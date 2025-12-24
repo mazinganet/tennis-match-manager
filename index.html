@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Match Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-icon">🎾</div>
+            <h2>Area Admin</h2>
+            <p>Inserisci la password per accedere</p>
+            <input type="password" id="admin-password" placeholder="Password"
+                onkeypress="if(event.key==='Enter') checkAdminPassword()">
+            <button onclick="checkAdminPassword()" class="btn btn-primary">Accedi</button>
+            <p id="login-error" style="color: #ef4444; display: none; margin-top: 10px;">Password errata!</p>
+            <a href="public.html" class="public-link">📺 Vai alla vista pubblica</a>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🎾</span>
+                <h1>Tennis Match Manager</h1>
+            </div>
+            <div class="season-toggle">
+                <label class="toggle-label">
+                    <span>Stagione:</span>
+                    <select id="season-select">
+                        <option value="winter">Viserba (4 campi)</option>
+                        <option value="summer">Rivabella (6 campi)</option>
+                    </select>
+                </label>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <button class="nav-btn active" data-tab="dashboard">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </button>
+            <button class="nav-btn" data-tab="players">
+                <span class="nav-icon">👥</span>
+                Giocatori
+            </button>
+            <button class="nav-btn" data-tab="courts">
+                <span class="nav-icon">🏟️</span>
+                Campi
+            </button>
+
+            <button class="nav-btn" data-tab="planning">
+                <span class="nav-icon">📅</span>
+                Planning
+            </button>
+            <button class="nav-btn" data-tab="recurring">
+                <span class="nav-icon">🔁</span>
+                Ricorrente
+            </button>
+            <button class="nav-btn" data-tab="history">
+                <span class="nav-icon">📜</span>
+                Storico
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Tab -->
+            <section id="dashboard" class="tab-content active">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-players">0</span>
+                            <span class="stat-label">Giocatori</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏟️</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-courts">0</span>
+                            <span class="stat-label">Campi Attivi</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-matches">0</span>
+                            <span class="stat-label">Partite Giocate</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduled-matches">0</span>
+                            <span class="stat-label">Partite Programmate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WhatsApp Importer Widget -->
+                <div id="whatsapp-importer" class="card" style="margin-top: 2rem; display: none;">
+                    <h3>📥 Importa da WhatsApp</h3>
+                    <p><small>Copia e incolla qui il messaggio del giocatore per aggiornare la sua
+                            disponibilità.</small></p>
+                    <textarea id="wa-import-text" placeholder="Es: 'Ciao, lunedì alle 18 ci sono'..."
+                        style="width: 100%; height: 100px; padding: 10px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); color: var(--text-main); font-family: inherit;"></textarea>
+                    <button class="btn-primary" onclick="App.parseWhatsApp()">Analizza Messaggio</button>
+                </div>
+
+                <div class="dashboard-sections">
+                    <div class="section-card">
+                        <h3>Prossime Partite</h3>
+                        <div id="upcoming-matches" class="upcoming-list">
+                            <p class="empty-state">Nessuna partita programmata</p>
+                        </div>
+                    </div>
+                    <div class="section-card">
+                        <h3>Attività Recenti</h3>
+                        <div id="recent-activity" class="activity-list">
+                            <p class="empty-state">Nessuna attività recente</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup Section -->
+                <div class="section-card" style="margin-top: 20px;">
+                    <h3>💾 Backup e Sincronizzazione</h3>
+
+                    <!-- Firebase Status -->
+                    <div id="firebase-status"
+                        style="margin-bottom: 15px; padding: 10px; border-radius: 8px; background: var(--bg-card);">
+                        <span id="firebase-status-icon">⏳</span>
+                        <span id="firebase-status-text">Verifica connessione Firebase...</span>
+                    </div>
+
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Salva i tuoi dati su file per evitare di perderli. Puoi ripristinarli in qualsiasi momento.
+                    </p>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                        <button class="btn btn-primary" onclick="Storage.downloadBackup()">
+                            📥 Scarica Backup
+                        </button>
+                        <label class="btn btn-secondary" style="cursor: pointer;">
+                            📤 Carica Backup
+                            <input type="file" accept=".json" style="display: none;"
+                                onchange="if(this.files[0]) { Storage.loadFromBackup(this.files[0]).then(() => { alert('Backup caricato! La pagina verrà ricaricata.'); location.reload(); }).catch(e => alert('Errore: ' + e.message)); }">
+                        </label>
+                        <button class="btn btn-primary" id="migrate-firebase-btn" onclick="Storage.migrateToFirebase()"
+                            style="background: #f59e0b;">
+                            🔄 Migra a Firebase
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Players Tab -->
+            <section id="players" class="tab-content">
+                <div class="section-header">
+                    <h2>Gestione Giocatori</h2>
+                    <button class="btn btn-primary" id="add-player-btn">
+                        <span>+</span> Nuovo Giocatore
+                    </button>
+                </div>
+
+                <div class="filters-bar">
+                    <input type="text" id="player-search" placeholder="Cerca giocatore..." class="search-input">
+                    <option value="">Tutti i livelli</option>
+                    <option value="principiante">Principiante</option>
+                    <option value="intermedio">Intermedio</option>
+                    <option value="avanzato">Avanzato</option>
+                    <option value="agonista">Agonista</option>
+                    </select>
+                </div>
+
+                <div class="players-table-container">
+                    <table class="data-table" id="players-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefono</th>
+                                <th>Livello</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="players-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Courts Tab -->
+            <section id="courts" class="tab-content">
+                <div class="section-header">
+                    <h2>Gestione Campi</h2>
+                    <button class="btn btn-primary" id="add-court-btn">
+                        <span>+</span> Nuovo Campo
+                    </button>
+                </div>
+
+                <div class="courts-grid" id="courts-grid">
+                </div>
+            </section>
+
+            <section id="planning" class="tab-content">
+                <div class="section-header">
+                    <h2 style="display: flex; align-items: baseline; gap: 10px;">
+                        📅 <span id="planning-day-name" style="font-size: 1.5rem;"></span>
+                        <span id="planning-date-display"
+                            style="font-size: 2rem; font-weight: 700; color: var(--primary-light);"></span>
+                    </h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary" id="planning-prev-day" title="Giorno Precedente">«</button>
+                        <input type="date" id="planning-date" class="form-control" style="width: auto;">
+                        <button class="btn-secondary" id="planning-next-day" title="Giorno Successivo">»</button>
+                    </div>
+                </div>
+                <div class="planning-container card">
+                    <!-- Top scrollbar -->
+                    <div id="planning-top-scroll"
+                        style="overflow-x: auto; overflow-y: hidden; height: 16px; margin-bottom: 5px;">
+                        <div id="planning-top-scroll-spacer" style="height: 1px;"></div>
+                    </div>
+                    <div id="planning-flex-container" class="planning-flex-container">
+                        <!-- Tables for each court injected by JS -->
+                    </div>
+                    <div class="planning-legend">
+                        <span class="legend-item"><span class="dot free"></span> Libero</span>
+                        <span class="legend-item"><span class="dot confirmed"></span> Match</span>
+                        <span class="legend-item"><span class="dot scuola"></span> Scuola</span>
+                        <span class="legend-item"><span class="dot ago"></span> AGO</span>
+                        <span class="legend-item"><span class="dot promo"></span> PROMO</span>
+                        <span class="legend-item"><span class="dot torneo"></span> Torneo</span>
+                        <span class="legend-item"><span class="dot manutenzione"></span> Manutenz.</span>
+                        <span class="legend-item"><span class="dot reserved"></span> Bloccato</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recurring Planning Tab -->
+            <section id="recurring" class="tab-content">
+                <div class="section-header">
+                    <h2>🔁 Planning Ricorrente</h2>
+                </div>
+
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="recurring-config"
+                        style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Giorno</label>
+                            <select id="recurring-day" class="form-control" style="width: 100%; padding: 8px 10px;">
+                                <option value="1">Lunedì</option>
+                                <option value="2">Martedì</option>
+                                <option value="3">Mercoledì</option>
+                                <option value="4">Giovedì</option>
+                                <option value="5">Venerdì</option>
+                                <option value="6">Sabato</option>
+                                <option value="0">Domenica</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Inizio</label>
+                            <input type="date" id="recurring-start-date" class="form-control"
+                                style="width: 100%; padding: 8px 10px;">
+                        </div>
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Fine</label>
+                            <input type="date" id="recurring-end-date" class="form-control"
+                                style="width: 100%; padding: 8px 10px;">
+                        </div>
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">&nbsp;</label>
+                            <button class="btn btn-primary" onclick="App.generateRecurringReservations()"
+                                style="width: 100%; padding: 8px 10px;">
+                                🚀 Genera Prenotazioni
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <p style="margin-bottom: 15px; color: var(--text-secondary);">
+                        Clicca sulle celle per impostare le attività ricorrenti, poi premi "Genera Prenotazioni".
+                    </p>
+                    <div id="recurring-flex-container" class="planning-flex-container" style="overflow-x: auto;">
+                        <!-- Tables for each court injected by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Tab -->
+            <section id="history" class="tab-content">
+                <div class="section-header">
+                    <h2>Storico Partite</h2>
+                    <div class="history-filters">
+                        <input type="date" id="history-from" class="date-input">
+                        <span>a</span>
+                        <input type="date" id="history-to" class="date-input">
+                        <select id="history-type-filter" class="filter-select">
+                            <option value="">Tutti i tipi</option>
+                            <option value="singles">Singoli</option>
+                            <option value="doubles">Doppi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="history-table-container">
+                    <table class="data-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Ora</th>
+                                <th>Campo</th>
+                                <th>Tipo</th>
+                                <th>Giocatori</th>
+                                <th>Risultato</th>
+                                <th>Feedback</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Template -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Titolo Modal</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+            </div>
+            <div class="modal-footer" id="modal-footer">
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Authentication Script - MUST be first -->
+    <script>
+        // Password admin (modificabile)
+        const ADMIN_PASSWORD = 'tennis';
+
+        // Verifica se già loggato
+        function checkAdminSession() {
+            if (sessionStorage.getItem('admin_logged_in') === 'true') {
+                showAdminArea();
+            }
+        }
+
+        // Verifica password
+        function checkAdminPassword() {
+            const input = document.getElementById('admin-password');
+            const error = document.getElementById('login-error');
+
+            if (input.value === ADMIN_PASSWORD) {
+                sessionStorage.setItem('admin_logged_in', 'true');
+                showAdminArea();
+            } else {
+                error.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // Mostra area admin
+        function showAdminArea() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+        }
+
+        // Check sessione all'avvio
+        checkAdminSession();
+    </script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/players.js"></script>
+    <script src="js/courts.js"></script>
+    <script src="js/availability.js"></script>
+    <script src="js/matching.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/seed_players.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

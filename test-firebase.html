@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connessione Firebase</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+
+        h1 {
+            color: #10b981;
+        }
+
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        .success {
+            background: #10b98133;
+            border: 1px solid #10b981;
+        }
+
+        .error {
+            background: #ef444433;
+            border: 1px solid #ef4444;
+        }
+
+        .warning {
+            background: #f59e0b33;
+            border: 1px solid #f59e0b;
+        }
+
+        .info {
+            background: #3b82f633;
+            border: 1px solid #3b82f6;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #059669;
+        }
+
+        pre {
+            background: #0f0f1a;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔥 Test Connessione Firebase</h1>
+    <p>Questo test verifica la configurazione Firebase per la migrazione dati.</p>
+
+    <button onclick="runAllTests()">▶️ Esegui Tutti i Test</button>
+    <button onclick="testRead()">📖 Test Lettura</button>
+    <button onclick="testWrite()">✏️ Test Scrittura</button>
+
+    <div id="results"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+
+        // Firebase Config (copiata da firebase-config.js)
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9TI0w5rMvl0YNcDBaKAtNgxMpFEZL0lk",
+            authDomain: "prenota-5062d.firebaseapp.com",
+            databaseURL: "https://prenota-5062d-default-rtdb.firebaseio.com",
+            projectId: "prenota-5062d",
+            storageBucket: "prenota-5062d.firebasestorage.app",
+            messagingSenderId: "1042421630778",
+            appId: "1:1042421630778:web:ede08e4c3e33d95d103203"
+        };
+
+        let database = null;
+        let firebaseReady = false;
+
+        // Test 1: Inizializzazione Firebase
+        function testInit() {
+            log('<b>🔧 Test 1: Inizializzazione Firebase...</b>');
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                database = firebase.database();
+                firebaseReady = true;
+                log('✅ Firebase inizializzato correttamente!', 'success');
+                log(`<pre>Database URL: ${firebaseConfig.databaseURL}
+Project ID: ${firebaseConfig.projectId}</pre>`, 'info');
+                return true;
+            } catch (error) {
+                log(`❌ Errore inizializzazione: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Test 2: Connettività Database
+        async function testConnection() {
+            log('<b>🌐 Test 2: Connettività Database...</b>');
+            try {
+                const connectedRef = firebase.database().ref('.info/connected');
+                const snapshot = await connectedRef.once('value');
+                if (snapshot.val() === true) {
+                    log('✅ Connesso al database Firebase!', 'success');
+                    return true;
+                } else {
+                    log('⚠️ Non connesso al database (offline mode)', 'warning');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Errore connessione: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Test 3: Lettura dati esistenti
+        async function testRead() {
+            if (!firebaseReady) testInit();
+            clearResults();
+            log('<b>📖 Test 3: Lettura dati esistenti...</b>');
+            try {
+                const snapshot = await database.ref('tennis-manager').once('value');
+                const data = snapshot.val();
+
+                if (data) {
+                    log('✅ Dati trovati su Firebase!', 'success');
+
+                    // Mostra riepilogo dati
+                    const summary = {
+                        players: data.tennis_players ? (Array.isArray(data.tennis_players) ? data.tennis_players.length : Object.keys(data.tennis_players).length) : 0,
+                        courts: data.tennis_courts ? (Array.isArray(data.tennis_courts) ? data.tennis_courts.length : Object.keys(data.tennis_courts).length) : 0,
+                        matches: data.tennis_matches ? (Array.isArray(data.tennis_matches) ? data.tennis_matches.length : Object.keys(data.tennis_matches).length) : 0,
+                        scheduled: data.tennis_scheduled ? (Array.isArray(data.tennis_scheduled) ? data.tennis_scheduled.length : Object.keys(data.tennis_scheduled).length) : 0,
+                        hasSettings: !!data.tennis_settings,
+                        hasPlanningTemplates: !!data.planning_templates
+                    };
+
+                    log(`<pre>📊 Riepilogo dati Firebase:
+━━━━━━━━━━━━━━━━━━━━━━━━
+👥 Giocatori: ${summary.players}
+🎾 Campi: ${summary.courts}
+📅 Partite: ${summary.matches}
+📋 Prenotazioni: ${summary.scheduled}
+⚙️ Impostazioni: ${summary.hasSettings ? 'Sì' : 'No'}
+📝 Template Planning: ${summary.hasPlanningTemplates ? 'Sì' : 'No'}</pre>`, 'info');
+                } else {
+                    log('⚠️ Nessun dato trovato su Firebase (database vuoto)', 'warning');
+                    log('💡 Usa il pulsante "Migra a Firebase" nell\'app per caricare i dati locali.', 'info');
+                }
+                return true;
+            } catch (error) {
+                log(`❌ Errore lettura: ${error.message}`, 'error');
+                if (error.message.includes('Permission denied')) {
+                    log('🔒 Le regole di sicurezza Firebase potrebbero bloccare l\'accesso.<br>Vai su Firebase Console > Realtime Database > Regole e imposta:<pre>{\n  "rules": {\n    ".read": true,\n    ".write": true\n  }\n}</pre>', 'warning');
+                }
+                return false;
+            }
+        }
+
+        // Test 4: Scrittura test
+        async function testWrite() {
+            if (!firebaseReady) testInit();
+            clearResults();
+            log('<b>✏️ Test 4: Scrittura test...</b>');
+            try {
+                const testRef = database.ref('tennis-manager/_test_connection');
+                const testData = {
+                    timestamp: new Date().toISOString(),
+                    message: 'Test connessione riuscito!'
+                };
+
+                await testRef.set(testData);
+                log('✅ Scrittura riuscita!', 'success');
+
+                // Verifica lettura
+                const snapshot = await testRef.once('value');
+                if (snapshot.val()) {
+                    log('✅ Verifica lettura dopo scrittura: OK', 'success');
+
+                    // Pulisci dati test
+                    await testRef.remove();
+                    log('🧹 Dati test rimossi', 'info');
+                }
+                return true;
+            } catch (error) {
+                log(`❌ Errore scrittura: ${error.message}`, 'error');
+                if (error.message.includes('Permission denied')) {
+                    log('🔒 Permessi di scrittura negati. Controlla le regole Firebase.', 'warning');
+                }
+                return false;
+            }
+        }
+
+        // Esegui tutti i test
+        async function runAllTests() {
+            clearResults();
+            log('<h2>🚀 Avvio test completo Firebase</h2>', 'info');
+            log(`<small>Timestamp: ${new Date().toLocaleString('it-IT')}</small>`, 'info');
+
+            const initOk = testInit();
+            if (!initOk) return;
+
+            await testConnection();
+            await testRead();
+            await testWrite();
+
+            log('<h2>✅ Test completati!</h2>', 'success');
+        }
+
+        // Avvia test automaticamente
+        runAllTests();
+    </script>
+</body>
+
+</html>

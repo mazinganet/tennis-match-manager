@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Planning - Vista Pubblica</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Stili fullscreen per vista pubblica */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            min-height: 100vh;
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        .public-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2d8a4e;
+        }
+
+        .public-header h1 {
+            color: #fff;
+            margin: 0;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .public-header h1 span {
+            color: #2d8a4e;
+        }
+
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .date-nav button {
+            background: #2d8a4e;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .date-nav button:hover {
+            background: #3da862;
+        }
+
+        .current-date {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .day-name {
+            color: #fbbf24;
+            font-size: 1.2rem;
+        }
+
+        .public-container {
+            padding: 20px;
+            height: calc(100vh - 100px);
+            overflow: auto;
+        }
+
+        .public-planning-grid {
+            display: block;
+            overflow-x: auto;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .public-horizontal-table {
+            width: 100%;
+            min-width: 1200px;
+            border-collapse: collapse;
+            background-color: #fff;
+            font-size: 0.8rem;
+        }
+
+        .public-horizontal-table th,
+        .public-horizontal-table td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .public-horizontal-table .court-header-cell {
+            background: #2d8a4e;
+            color: #fff;
+            width: 120px;
+            min-width: 120px;
+        }
+
+        .public-horizontal-table .time-header-cell {
+            background: #2d8a4e;
+            color: #fff;
+            font-size: 0.85rem;
+            min-width: 80px;
+        }
+
+        .public-horizontal-table .court-name-cell {
+            background: #3da862;
+            color: #fff;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 8px;
+        }
+
+        .public-horizontal-table .planning-cell {
+            min-width: 80px;
+            height: 50px;
+            padding: 2px;
+        }
+
+        .last-update {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #2d8a4e;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .season-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .season-selector select {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid #2d8a4e;
+            background: #16213e;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        /* Activity colors */
+        .activity-free {
+            background-color: #fff;
+        }
+
+        .activity-confirmed {
+            background-color: #92d050;
+            color: #000;
+        }
+
+        .activity-players {
+            background-color: #fff;
+            color: #000;
+        }
+
+        .activity-single-player {
+            background-color: #c5e1a5;
+            color: #000;
+        }
+
+        .activity-scuola {
+            background-color: #deebf7;
+            color: #000;
+        }
+
+        .activity-ago {
+            background-color: #f4b084;
+            color: #000;
+        }
+
+        .activity-promo {
+            background-color: #ffff00;
+            color: #000;
+        }
+
+        .activity-torneo {
+            background-color: #ffc000;
+            color: #000;
+        }
+
+        .activity-manutenzione {
+            background-color: #a6a6a6;
+            color: #000;
+        }
+
+        .activity-reserved {
+            background-color: #ff0000;
+            color: #fff;
+        }
+
+        /* Mobile Court Selector */
+        .mobile-court-selector {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .mobile-court-selector select {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 2px solid #2d8a4e;
+            background: #16213e;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        /* Mobile Vertical Table */
+        .mobile-vertical-table {
+            display: none;
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .mobile-vertical-table th,
+        .mobile-vertical-table td {
+            border: 1px solid #000;
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .mobile-vertical-table .time-column {
+            background: #2d8a4e;
+            color: #fff;
+            font-weight: bold;
+            width: 50px;
+            min-width: 50px;
+            max-width: 50px;
+            font-size: 0.75rem;
+        }
+
+        .mobile-vertical-table .activity-cell {
+            min-height: 40px;
+            font-size: 0.85rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            html,
+            body {
+                overflow-x: hidden !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .public-header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .public-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .date-nav {
+                gap: 10px;
+            }
+
+            .date-nav button {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            .current-date {
+                min-width: 120px;
+                font-size: 1.2rem;
+            }
+
+            .day-name {
+                font-size: 1rem;
+            }
+
+            .season-selector {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .mobile-court-selector {
+                display: flex !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                margin: 0 0 10px 0 !important;
+                padding: 0 5px !important;
+            }
+
+            .mobile-court-selector label {
+                flex-shrink: 0 !important;
+                margin-right: 8px !important;
+            }
+
+            .mobile-court-selector select {
+                flex: 1 !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                padding: 8px 10px !important;
+                font-size: 1rem !important;
+            }
+
+            .public-planning-grid {
+                display: none !important;
+            }
+
+            .mobile-vertical-table {
+                display: table !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed !important;
+                margin: 0 !important;
+            }
+
+            .mobile-vertical-table th,
+            .mobile-vertical-table td {
+                padding: 6px 3px !important;
+            }
+
+            .mobile-vertical-table .time-column {
+                width: 15% !important;
+                font-size: 0.75rem !important;
+                padding: 5px 2px !important;
+            }
+
+            .mobile-vertical-table .activity-cell {
+                width: 85% !important;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            .public-container {
+                padding: 5px !important;
+                height: auto;
+                overflow-x: hidden;
+                max-width: 100%;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .mobile-vertical-table {
+                display: table !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="public-header">
+        <h1>🎾 Tennis <span>Planning</span></h1>
+
+        <div class="date-nav">
+            <button onclick="changeDay(-1)">◀ Ieri</button>
+            <div class="current-date">
+                <div class="day-name" id="day-name">Lunedì</div>
+                <div id="current-date">23/12/2024</div>
+            </div>
+            <button onclick="changeDay(1)">Domani ▶</button>
+        </div>
+
+        <div class="season-selector">
+            <label>Sede:</label>
+            <select id="season-select" onchange="renderPlanning()">
+                <option value="winter">Viserba</option>
+                <option value="summer">Rivabella</option>
+            </select>
+            <span class="last-update">
+                Aggiornato: <span id="last-update-time">--:--</span>
+                <span class="refresh-indicator"></span>
+            </span>
+        </div>
+    </header>
+
+    <div class="public-container">
+        <!-- Mobile Court Selector -->
+        <div class="mobile-court-selector">
+            <label>📍 Campo:</label>
+            <select id="mobile-court-select" onchange="renderMobilePlanning()">
+                <!-- Options populated dynamically -->
+            </select>
+        </div>
+
+        <!-- Desktop Horizontal Tables -->
+        <div class="public-planning-grid" id="planning-grid">
+            <!-- Tables will be generated here -->
+        </div>
+
+        <!-- Mobile Vertical Table -->
+        <table class="mobile-vertical-table" id="mobile-planning-table">
+            <!-- Mobile table will be generated here -->
+        </table>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <script src="js/storage.js"></script>
+    <script src="js/courts.js"></script>
+    <script src="js/players.js"></script>
+    <script src="js/matching.js"></script>
+    <script>
+        let currentDate = new Date();
+
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return day + '/' + month;
+        }
+
+        function getDayName(date) {
+            const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+            return days[date.getDay()];
+        }
+
+        function changeDay(delta) {
+            currentDate.setDate(currentDate.getDate() + delta);
+            renderPlanning();
+        }
+
+        function renderPlanning() {
+            try {
+                var season = document.getElementById('season-select').value;
+                var dateStr = currentDate.toISOString().split('T')[0];
+                var dayName = Matching.getDayNameFromDate(dateStr);
+
+                document.getElementById('current-date').textContent = formatDate(currentDate);
+                document.getElementById('day-name').textContent = getDayName(currentDate);
+
+                var courts = Courts.getAvailable(season);
+                var container = document.getElementById('planning-grid');
+
+                if (!courts || courts.length === 0) {
+                    if (container) {
+                        container.innerHTML = '<p style="color: #333; text-align: center; padding: 20px;">Nessun campo disponibile per questa stagione.</p>';
+                    }
+                    // Still try to render mobile (will handle its own empty state)
+                    populateMobileCourtSelector();
+                    renderMobilePlanning();
+                    return;
+                }
+
+                var planningTemplates = Storage.load('planning_templates', {}) || {};
+                var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+
+                var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+                var headerTimes = (courts[0] && dayTemplate[courts[0].id]) ? dayTemplate[courts[0].id] : defaultTimes;
+
+                var tableHtml = '<table class="public-horizontal-table"><tbody>';
+
+                for (var c = 0; c < courts.length; c++) {
+                    var court = courts[c];
+                    var times = dayTemplate[court.id] || defaultTimes;
+
+                    // Riga orari per questo campo
+                    tableHtml += '<tr class="court-time-row">';
+                    tableHtml += '<td class="court-name-cell" style="font-size:0.6rem; background:#d0d0d0; color:#000;">⏰ Orari</td>';
+                    for (var ti = 0; ti < times.length; ti++) {
+                        tableHtml += '<td style="background:#e8e8e8; font-size:0.65rem; color:#000; text-align:center; border:1px solid #999;">' + times[ti] + '</td>';
+                    }
+                    tableHtml += '</tr>';
+
+                    // Riga attività
+                    tableHtml += '<tr><td class="court-name-cell">' + court.name + '</td>';
+
+                    for (var t = 0; t < times.length; t++) {
+                        var time = times[t];
+                        var standardizedTime = time.replace('.', ':');
+                        var nextTime = times[t + 1] || Matching.addTime(standardizedTime, 60);
+                        var standardizedNextTime = nextTime.replace('.', ':');
+
+                        var res = null;
+                        if (court.reservations) {
+                            for (var r = 0; r < court.reservations.length; r++) {
+                                var reservation = court.reservations[r];
+                                if (reservation.date === dateStr && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
+                                    res = reservation;
+                                    break;
+                                }
+                            }
+                            if (!res) {
+                                for (var r = 0; r < court.reservations.length; r++) {
+                                    var reservation = court.reservations[r];
+                                    if (!reservation.date && reservation.day === dayName && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
+                                        res = reservation;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        var cellClass = 'activity-free';
+                        var cellContent = '';
+
+                        if (res) {
+                            var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
+
+                            if (res.players && res.players.some(function (p) { return p; })) {
+                                var filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
+                                var hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                                var firstPlayerLower = (res.players[0] || '').toLowerCase();
+                                var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
+
+                                if (hasOnlyFirst && isActivity) {
+                                    cellClass = 'activity-' + firstPlayerLower;
+                                    cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
+                                } else if (hasOnlyFirst) {
+                                    cellClass = 'activity-single-player';
+                                    cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
+                                } else if (filledPlayers.length === 2) {
+                                    cellClass = 'activity-players';
+                                    cellContent = '<div style="display:flex;flex-direction:column;font-size:0.7rem;"><span>' + filledPlayers[0] + '</span><span>' + filledPlayers[1] + '</span></div>';
+                                } else {
+                                    cellClass = 'activity-players';
+                                    cellContent = '<div style="display:grid;grid-template-columns:1fr 1fr;font-size:0.55rem;">';
+                                    for (var p = 0; p < 4; p++) {
+                                        cellContent += '<span>' + (res.players[p] || '') + '</span>';
+                                    }
+                                    cellContent += '</div>';
+                                }
+                            } else {
+                                cellClass = 'activity-' + (res.type || 'reserved');
+                                var label = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                                cellContent = '<span class="cell-label">' + label + '</span>';
+                            }
+                        }
+
+                        tableHtml += '<td class="planning-cell ' + cellClass + '">' + cellContent + '</td>';
+                    }
+
+                    tableHtml += '</tr>';
+                }
+
+                tableHtml += '</tbody></table>';
+                if (container) {
+                    container.innerHTML = tableHtml;
+                }
+
+                document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+                // Also render mobile version
+                populateMobileCourtSelector();
+                renderMobilePlanning();
+            } catch (e) {
+                console.error('Error rendering planning:', e);
+                var errorContainer = document.getElementById('planning-grid');
+                if (errorContainer) {
+                    errorContainer.innerHTML = '<p style="color:red;padding:20px;">Errore: ' + e.message + '</p>';
+                }
+            }
+        }
+
+        // Populate mobile court selector dropdown
+        function populateMobileCourtSelector() {
+            var season = document.getElementById('season-select').value;
+            var courts = Courts.getAvailable(season);
+            var select = document.getElementById('mobile-court-select');
+
+            if (!select || !courts || courts.length === 0) return;
+
+            var currentValue = select.value;
+            select.innerHTML = '';
+
+            courts.forEach(function (court, index) {
+                var option = document.createElement('option');
+                option.value = court.id;
+                option.textContent = court.name;
+                if (court.id === currentValue || (!currentValue && index === 0)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        // Render mobile vertical table for selected court
+        function renderMobilePlanning() {
+            try {
+                var season = document.getElementById('season-select').value;
+                var dateStr = currentDate.toISOString().split('T')[0];
+                var dayName = Matching.getDayNameFromDate(dateStr);
+
+                var courts = Courts.getAvailable(season);
+                var mobileTable = document.getElementById('mobile-planning-table');
+                var select = document.getElementById('mobile-court-select');
+
+                if (!mobileTable || !courts || courts.length === 0) return;
+
+                var selectedCourtId = select.value;
+                var court = courts.find(function (c) { return c.id === selectedCourtId; });
+
+                if (!court) {
+                    court = courts[0];
+                }
+
+                var planningTemplates = Storage.load('planning_templates', {}) || {};
+                var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+                var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+                var times = dayTemplate[court.id] || defaultTimes;
+
+                var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
+
+                var tableHtml = '<tbody>';
+                tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
+
+                for (var t = 0; t < times.length; t++) {
+                    var time = times[t];
+                    var standardizedTime = time.replace('.', ':');
+                    var nextTime = times[t + 1] || Matching.addTime(standardizedTime, 60);
+                    var standardizedNextTime = nextTime.replace('.', ':');
+
+                    var res = null;
+                    if (court.reservations) {
+                        for (var r = 0; r < court.reservations.length; r++) {
+                            var reservation = court.reservations[r];
+                            if (reservation.date === dateStr && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
+                                res = reservation;
+                                break;
+                            }
+                        }
+                        if (!res) {
+                            for (var r = 0; r < court.reservations.length; r++) {
+                                var reservation = court.reservations[r];
+                                if (!reservation.date && reservation.day === dayName && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
+                                    res = reservation;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    var cellClass = 'activity-free';
+                    var cellContent = '-';
+
+                    if (res) {
+                        if (res.players && res.players.some(function (p) { return p; })) {
+                            var filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
+                            var hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                            var firstPlayerLower = (res.players[0] || '').toLowerCase();
+                            var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
+
+                            if (hasOnlyFirst && isActivity) {
+                                cellClass = 'activity-' + firstPlayerLower;
+                                cellContent = res.players[0];
+                            } else if (hasOnlyFirst) {
+                                cellClass = 'activity-single-player';
+                                cellContent = res.players[0];
+                            } else {
+                                cellClass = 'activity-players';
+                                cellContent = filledPlayers.join('<br>');
+                            }
+                        } else {
+                            cellClass = 'activity-' + (res.type || 'reserved');
+                            cellContent = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                        }
+                    }
+
+                    tableHtml += '<tr>';
+                    tableHtml += '<td class="time-column">' + time + '</td>';
+                    tableHtml += '<td class="activity-cell ' + cellClass + '">' + cellContent + '</td>';
+                    tableHtml += '</tr>';
+                }
+
+                tableHtml += '</tbody>';
+                mobileTable.innerHTML = tableHtml;
+
+            } catch (e) {
+                console.error('Error rendering mobile planning:', e);
+            }
+        }
+
+        // Initialize with Firebase support
+        async function init() {
+            // If Firebase is connected, load data first and subscribe to changes
+            if (Storage.isFirebaseConnected()) {
+                console.log('🔄 Public view: caricamento dati da Firebase...');
+                await Storage.loadFromFirebase(Storage.KEYS.COURTS);
+                await Storage.loadFromFirebase(Storage.KEYS.PLANNING_TEMPLATES);
+
+                // Subscribe to real-time updates
+                Storage.subscribe(Storage.KEYS.COURTS, () => {
+                    console.log('📡 Aggiornamento campi ricevuto');
+                    renderPlanning();
+                });
+                Storage.subscribe(Storage.KEYS.PLANNING_TEMPLATES, () => {
+                    console.log('📡 Aggiornamento templates ricevuto');
+                    renderPlanning();
+                });
+
+                console.log('✅ Public view: sottoscritto a aggiornamenti real-time');
+            }
+
+            // Initial render
+            renderPlanning();
+        }
+
+        // Start initialization
+        init();
+
+        // Auto-refresh every 30 seconds (as backup for non-Firebase mode)
+        setInterval(function () {
+            if (!Storage.isFirebaseConnected()) {
+                renderPlanning();
+            }
+        }, 30000);
+
+        // Real-time update when admin makes changes (localStorage events for non-Firebase mode)
+        window.addEventListener('storage', function (event) {
+            if (event.key === 'tennis_courts' || event.key === 'planning_templates') {
+                console.log('Detected change from admin, updating...');
+                renderPlanning();
+            }
+        });
+    </script>
+</body>
+
+</html>
