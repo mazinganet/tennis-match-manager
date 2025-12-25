@@ -1578,16 +1578,16 @@ body {
         gap: 15px;
     }
 
-    /* Reorder columns for mobile: players dropdown first, then nominativi, then activity type */
-    .modal-three-columns #players-column {
+    /* Reorder columns for mobile: activity first, then players dropdown, then nominativi */
+    .modal-three-columns #activity-column {
         order: 1;
     }
 
-    .modal-three-columns .center-column {
+    .modal-three-columns #players-column {
         order: 2;
     }
 
-    .modal-three-columns #activity-column {
+    .modal-three-columns .center-column {
         order: 3;
     }
 
