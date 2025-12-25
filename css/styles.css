@@ -1611,6 +1611,11 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .players-grid-input .player-input {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+
     /* Modal footer buttons for mobile - stacked */
     .modal-footer-buttons {
         flex-direction: column;

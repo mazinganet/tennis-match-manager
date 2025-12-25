@@ -704,11 +704,6 @@ const App = {
                         </div>
                     </div>
                     
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Incasso (€)</label>
-                        <input type="number" id="slot-price" placeholder="0.00" value="${existingRes?.price || ''}">
-                    </div>
-                    
                     <div class="auto-match-section" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <label style="font-size: 0.75rem; margin: 0;">Tipo:</label>
