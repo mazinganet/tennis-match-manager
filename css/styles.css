@@ -1554,11 +1554,13 @@ body {
         grid-template-columns: 40% 60%;
         grid-template-rows: auto auto;
         gap: 3px 8px;
+        align-items: start;
     }
 
     /* Left side: Activity types and Players lists stacked vertically close */
     .modal-three-columns .selection-column {
         max-height: 120px;
+        align-self: start;
     }
 
     .modal-three-columns #activity-column {
@@ -1576,6 +1578,7 @@ body {
     .modal-three-columns .center-column {
         grid-column: 2;
         grid-row: 1 / 3;
+        align-self: start;
     }
 
     .scrollable-selection-list {
