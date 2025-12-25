@@ -1581,14 +1581,18 @@ body {
     /* Reorder columns for mobile: activity first, then players dropdown, then nominativi */
     .modal-three-columns #activity-column {
         order: 1;
+        margin-bottom: 0;
     }
 
     .modal-three-columns #players-column {
         order: 2;
+        margin-top: 5px;
+        margin-bottom: 0;
     }
 
     .modal-three-columns .center-column {
         order: 3;
+        margin-top: 15px;
     }
 
     /* All selection columns full width on mobile */
