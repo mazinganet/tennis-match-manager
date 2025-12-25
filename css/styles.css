@@ -1583,6 +1583,35 @@ body {
         grid-template-columns: 1fr;
     }
 
+    /* Modal footer buttons for mobile */
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .modal-footer>div {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .modal-footer .btn {
+        flex: 1 1 auto;
+        min-width: 100px;
+        max-width: 48%;
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .modal-footer .btn-primary,
+    .modal-footer .btn-secondary {
+        min-width: 45%;
+    }
+
     /* Dashboard cards mobile */
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr);
