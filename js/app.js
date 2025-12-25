@@ -818,6 +818,15 @@ const App = {
         console.log('[CONFIRM] Time range:', time, '-', endTime);
         console.log('[CONFIRM] Players:', playersArray);
 
+        // Check if there's any content to save
+        const hasPlayers = playersArray.some(p => p && p.length > 0);
+        const isActivityType = type !== 'match';
+
+        if (!hasPlayers && !isActivityType) {
+            alert('Inserisci almeno un nominativo o seleziona un tipo di attività diverso da Match.');
+            return;
+        }
+
         const court = Courts.getById(courtId);
         if (!court) {
             console.error('[CONFIRM] Court not found:', courtId);
