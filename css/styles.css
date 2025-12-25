@@ -819,9 +819,7 @@ body {
 .modal {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
-    width: auto;
-    min-width: 300px;
-    max-width: 380px;
+    width: fit-content;
     max-height: 85vh;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
