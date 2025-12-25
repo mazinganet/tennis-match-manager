@@ -820,6 +820,7 @@ body {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
     width: fit-content;
+    max-width: 340px;
     max-height: 85vh;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
@@ -1679,8 +1680,9 @@ body {
     }
 
     .players-grid-input .player-input {
-        padding: 6px 10px;
-        font-size: 0.85rem;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        height: auto;
     }
 
     /* Modal footer buttons for mobile - stacked */
@@ -1695,6 +1697,7 @@ body {
         justify-content: flex-start;
         gap: 6px;
         flex-wrap: wrap;
+        width: 100%;
     }
 
     .footer-right-buttons {
