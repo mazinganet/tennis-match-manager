@@ -743,17 +743,14 @@ const App = {
         `;
 
         const footer = `
-            <div class="modal-footer-grid">
-                <div class="footer-left">
-                    ${hasExisting ? `<button class="btn btn-danger btn-footer-sm" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">Elimina Range</button>` : ''}
-                    <button class="btn btn-warning btn-footer-sm" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">🗑️ Giornata</button>
-                </div>
-                <div class="footer-right">
-                    <button class="btn btn-secondary btn-footer-sm" onclick="App.closeModal()">Annulla</button>
-                    <button class="btn btn-primary btn-footer-lg" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
-                        ${hasExisting ? 'Salva Modifiche' : 'Conferma'}
-                    </button>
-                </div>
+            <div class="modal-footer-row">
+                ${hasExisting ? `<button class="btn btn-danger btn-xs" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">Elimina</button>` : ''}
+                <button class="btn btn-warning btn-xs" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">Giornata</button>
+                <button class="btn btn-outline btn-xs" onclick="App.clearAllReservations()" style="border-color: #ef4444; color: #ef4444;">Pulisci</button>
+                <button class="btn btn-secondary btn-sm-modal" onclick="App.closeModal()">Annulla</button>
+                <button class="btn btn-primary btn-md-modal" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
+                    ${hasExisting ? 'Salva' : 'Conferma'}
+                </button>
             </div>
         `;
 
