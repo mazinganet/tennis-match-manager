@@ -629,10 +629,11 @@ const App = {
 
         const body = `
             <div class="modal-three-columns">
-                <!-- Colonna sinistra: Tipo Attività -->
-                <div class="selection-column" id="activity-column">
-                    <div class="form-group">
-                        <label>Tipo Attività</label>
+                <!-- Row for Activity/Player selection with radio buttons -->
+                <div class="selection-row" id="selection-row">
+                    <div class="selection-option">
+                        <input type="radio" id="mode-activity" name="selection-mode" value="activity" checked onchange="App.toggleSelectionMode('activity')">
+                        <label for="mode-activity">Attività</label>
                         <select id="activity-type-select" class="form-control" onchange="
                             var type = this.value;
                             document.getElementById('selected-type').value = type;
@@ -650,7 +651,21 @@ const App = {
                             `).join('')}
                         </select>
                     </div>
-                </div>
+                    <div class="selection-option">
+                        <input type="radio" id="mode-player" name="selection-mode" value="player" onchange="App.toggleSelectionMode('player')">
+                        <label for="mode-player">Giocatore</label>
+                        <select id="player-select" class="form-control" disabled onchange="
+                            if(this.value) {
+                                App.insertPlayerInActiveSlot(this.value);
+                                this.value = '';
+                            }
+                        ">
+                            <option value="">-- Scegli --</option>
+                            ${players.map(p => `
+                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${!p.isAvailable ? ' ⚠️' : ''}</option>
+                            `).join('')}
+                        </select>
+                    </div>
                 
                 <!-- Colonna centrale: Nominativi + Orario -->
                 <div class="center-column">
@@ -669,7 +684,7 @@ const App = {
                         <input type="hidden" id="slot-label" value="${existingRes?.label || ''}">
                     </div>
                     
-                    <div class="time-selection" style="margin-top: 15px;">
+                    <div class="time-selection" style="margin-top: 10px;">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Orario Inizio</label>
@@ -704,7 +719,7 @@ const App = {
                         </div>
                     </div>
                     
-                    <div class="auto-match-section" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div class="auto-match-section" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <label style="font-size: 0.75rem; margin: 0;">Tipo:</label>
                             <select id="match-type-auto" class="filter-select" style="font-size: 0.7rem; padding: 3px 6px;">
@@ -715,24 +730,6 @@ const App = {
                                 🔄 Auto Match
                             </button>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Colonna destra: Selezione Giocatori -->
-                <div class="selection-column" id="players-column">
-                    <div class="form-group">
-                        <label>Seleziona Giocatore</label>
-                        <select id="player-select" class="form-control" onchange="
-                            if(this.value) {
-                                App.insertPlayerInActiveSlot(this.value);
-                                this.value = '';
-                            }
-                        ">
-                            <option value="">-- Scegli giocatore --</option>
-                            ${players.map(p => `
-                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${!p.isAvailable ? ' ⚠️' : ''}</option>
-                            `).join('')}
-                        </select>
                     </div>
                 </div>
             </div>
@@ -1144,6 +1141,19 @@ const App = {
         document.querySelectorAll('.player-input').forEach((input, index) => {
             input.classList.toggle('active-slot', index + 1 === slotNum);
         });
+    },
+
+    toggleSelectionMode(mode) {
+        const activitySelect = document.getElementById('activity-type-select');
+        const playerSelect = document.getElementById('player-select');
+
+        if (mode === 'activity') {
+            activitySelect.disabled = false;
+            playerSelect.disabled = true;
+        } else {
+            activitySelect.disabled = true;
+            playerSelect.disabled = false;
+        }
     },
 
     insertPlayerInActiveSlot(playerName) {
