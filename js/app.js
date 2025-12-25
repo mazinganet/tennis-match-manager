@@ -2514,64 +2514,239 @@ const App = {
         // Clear template
         this.recurringTemplate = {};
         this.renderRecurringPlanning();
-    }
+    },
+
+    // --- Date Navigation & Planning (New Implementation) ---
+
+    changeDay(delta) {
+        this.currentPlanningDate.setDate(this.currentPlanningDate.getDate() + delta);
+        this.renderPlanning();
+    },
+
+    formatDate(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        return `${day}/${month}/${date.getFullYear()}`;
+    },
+
+    renderPlanning() {
+        const season = this.currentSeason;
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dayName = Matching.getDayNameFromDate(dateStr);
+
+        // Update header date display
+        const dateDisplayEl = document.getElementById('current-date-display');
+        if (dateDisplayEl) {
+            dateDisplayEl.textContent = this.formatDate(this.currentPlanningDate);
+        }
+        const dayNameEl = document.getElementById('current-day-name');
+        if (dayNameEl) {
+            const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+            dayNameEl.textContent = days[this.currentPlanningDate.getDay()];
+        }
+
+        console.log(`Rendering planning for ${dayName} (${dateStr}), season: ${season}`);
+
+        // Update old planning-date-display if it exists (for dashboard title mainly)
+        const oldDateDisplay = document.getElementById('planning-date-display');
+        if (oldDateDisplay) {
+            oldDateDisplay.textContent = this.formatDate(this.currentPlanningDate) + ' - ' + dayName;
+        }
+
+        const courts = Courts.getAvailable(season);
+        const container = document.getElementById('planning-grid');
+
+        if (!container) return;
+
+        if (!courts || courts.length === 0) {
+            container.innerHTML = '<div class="empty-state">Nessun campo disponibile per questa stagione. Vai alla sezione Campi per aggiungerne.</div>';
+            return;
+        }
+
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        const dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+
+        let html = '';
+
+        courts.forEach(court => {
+            const times = dayTemplate[court.id] || defaultTimes;
+
+            html += `
+                <div class="court-planning-section">
+                    <div class="planning-header-actions">
+                         <div class="court-title">${court.name}</div>
+                         <button class="btn btn-outline btn-xs" onclick="App.showAddSlotModal('${court.id}', '${dayName}')" title="Modifica orari">+ Orari</button>
+                    </div>
+                    <div class="planning-horizontal-table-container">
+                        <table class="planning-horizontal-table">
+                            <thead>
+                                <tr>
+                                    <th class="court-header-cell">Orario</th>
+                                    ${times.map(t => `<th class="time-header-cell">${t}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="court-name-cell">Attività</td>
+                                    ${times.map((time, index) => {
+                const standardizedTime = time.replace('.', ':');
+                const nextTime = times[index + 1] || Matching.addTime(standardizedTime, 60);
+                const standardizedNextTime = nextTime.replace('.', ':');
+
+                // PRIORITY 1: Manual Reservation with SPECIFIC DATE
+                let res = (court.reservations || []).find(r =>
+                    r.date === dateStr &&
+                    standardizedTime < r.to &&
+                    standardizedNextTime > r.from
+                );
+
+                let isRecurrent = false;
+
+                // PRIORITY 2: Manual Reservation with RECURRING DAY (if no date specific)
+                if (!res) {
+                    res = (court.reservations || []).find(r =>
+                        !r.date &&
+                        r.day === dayName &&
+                        standardizedTime < r.to &&
+                        standardizedNextTime > r.from
+                    );
+                    if (res) isRecurrent = true;
+                }
+
+                // PRIORITY 3: Legacy Matches (if no reservation)
+                if (!res && court.matches) {
+                    const match = court.matches.find(m => m.day === dayName && m.time === time);
+                    if (match) {
+                        res = {
+                            type: 'match',
+                            players: [match.player1, match.player2, match.player3, match.player4].filter(p => p),
+                            label: 'Match'
+                        };
+                    }
+                }
+
+                let cellClass = 'activity-free';
+                let cellContent = '<span class="add-icon">+</span>';
+                let tooltip = '';
+
+                if (res) {
+                    const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
+
+                    // Check if players array has valid names
+                    if (res.players && res.players.some(p => p)) {
+                        const filledPlayers = res.players.filter(p => p && p.trim());
+                        const hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                        const firstPlayerLower = (res.players[0] || '').toLowerCase();
+                        const isActivity = activityLabels.includes(firstPlayerLower);
+
+                        if (hasOnlyFirst && isActivity) {
+                            cellClass = `activity-${firstPlayerLower}`;
+                                                    cellContent = `<span class="cell-label">${res.players[0]}</span>`;
+                                                } else if (hasOnlyFirst) {
+                                                    cellClass = 'activity-single-player';
+                                                     cellContent = `<span class="cell-label">${res.players[0]}</span>`;
+                                                } else if (filledPlayers.length === 2) {
+                                                    cellClass = 'activity-players';
+                                                    cellContent = `<div class="cell-players-vertical">
+                                                        <span>${filledPlayers[0]}</span>
+                                                        <span>${filledPlayers[1]}</span>
+                                                    </div>`;
+                                                } else {
+                                                    cellClass = 'activity-players';
+                                                    cellContent = `<div class="cell-players-grid">
+                                                        ${res.players.map(p => `<span>${p || ''}</span>`).join('')}
+                                                    </div>`;
+                                                }
+                                             } else {
+                                                cellClass = `activity-${res.type || 'reserved'}`;
+                                                const label = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                                                cellContent = `<span class="cell-label">${label}</span>`;
+                                             }
+                                             
+                                             if (isRecurrent) {
+                                                 cellContent += '<span class="recurrent-indicator" title="Prenotazione ricorrente settimanale">🔄</span>';
+                                             }
+                                             
+                                             if (res.price) {
+                                                 tooltip = `title="Incasso: €${res.price}"`;
+                                             }
+                                        }
+
+                                        return `<td class="planning-activity-cell ${cellClass}" 
+                                                    onclick="App.handlePlanningCellClick('${court.id}', '${dateStr}', '${time}', '${index}')"
+                                                    ${tooltip}>
+                                                    ${cellContent}
+                                                </td>`;
+                                    }).join('')}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+                        });
+
+            container.innerHTML = html;
+            this.updateMobileCourtSelector(courts); // Ensure mobile view is kept in sync
+        }
 };
 
-// Initialize app with Firebase support
-document.addEventListener('DOMContentLoaded', async () => {
-    // Update Firebase status indicator
-    const updateFirebaseStatus = () => {
-        const iconEl = document.getElementById('firebase-status-icon');
-        const textEl = document.getElementById('firebase-status-text');
-        const statusEl = document.getElementById('firebase-status');
-        const migrateBtn = document.getElementById('migrate-firebase-btn');
+    // Initialize app with Firebase support
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Update Firebase status indicator
+        const updateFirebaseStatus = () => {
+            const iconEl = document.getElementById('firebase-status-icon');
+            const textEl = document.getElementById('firebase-status-text');
+            const statusEl = document.getElementById('firebase-status');
+            const migrateBtn = document.getElementById('migrate-firebase-btn');
 
-        if (!iconEl || !textEl || !statusEl) return;
+            if (!iconEl || !textEl || !statusEl) return;
 
+            if (Storage.isFirebaseConnected()) {
+                iconEl.textContent = '✅';
+                textEl.textContent = 'Firebase connesso - Dati sincronizzati in tempo reale';
+                statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+                statusEl.style.border = '1px solid #22c55e';
+                if (migrateBtn) migrateBtn.style.display = 'inline-block';
+            } else {
+                iconEl.textContent = '⚠️';
+                textEl.textContent = 'Firebase non configurato - I dati sono salvati solo localmente';
+                statusEl.style.background = 'rgba(234, 179, 8, 0.2)';
+                statusEl.style.border = '1px solid #eab308';
+                if (migrateBtn) migrateBtn.style.display = 'inline-block';
+            }
+        };
+
+        // Initialize storage defaults (async now)
+        await Storage.initializeDefaults();
+
+        // Migrate player levels if needed
+        await migratePlayerLevels();
+
+        // Subscribe to real-time updates if Firebase is connected
         if (Storage.isFirebaseConnected()) {
-            iconEl.textContent = '✅';
-            textEl.textContent = 'Firebase connesso - Dati sincronizzati in tempo reale';
-            statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
-            statusEl.style.border = '1px solid #22c55e';
-            if (migrateBtn) migrateBtn.style.display = 'inline-block';
-        } else {
-            iconEl.textContent = '⚠️';
-            textEl.textContent = 'Firebase non configurato - I dati sono salvati solo localmente';
-            statusEl.style.background = 'rgba(234, 179, 8, 0.2)';
-            statusEl.style.border = '1px solid #eab308';
-            if (migrateBtn) migrateBtn.style.display = 'inline-block';
+            Storage.subscribe(Storage.KEYS.PLAYERS, () => {
+                if (App.currentTab === 'players') Players.renderTable();
+                if (App.currentTab === 'dashboard') App.updateDashboard();
+            });
+            Storage.subscribe(Storage.KEYS.COURTS, () => {
+                if (App.currentTab === 'courts') Courts.renderGrid(App.currentSeason);
+                if (App.currentTab === 'planning') App.renderPlanning();
+                if (App.currentTab === 'recurring') App.renderRecurringPlanning();
+            });
+            Storage.subscribe(Storage.KEYS.SCHEDULED, () => {
+                if (App.currentTab === 'planning') App.renderPlanning();
+                if (App.currentTab === 'dashboard') App.updateDashboard();
+            });
+            Storage.subscribe(Storage.KEYS.SETTINGS, () => {
+                App.loadSettings();
+            });
         }
-    };
 
-    // Initialize storage defaults (async now)
-    await Storage.initializeDefaults();
+        // Initialize app
+        App.init();
 
-    // Migrate player levels if needed
-    await migratePlayerLevels();
-
-    // Subscribe to real-time updates if Firebase is connected
-    if (Storage.isFirebaseConnected()) {
-        Storage.subscribe(Storage.KEYS.PLAYERS, () => {
-            if (App.currentTab === 'players') Players.renderTable();
-            if (App.currentTab === 'dashboard') App.updateDashboard();
-        });
-        Storage.subscribe(Storage.KEYS.COURTS, () => {
-            if (App.currentTab === 'courts') Courts.renderGrid(App.currentSeason);
-            if (App.currentTab === 'planning') App.renderPlanning();
-            if (App.currentTab === 'recurring') App.renderRecurringPlanning();
-        });
-        Storage.subscribe(Storage.KEYS.SCHEDULED, () => {
-            if (App.currentTab === 'planning') App.renderPlanning();
-            if (App.currentTab === 'dashboard') App.updateDashboard();
-        });
-        Storage.subscribe(Storage.KEYS.SETTINGS, () => {
-            App.loadSettings();
-        });
-    }
-
-    // Initialize app
-    App.init();
-
-    // Update Firebase status after a short delay to ensure config is loaded
-    setTimeout(updateFirebaseStatus, 500);
-});
+        // Update Firebase status after a short delay to ensure config is loaded
+        setTimeout(updateFirebaseStatus, 500);
+    });

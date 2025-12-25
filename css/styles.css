@@ -2312,3 +2312,76 @@ body {
         justify-content: center;
     }
 }
+
+/* ===== Date Navigation ===== */
+.date-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-right: 20px;
+}
+
+.date-nav button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    /* Più largo */
+    border-radius: 6px;
+    /* Arrotondato */
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: var(--transition-fast);
+}
+
+.date-nav button:hover {
+    background: var(--primary-hover);
+}
+
+.current-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+}
+
+.day-name {
+    color: var(--accent);
+    /* #ffd700 Yellow */
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+#current-date-display {
+    color: #fff;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: transparent;
+    /* Or specific background if needed */
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .date-nav {
+        margin-right: 0;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+}
