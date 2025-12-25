@@ -536,7 +536,11 @@ const App = {
     },
 
     handlePlanningAction(e) {
-        const cell = e.target.closest('.planning-activity-cell');
+        // Support both desktop (.planning-activity-cell) and mobile (.activity-cell) clicks
+        let cell = e.target.closest('.planning-activity-cell');
+        if (!cell) {
+            cell = e.target.closest('.activity-cell');
+        }
         if (!cell) return;
 
         const courtId = cell.dataset.court;
