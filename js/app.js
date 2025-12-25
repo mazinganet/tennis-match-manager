@@ -375,9 +375,19 @@ const App = {
     // Populate the mobile court selector dropdown
     populateMobileCourtSelector() {
         const select = document.getElementById('admin-mobile-court-select');
-        if (!select) return;
+        if (!select) {
+            console.log('[MOBILE] Court selector not found');
+            return;
+        }
 
         const courts = Courts.getAvailable(this.currentSeason);
+        console.log('[MOBILE] Courts available:', courts?.length || 0, 'Season:', this.currentSeason);
+
+        if (!courts || courts.length === 0) {
+            select.innerHTML = '<option value="">Nessun campo</option>';
+            return;
+        }
+
         const currentValue = select.value;
 
         select.innerHTML = '';
@@ -390,12 +400,14 @@ const App = {
             }
             select.appendChild(option);
         });
+        console.log('[MOBILE] Court selector populated with', courts.length, 'courts');
     },
 
     // Render mobile vertical table for selected court
     renderMobilePlanning() {
         const mobileTable = document.getElementById('admin-mobile-planning-table');
         const select = document.getElementById('admin-mobile-court-select');
+        console.log('[MOBILE] renderMobilePlanning called, table:', !!mobileTable, 'select:', !!select);
         if (!mobileTable || !select) return;
 
         const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
@@ -404,9 +416,10 @@ const App = {
         const scheduled = Storage.load(Storage.KEYS.SCHEDULED, []) || [];
 
         const selectedCourtId = select.value;
+        console.log('[MOBILE] Selected court ID:', selectedCourtId, 'Total courts:', courts?.length);
         const court = courts.find(c => c.id === selectedCourtId) || courts[0];
         if (!court) {
-            mobileTable.innerHTML = '<tbody><tr><td colspan="2">Nessun campo disponibile</td></tr></tbody>';
+            mobileTable.innerHTML = '<tbody><tr><td colspan="2" style="padding:20px;text-align:center;">Nessun campo disponibile. Vai alla sezione Campi per aggiungerne.</td></tr></tbody>';
             return;
         }
 
