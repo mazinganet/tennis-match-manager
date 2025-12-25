@@ -31,14 +31,7 @@
                 <span class="logo-icon">🎾</span>
                 <h1>Tennis <span style="color: var(--primary);">Planning</span></h1>
             </div>
-            <div class="date-nav">
-                <button onclick="App.changeDay(-1)">◀ Ieri</button>
-                <div class="current-date">
-                    <div class="day-name" id="current-day-name">Lunedì</div>
-                    <div id="current-date-display">23/12/2024</div>
-                </div>
-                <button onclick="App.changeDay(1)">Domani ▶</button>
-            </div>
+
             <div class="season-toggle">
                 <label class="toggle-label">
                     <span>Stagione:</span>
@@ -219,18 +212,16 @@
             </section>
 
             <section id="planning" class="tab-content">
-                <div class="section-header">
-                    <h2 style="display: flex; align-items: baseline; gap: 10px;">
-                        📅 <span id="planning-day-name" style="font-size: 1.5rem;"></span>
-                        <span id="planning-date-display"
-                            style="font-size: 2rem; font-weight: 700; color: var(--primary-light);"></span>
-                    </h2>
-                    <div class="header-actions">
-                        <button class="btn-secondary" id="planning-prev-day" title="Giorno Precedente">«</button>
-                        <input type="date" id="planning-date" class="form-control" style="width: auto;">
-                        <button class="btn-secondary" id="planning-next-day" title="Giorno Successivo">»</button>
+                <!-- Date Navigation above table -->
+                <div class="planning-date-nav">
+                    <button class="btn-nav" onclick="App.changeDay(-1)">◀ Ieri</button>
+                    <div class="current-date">
+                        <div class="day-name" id="current-day-name">Giovedì</div>
+                        <div id="current-date-display">25/12/2024</div>
                     </div>
+                    <button class="btn-nav" onclick="App.changeDay(1)">Domani ▶</button>
                 </div>
+                <input type="hidden" id="planning-date">
                 <div class="planning-container card">
                     <!-- Mobile Court Selector (visible only on mobile) -->
                     <div class="admin-mobile-court-selector" id="admin-mobile-court-selector">
