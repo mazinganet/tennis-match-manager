@@ -909,6 +909,7 @@ body {
     gap: 8px;
     margin-bottom: 10px;
     align-items: flex-start;
+    max-width: 350px;
 }
 
 .selection-option {
