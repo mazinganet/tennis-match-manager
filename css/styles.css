@@ -2053,3 +2053,112 @@ body {
     border-bottom-color: #2d8a4e;
     z-index: 10000;
 }
+
+/* ===== Admin Mobile Planning Styles ===== */
+.admin-mobile-court-selector {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    margin-bottom: 15px;
+    padding: 0 5px;
+}
+
+.admin-mobile-court-selector label {
+    flex-shrink: 0;
+}
+
+.admin-mobile-court-selector select {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 2px solid #2d8a4e;
+    background: #16213e;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.admin-mobile-vertical-table {
+    display: none;
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    font-size: 0.9rem;
+}
+
+.admin-mobile-vertical-table th,
+.admin-mobile-vertical-table td {
+    border: 1px solid #000;
+    padding: 8px 5px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.admin-mobile-vertical-table .time-column {
+    background: #2d8a4e;
+    color: #fff;
+    font-weight: bold;
+}
+
+.admin-mobile-vertical-table .activity-cell {
+    min-height: 45px;
+    cursor: pointer;
+}
+
+.admin-mobile-vertical-table .activity-cell:hover {
+    opacity: 0.8;
+}
+
+/* Mobile Responsive for Admin */
+@media (max-width: 768px) {
+    .admin-mobile-court-selector {
+        display: flex !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .desktop-planning-element {
+        display: none !important;
+    }
+
+    .admin-mobile-vertical-table {
+        display: table !important;
+        width: calc(100% - 10px) !important;
+        max-width: calc(100% - 10px) !important;
+        table-layout: fixed !important;
+        margin: 0 auto !important;
+    }
+
+    .admin-mobile-vertical-table .time-column {
+        width: 75px !important;
+        font-size: 0.85rem !important;
+    }
+
+    .admin-mobile-vertical-table .activity-cell {
+        width: auto !important;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .planning-container.card {
+        padding: 10px !important;
+    }
+
+    .planning-legend {
+        flex-wrap: wrap;
+        gap: 5px;
+        font-size: 0.75rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}

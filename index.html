@@ -224,114 +224,129 @@
                     </div>
                 </div>
                 <div class="planning-container card">
-                    <!-- Top scrollbar -->
-                    <div id="planning-top-scroll"
+                    <!-- Mobile Court Selector (visible only on mobile) -->
+                    <div class="admin-mobile-court-selector" id="admin-mobile-court-selector">
+                        <label>📍 Campo:</label>
+                        <select id="admin-mobile-court-select" onchange="App.renderMobilePlanning()">
+                            <!-- Options populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Desktop: Top scrollbar -->
+                    <div id="planning-top-scroll" class="desktop-planning-element"
                         style="overflow-x: auto; overflow-y: hidden; height: 16px; margin-bottom: 5px;">
                         <div id="planning-top-scroll-spacer" style="height: 1px;"></div>
                     </div>
-                    <div id="planning-flex-container" class="planning-flex-container">
+
+                    <!-- Desktop: Horizontal tables -->
+                    <div id="planning-flex-container" class="planning-flex-container desktop-planning-element">
                         <!-- Tables for each court injected by JS -->
                     </div>
-                    <div class="planning-legend">
-                        <span class="legend-item"><span class="dot free"></span> Libero</span>
-                        <span class="legend-item"><span class="dot confirmed"></span> Match</span>
-                        <span class="legend-item"><span class="dot scuola"></span> Scuola</span>
-                        <span class="legend-item"><span class="dot ago"></span> AGO</span>
-                        <span class="legend-item"><span class="dot promo"></span> PROMO</span>
-                        <span class="legend-item"><span class="dot torneo"></span> Torneo</span>
-                        <span class="legend-item"><span class="dot manutenzione"></span> Manutenz.</span>
-                        <span class="legend-item"><span class="dot reserved"></span> Bloccato</span>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Recurring Planning Tab -->
-            <section id="recurring" class="tab-content">
-                <div class="section-header">
-                    <h2>🔁 Planning Ricorrente</h2>
-                </div>
-
-                <div class="card" style="margin-bottom: 20px;">
-                    <div class="recurring-config"
-                        style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-                        <div class="form-group" style="min-width: 150px;">
-                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Giorno</label>
-                            <select id="recurring-day" class="form-control" style="width: 100%; padding: 8px 10px;">
-                                <option value="1">Lunedì</option>
-                                <option value="2">Martedì</option>
-                                <option value="3">Mercoledì</option>
-                                <option value="4">Giovedì</option>
-                                <option value="5">Venerdì</option>
-                                <option value="6">Sabato</option>
-                                <option value="0">Domenica</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="min-width: 150px;">
-                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Inizio</label>
-                            <input type="date" id="recurring-start-date" class="form-control"
-                                style="width: 100%; padding: 8px 10px;">
-                        </div>
-                        <div class="form-group" style="min-width: 150px;">
-                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Fine</label>
-                            <input type="date" id="recurring-end-date" class="form-control"
-                                style="width: 100%; padding: 8px 10px;">
-                        </div>
-                        <div class="form-group" style="min-width: 150px;">
-                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">&nbsp;</label>
-                            <button class="btn btn-primary" onclick="App.generateRecurringReservations()"
-                                style="width: 100%; padding: 8px 10px;">
-                                🚀 Genera Prenotazioni
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <p style="margin-bottom: 15px; color: var(--text-secondary);">
-                        Clicca sulle celle per impostare le attività ricorrenti, poi premi "Genera Prenotazioni".
-                    </p>
-                    <div id="recurring-flex-container" class="planning-flex-container" style="overflow-x: auto;">
-                        <!-- Tables for each court injected by JS -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- History Tab -->
-            <section id="history" class="tab-content">
-                <div class="section-header">
-                    <h2>Storico Partite</h2>
-                    <div class="history-filters">
-                        <input type="date" id="history-from" class="date-input">
-                        <span>a</span>
-                        <input type="date" id="history-to" class="date-input">
-                        <select id="history-type-filter" class="filter-select">
-                            <option value="">Tutti i tipi</option>
-                            <option value="singles">Singoli</option>
-                            <option value="doubles">Doppi</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="history-table-container">
-                    <table class="data-table" id="history-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Ora</th>
-                                <th>Campo</th>
-                                <th>Tipo</th>
-                                <th>Giocatori</th>
-                                <th>Risultato</th>
-                                <th>Feedback</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-tbody">
-                        </tbody>
+                    <!-- Mobile: Vertical table -->
+                    <table class="admin-mobile-vertical-table" id="admin-mobile-planning-table">
+                        <!-- Mobile table will be generated by JS -->
                     </table>
                 </div>
-            </section>
-        </main>
+                <div class="planning-legend">
+                    <span class="legend-item"><span class="dot free"></span> Libero</span>
+                    <span class="legend-item"><span class="dot confirmed"></span> Match</span>
+                    <span class="legend-item"><span class="dot scuola"></span> Scuola</span>
+                    <span class="legend-item"><span class="dot ago"></span> AGO</span>
+                    <span class="legend-item"><span class="dot promo"></span> PROMO</span>
+                    <span class="legend-item"><span class="dot torneo"></span> Torneo</span>
+                    <span class="legend-item"><span class="dot manutenzione"></span> Manutenz.</span>
+                    <span class="legend-item"><span class="dot reserved"></span> Bloccato</span>
+                </div>
+    </div>
+    </section>
+
+    <!-- Recurring Planning Tab -->
+    <section id="recurring" class="tab-content">
+        <div class="section-header">
+            <h2>🔁 Planning Ricorrente</h2>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="recurring-config" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="min-width: 150px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Giorno</label>
+                    <select id="recurring-day" class="form-control" style="width: 100%; padding: 8px 10px;">
+                        <option value="1">Lunedì</option>
+                        <option value="2">Martedì</option>
+                        <option value="3">Mercoledì</option>
+                        <option value="4">Giovedì</option>
+                        <option value="5">Venerdì</option>
+                        <option value="6">Sabato</option>
+                        <option value="0">Domenica</option>
+                    </select>
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Inizio</label>
+                    <input type="date" id="recurring-start-date" class="form-control"
+                        style="width: 100%; padding: 8px 10px;">
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">Data Fine</label>
+                    <input type="date" id="recurring-end-date" class="form-control"
+                        style="width: 100%; padding: 8px 10px;">
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                    <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">&nbsp;</label>
+                    <button class="btn btn-primary" onclick="App.generateRecurringReservations()"
+                        style="width: 100%; padding: 8px 10px;">
+                        🚀 Genera Prenotazioni
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p style="margin-bottom: 15px; color: var(--text-secondary);">
+                Clicca sulle celle per impostare le attività ricorrenti, poi premi "Genera Prenotazioni".
+            </p>
+            <div id="recurring-flex-container" class="planning-flex-container" style="overflow-x: auto;">
+                <!-- Tables for each court injected by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- History Tab -->
+    <section id="history" class="tab-content">
+        <div class="section-header">
+            <h2>Storico Partite</h2>
+            <div class="history-filters">
+                <input type="date" id="history-from" class="date-input">
+                <span>a</span>
+                <input type="date" id="history-to" class="date-input">
+                <select id="history-type-filter" class="filter-select">
+                    <option value="">Tutti i tipi</option>
+                    <option value="singles">Singoli</option>
+                    <option value="doubles">Doppi</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="history-table-container">
+            <table class="data-table" id="history-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Ora</th>
+                        <th>Campo</th>
+                        <th>Tipo</th>
+                        <th>Giocatori</th>
+                        <th>Risultato</th>
+                        <th>Feedback</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                </tbody>
+            </table>
+        </div>
+    </section>
+    </main>
     </div>
 
     <!-- Modal Template -->

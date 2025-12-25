@@ -366,6 +366,134 @@ const App = {
                 topScroll.scrollLeft = container.scrollLeft;
             };
         }
+
+        // Also render mobile view
+        this.populateMobileCourtSelector();
+        this.renderMobilePlanning();
+    },
+
+    // Populate the mobile court selector dropdown
+    populateMobileCourtSelector() {
+        const select = document.getElementById('admin-mobile-court-select');
+        if (!select) return;
+
+        const courts = Courts.getAvailable(this.currentSeason);
+        const currentValue = select.value;
+
+        select.innerHTML = '';
+        courts.forEach((court, index) => {
+            const option = document.createElement('option');
+            option.value = court.id;
+            option.textContent = court.name;
+            if (court.id === currentValue || (index === 0 && !currentValue)) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    },
+
+    // Render mobile vertical table for selected court
+    renderMobilePlanning() {
+        const mobileTable = document.getElementById('admin-mobile-planning-table');
+        const select = document.getElementById('admin-mobile-court-select');
+        if (!mobileTable || !select) return;
+
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dayName = Matching.getDayNameFromDate(dateStr);
+        const courts = Courts.getAvailable(this.currentSeason);
+        const scheduled = Storage.load(Storage.KEYS.SCHEDULED, []) || [];
+
+        const selectedCourtId = select.value;
+        const court = courts.find(c => c.id === selectedCourtId) || courts[0];
+        if (!court) {
+            mobileTable.innerHTML = '<tbody><tr><td colspan="2">Nessun campo disponibile</td></tr></tbody>';
+            return;
+        }
+
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        const dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        const times = dayTemplate[court.id] || defaultTimes;
+
+        const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
+
+        let tableHtml = '<colgroup><col style="width:75px"><col style="width:auto"></colgroup>';
+        tableHtml += '<tbody>';
+        tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
+
+        for (let t = 0; t < times.length; t++) {
+            const time = times[t];
+            const standardizedTime = time.replace('.', ':');
+            const nextTime = times[t + 1] || Matching.addTime(standardizedTime, 60);
+            const standardizedNextTime = nextTime.replace('.', ':');
+
+            const isReserved = !Courts.isFree(court.id, dayName, standardizedTime, standardizedNextTime, dateStr);
+            const reservations = court.reservations || [];
+
+            let cellClass = 'activity-free';
+            let cellContent = '-';
+
+            if (isReserved) {
+                let res = reservations.find(function (r) {
+                    return r.date === dateStr && (standardizedTime < r.to && standardizedNextTime > r.from);
+                });
+                if (!res) {
+                    res = reservations.find(function (r) {
+                        return !r.date && r.day === dayName && (standardizedTime < r.to && standardizedNextTime > r.from);
+                    });
+                }
+
+                if (res) {
+                    if (res.players && res.players.some(function (p) { return p; })) {
+                        const filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
+                        const hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                        const firstPlayerLower = (res.players[0] || '').toLowerCase();
+                        const isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
+
+                        if (hasOnlyFirst && isActivity) {
+                            cellClass = 'activity-' + firstPlayerLower;
+                            cellContent = res.players[0];
+                        } else if (hasOnlyFirst) {
+                            cellClass = 'activity-single-player';
+                            cellContent = res.players[0];
+                        } else {
+                            cellClass = 'activity-players';
+                            cellContent = filledPlayers.join('<br>');
+                        }
+                    } else {
+                        cellClass = 'activity-' + (res.type || 'reserved');
+                        cellContent = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                    }
+                }
+            }
+
+            // Check for scheduled matches
+            const match = (scheduled || []).find(m => {
+                if (m.date !== dateStr || m.court !== court.id) return false;
+                const mEnd = Matching.addTime(m.time, 90);
+                return (standardizedTime < mEnd && standardizedNextTime > m.time);
+            });
+
+            if (match) {
+                cellClass = 'activity-confirmed';
+                const p1 = Players.getById(match.players[0])?.name || '?';
+                const p2 = Players.getById(match.players[1])?.name || '?';
+                cellContent = p1 + ' vs ' + p2;
+            }
+
+            tableHtml += '<tr>';
+            tableHtml += '<td class="time-column">' + time + '</td>';
+            tableHtml += '<td class="activity-cell ' + cellClass + '" data-court="' + court.id + '" data-time="' + standardizedTime + '" data-index="' + t + '">' + cellContent + '</td>';
+            tableHtml += '</tr>';
+        }
+
+        tableHtml += '</tbody>';
+        mobileTable.innerHTML = tableHtml;
+
+        // Bind click events for mobile cells
+        mobileTable.querySelectorAll('.activity-cell').forEach(cell => {
+            cell.addEventListener('click', (e) => this.handlePlanningAction(e));
+        });
     },
 
     handleTimeChange(e) {
