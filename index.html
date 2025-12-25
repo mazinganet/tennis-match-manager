@@ -225,10 +225,16 @@
                 <div class="planning-container card">
                     <!-- Mobile Court Selector (visible only on mobile) -->
                     <div class="admin-mobile-court-selector" id="admin-mobile-court-selector">
-                        <label>📍 Campo:</label>
-                        <select id="admin-mobile-court-select" onchange="App.renderMobilePlanning()">
-                            <!-- Options populated dynamically -->
-                        </select>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <label>📍 Campo:</label>
+                            <select id="admin-mobile-court-select" onchange="App.renderMobilePlanning()">
+                                <!-- Options populated dynamically -->
+                            </select>
+                            <button class="btn btn-outline btn-sm" onclick="App.showMobileTimesModal()"
+                                style="margin-left: auto;">
+                                ⏰ Modifica Orari
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Desktop: Top scrollbar -->

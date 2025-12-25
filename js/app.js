@@ -2527,6 +2527,108 @@ const App = {
         this.renderRecurringPlanning();
     },
 
+    // Mobile times editing modal
+    showMobileTimesModal() {
+        const select = document.getElementById('admin-mobile-court-select');
+        if (!select || !select.value) {
+            alert('Seleziona prima un campo');
+            return;
+        }
+        const courtId = select.value;
+        const courts = Courts.getAvailable(this.currentSeason);
+        const court = courts.find(c => c.id === courtId);
+        if (!court) return;
+
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        const dayTemplate = planningTemplates[dateStr] || {};
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        const times = dayTemplate[courtId] || [...defaultTimes];
+
+        let timesHtml = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 60vh; overflow-y: auto;">';
+        times.forEach((time, index) => {
+            timesHtml += `
+                <input type="text" 
+                       class="mobile-time-input" 
+                       value="${time}" 
+                       data-index="${index}"
+                       style="padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 1rem;"
+                       onclick="this.select()">
+            `;
+        });
+        timesHtml += '</div>';
+        timesHtml += `
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn btn-outline" onclick="App.addMobileTimeSlot('${courtId}')" style="flex: 1;">+ Aggiungi</button>
+                <button class="btn btn-outline" onclick="App.removeMobileTimeSlot('${courtId}')" style="flex: 1;">- Rimuovi ultimo</button>
+            </div>
+        `;
+
+        const footer = `
+            <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
+            <button class="btn btn-primary" onclick="App.saveMobileTimes('${courtId}')">Salva Orari</button>
+        `;
+
+        this.showModal(`⏰ Orari ${court.name}`, timesHtml, footer);
+    },
+
+    // Save mobile times
+    saveMobileTimes(courtId) {
+        const inputs = document.querySelectorAll('.mobile-time-input');
+        const newTimes = [];
+        inputs.forEach(input => {
+            if (input.value.trim()) {
+                newTimes.push(input.value.trim());
+            }
+        });
+
+        if (newTimes.length === 0) {
+            alert('Devi inserire almeno un orario');
+            return;
+        }
+
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
+        planningTemplates[dateStr][courtId] = newTimes;
+        Storage.save('planning_templates', planningTemplates);
+
+        this.closeModal();
+        this.renderPlanning();
+        this.renderMobilePlanning();
+    },
+
+    // Add time slot in mobile modal
+    addMobileTimeSlot(courtId) {
+        const container = document.querySelector('.modal-body > div');
+        if (!container) return;
+        const inputs = container.querySelectorAll('.mobile-time-input');
+        const lastTime = inputs[inputs.length - 1]?.value || '22.30';
+
+        // Try to add +1 hour
+        const [hours, mins] = lastTime.split('.');
+        let newHour = parseInt(hours) + 1;
+        if (newHour > 23) newHour = 23;
+        const newTime = String(newHour).padStart(2, '0') + '.' + (mins || '30');
+
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.className = 'mobile-time-input';
+        newInput.value = newTime;
+        newInput.dataset.index = inputs.length;
+        newInput.style = 'padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 1rem;';
+        newInput.onclick = function () { this.select(); };
+        container.appendChild(newInput);
+    },
+
+    // Remove last time slot in mobile modal
+    removeMobileTimeSlot(courtId) {
+        const inputs = document.querySelectorAll('.mobile-time-input');
+        if (inputs.length > 1) {
+            inputs[inputs.length - 1].remove();
+        }
+    },
+
     // Date navigation for header buttons
     changeDay(delta) {
         this.currentPlanningDate.setDate(this.currentPlanningDate.getDate() + delta);
