@@ -759,14 +759,37 @@ const App = {
     },
 
     confirmPlanningSlot(courtId, day, existingIndex = -1) {
-        const type = document.getElementById('selected-type').value;
-        let label = document.getElementById('slot-label').value;
+        console.log('[CONFIRM] Called with:', courtId, day, existingIndex);
+
+        // Get elements with null checks
+        const typeEl = document.getElementById('selected-type');
+        const labelEl = document.getElementById('slot-label');
+        const startHourEl = document.getElementById('slot-start-hour');
+        const startMinEl = document.getElementById('slot-start-min');
+        const endHourEl = document.getElementById('slot-end-hour');
+        const endMinEl = document.getElementById('slot-end-min');
+
+        // Check if all required elements exist
+        if (!typeEl || !startHourEl || !startMinEl || !endHourEl || !endMinEl) {
+            console.error('[CONFIRM] Missing required elements:', {
+                typeEl: !!typeEl,
+                startHourEl: !!startHourEl,
+                startMinEl: !!startMinEl,
+                endHourEl: !!endHourEl,
+                endMinEl: !!endMinEl
+            });
+            alert('Errore: Elementi del form non trovati. Riapri il modal e riprova.');
+            return;
+        }
+
+        const type = typeEl.value;
+        let label = labelEl ? labelEl.value : '';
 
         // Read times from the selectors
-        const startHour = document.getElementById('slot-start-hour').value;
-        const startMin = document.getElementById('slot-start-min').value;
-        const endHour = document.getElementById('slot-end-hour').value;
-        const endMin = document.getElementById('slot-end-min').value;
+        const startHour = startHourEl.value;
+        const startMin = startMinEl.value;
+        const endHour = endHourEl.value;
+        const endMin = endMinEl.value;
 
         const time = `${startHour}:${startMin}`;
         const endTime = `${endHour}:${endMin}`;
@@ -782,7 +805,8 @@ const App = {
             label = type.charAt(0).toUpperCase() + type.slice(1);
         }
 
-        const price = document.getElementById('slot-price').value;
+        const priceEl = document.getElementById('slot-price');
+        const price = priceEl ? priceEl.value : '';
 
         // Collect 4 players
         const playersArray = [];
@@ -793,7 +817,16 @@ const App = {
             }
         }
 
+        console.log('[CONFIRM] Starting confirmPlanningSlot', { courtId, day, existingIndex });
+        console.log('[CONFIRM] Time range:', time, '-', endTime);
+        console.log('[CONFIRM] Players:', playersArray);
+
         const court = Courts.getById(courtId);
+        if (!court) {
+            console.error('[CONFIRM] Court not found:', courtId);
+            alert('Errore: Campo non trovato. Riprova.');
+            return;
+        }
         court.reservations = court.reservations || [];
 
         const reservationData = {
