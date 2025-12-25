@@ -880,6 +880,28 @@ body {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Modal footer with separated button groups */
+.modal-footer-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.footer-left-buttons {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.footer-right-buttons {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
 /* ===== Forms ===== */
 .form-group {
     margin-bottom: var(--space-lg);
@@ -1549,26 +1571,32 @@ body {
         overflow-y: auto;
     }
 
+    /* Mobile: 3 columns become vertical stack */
     .modal-three-columns {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: 15px;
     }
 
-    /* Left side: Activity type and Player combos */
+    /* All selection columns full width on mobile */
     .modal-three-columns .selection-column {
-        flex: 0 0 45%;
+        flex: 1 1 100%;
     }
 
     .modal-three-columns .selection-column select {
         width: 100%;
-        padding: 8px;
+        padding: 10px;
         font-size: 0.9rem;
     }
 
-    /* Right side: Nominativi and Time range */
+    /* Center column full width on mobile */
     .modal-three-columns .center-column {
-        flex: 0 0 50%;
+        flex: 1 1 100%;
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: var(--space-md) 0;
     }
 
     .modal-body {
@@ -1583,30 +1611,27 @@ body {
         grid-template-columns: 1fr;
     }
 
-    /* Modal footer buttons for mobile - single row */
-    .modal-footer-row {
-        display: flex;
-        flex-wrap: wrap;
+    /* Modal footer buttons for mobile - stacked */
+    .modal-footer-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .footer-left-buttons {
         justify-content: center;
-        gap: 5px;
-        width: 100%;
+        gap: 8px;
     }
 
-    .btn-xs {
-        padding: 5px 8px;
-        font-size: 0.65rem;
-        min-width: auto;
+    .footer-right-buttons {
+        justify-content: flex-end;
+        gap: 10px;
     }
 
-    .btn-sm-modal {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-
-    .btn-md-modal {
-        padding: 8px 16px;
-        font-size: 0.85rem;
-        font-weight: bold;
+    .footer-left-buttons .btn,
+    .footer-right-buttons .btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
     }
 
     .modal-footer {

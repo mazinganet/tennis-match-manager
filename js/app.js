@@ -108,14 +108,14 @@ const App = {
     },
 
     updateDashboard() {
-        const players = Players.getAll();
-        const courts = Courts.getAvailable(this.currentSeason);
-        const stats = History.getStats();
-        const scheduled = Matching.getScheduled();
+        const players = Players.getAll() || [];
+        const courts = Courts.getAvailable(this.currentSeason) || [];
+        const stats = History.getStats() || { total: 0 };
+        const scheduled = Matching.getScheduled() || [];
 
         document.getElementById('total-players').textContent = players.length;
         document.getElementById('total-courts').textContent = courts.length;
-        document.getElementById('total-matches').textContent = stats.total;
+        document.getElementById('total-matches').textContent = stats.total || 0;
         document.getElementById('scheduled-matches').textContent = scheduled.length;
 
         // Sezione WhatsApp Import
@@ -629,7 +629,7 @@ const App = {
 
         const body = `
             <div class="modal-three-columns">
-                <!-- Colonna sinistra: Tipo Attività e Giocatori come combo -->
+                <!-- Colonna sinistra: Tipo Attività -->
                 <div class="selection-column" id="activity-column">
                     <div class="form-group">
                         <label>Tipo Attività</label>
@@ -647,20 +647,6 @@ const App = {
                             <option value="match" ${existingRes?.type === 'match' || !existingRes?.type ? 'selected' : ''}>Match</option>
                             ${activityTypes.map(type => `
                                 <option value="${type.id}" ${existingRes?.type === type.id ? 'selected' : ''}>${type.label}</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-top: 10px;">
-                        <label>Seleziona Giocatore</label>
-                        <select id="player-select" class="form-control" onchange="
-                            if(this.value) {
-                                App.insertPlayerInActiveSlot(this.value);
-                                this.value = '';
-                            }
-                        ">
-                            <option value="">-- Scegli giocatore --</option>
-                            ${players.map(p => `
-                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${!p.isAvailable ? ' ⚠️' : ''}</option>
                             `).join('')}
                         </select>
                     </div>
@@ -718,6 +704,11 @@ const App = {
                         </div>
                     </div>
                     
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Incasso (€)</label>
+                        <input type="number" id="slot-price" placeholder="0.00" value="${existingRes?.price || ''}">
+                    </div>
+                    
                     <div class="auto-match-section" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <label style="font-size: 0.75rem; margin: 0;">Tipo:</label>
@@ -731,26 +722,41 @@ const App = {
                         </div>
                     </div>
                 </div>
+                
+                <!-- Colonna destra: Selezione Giocatori -->
+                <div class="selection-column" id="players-column">
+                    <div class="form-group">
+                        <label>Seleziona Giocatore</label>
+                        <select id="player-select" class="form-control" onchange="
+                            if(this.value) {
+                                App.insertPlayerInActiveSlot(this.value);
+                                this.value = '';
+                            }
+                        ">
+                            <option value="">-- Scegli giocatore --</option>
+                            ${players.map(p => `
+                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${!p.isAvailable ? ' ⚠️' : ''}</option>
+                            `).join('')}
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div class="form-row" style="margin-top: 15px; align-items: center;">
-                <div class="form-group">
-                    <label>Incasso (€)</label>
-                    <input type="number" id="slot-price" placeholder="0.00" value="${existingRes?.price || ''}">
-                </div>
-                <input type="hidden" id="selected-type" value="${existingRes?.type || 'match'}">
-            </div>
+            <input type="hidden" id="selected-type" value="${existingRes?.type || 'match'}">
         `;
 
         const footer = `
-            <div class="modal-footer-row">
-                ${hasExisting ? `<button class="btn btn-danger btn-xs" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">Elimina</button>` : ''}
-                <button class="btn btn-warning btn-xs" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">Giornata</button>
-                <button class="btn btn-outline btn-xs" onclick="App.clearAllReservations()" style="border-color: #ef4444; color: #ef4444;">Pulisci</button>
-                <button class="btn btn-secondary btn-sm-modal" onclick="App.closeModal()">Annulla</button>
-                <button class="btn btn-primary btn-md-modal" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
-                    ${hasExisting ? 'Salva' : 'Conferma'}
-                </button>
+            <div class="modal-footer-buttons">
+                <div class="footer-left-buttons">
+                    ${hasExisting ? `<button class="btn btn-danger btn-sm" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">🗑️ Elimina Range</button>` : ''}
+                    <button class="btn btn-warning btn-sm" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">📅 Giornata</button>
+                    <button class="btn btn-outline btn-sm" onclick="App.clearAllReservations()" style="border-color: #ef4444; color: #ef4444;">🧹 Pulisci Tutto</button>
+                </div>
+                <div class="footer-right-buttons">
+                    <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
+                    <button class="btn btn-primary" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
+                        ${hasExisting ? '💾 Salva' : '✓ Conferma'}
+                    </button>
+                </div>
             </div>
         `;
 
