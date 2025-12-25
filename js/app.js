@@ -629,30 +629,40 @@ const App = {
 
         const body = `
             <div class="modal-three-columns">
-                <!-- Colonna sinistra: Tipo Attività -->
-                <div class="selection-column disabled" id="activity-column">
-                    <div class="column-header">
-                        <input type="radio" name="insert-source" id="insert-from-activity" value="activity"
-                               onchange="document.getElementById('activity-column').classList.remove('disabled'); 
-                                         document.getElementById('players-column').classList.add('disabled');">
-                        <label for="insert-from-activity"><h4>Tipo Attività</h4></label>
+                <!-- Colonna sinistra: Tipo Attività e Giocatori come combo -->
+                <div class="selection-column" id="activity-column">
+                    <div class="form-group">
+                        <label>Tipo Attività</label>
+                        <select id="activity-type-select" class="form-control" onchange="
+                            var type = this.value;
+                            document.getElementById('selected-type').value = type;
+                            if(type !== 'match') {
+                                document.getElementById('slot-player-1').value = this.options[this.selectedIndex].text;
+                                document.getElementById('slot-player-2').value = '';
+                                document.getElementById('slot-player-3').value = '';
+                                document.getElementById('slot-player-4').value = '';
+                                App.updateSlotLabel();
+                            }
+                        ">
+                            <option value="match" ${existingRes?.type === 'match' || !existingRes?.type ? 'selected' : ''}>Match</option>
+                            ${activityTypes.map(type => `
+                                <option value="${type.id}" ${existingRes?.type === type.id ? 'selected' : ''}>${type.label}</option>
+                            `).join('')}
+                        </select>
                     </div>
-                    <div class="scrollable-selection-list" id="activity-list">
-                        ${activityTypes.map(type => `
-                            <div class="selection-item activity-type-item ${existingRes?.type === type.id ? 'active' : ''}" data-type="${type.id}" 
-                                 onclick="document.getElementById('selected-type').value='${type.id}'; 
-                                          document.querySelectorAll('.activity-type-item').forEach(el=>el.classList.remove('active'));
-                                          this.classList.add('active');
-                                          if(document.getElementById('insert-from-activity').checked) {
-                                              document.getElementById('slot-player-1').value = '${type.label}';
-                                              document.getElementById('slot-player-2').value = '';
-                                              document.getElementById('slot-player-3').value = '';
-                                              document.getElementById('slot-player-4').value = '';
-                                              App.updateSlotLabel();
-                                          }">
-                                 <span>${type.label}</span>
-                            </div>
-                        `).join('')}
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Seleziona Giocatore</label>
+                        <select id="player-select" class="form-control" onchange="
+                            if(this.value) {
+                                App.insertPlayerInActiveSlot(this.value);
+                                this.value = '';
+                            }
+                        ">
+                            <option value="">-- Scegli giocatore --</option>
+                            ${players.map(p => `
+                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${!p.isAvailable ? ' ⚠️' : ''}</option>
+                            `).join('')}
+                        </select>
                     </div>
                 </div>
                 
@@ -721,32 +731,6 @@ const App = {
                         </div>
                     </div>
                 </div>
-                
-                <!-- Colonna destra: Giocatori -->
-                <div class="selection-column" id="players-column">
-                    <div class="column-header">
-                        <input type="radio" name="insert-source" id="insert-from-players" value="players" checked
-                               onchange="document.getElementById('players-column').classList.remove('disabled'); 
-                                         document.getElementById('activity-column').classList.add('disabled');">
-                        <label for="insert-from-players"><h4>Giocatori (${players.length})</h4></label>
-                    </div>
-                    <div class="scrollable-selection-list" id="modal-players-list">
-                        ${players.map(p => `
-                            <div class="selection-item player-selection-item player-level-${(p.level || '').toLowerCase().replace(/\s+/g, '-')} ${!p.isAvailable ? 'player-unavailable' : ''}" 
-                                 onclick="if(document.getElementById('insert-from-players').checked) {
-                                              App.insertPlayerInActiveSlot('${p.name}');
-                                          }"
-                                 title="${!p.isAvailable ? 'Non disponibile per questo orario' : ''}">
-                                <span>${p.name}</span>
-                                <span class="item-sub level-badge-${(p.level || '').toLowerCase().replace(/\s+/g, '-')}">${p.level}${!p.isAvailable ? ' ⚠️' : ''}</span>
-                            </div>
-                        `).join('')}
-                        ${players.length === 0 ? `
-                            <div class="empty-state" style="padding: 10px; flex-direction: column; gap: 10px;">
-                                <p>Nessun giocatore registrato.</p>
-                            </div>
-                        ` : ''}
-                    </div>
                 </div>
             </div>
             <div class="form-row" style="margin-top: 15px; align-items: center;">

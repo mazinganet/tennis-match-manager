@@ -1552,34 +1552,23 @@ body {
     .modal-three-columns {
         display: flex;
         flex-direction: row;
-        gap: 8px;
+        gap: 15px;
     }
 
-    /* Left side: Activity types and Players lists stacked vertically close */
+    /* Left side: Activity type and Player combos */
     .modal-three-columns .selection-column {
-        flex: 0 0 40%;
-        max-height: 120px;
-        display: flex;
-        flex-direction: column;
+        flex: 0 0 45%;
     }
 
-    .modal-three-columns #activity-column {
-        order: 1;
-        margin-bottom: 5px !important;
-    }
-
-    .modal-three-columns #players-column {
-        order: 3;
-        position: absolute;
-        top: 140px;
-        left: 0;
-        width: 40%;
+    .modal-three-columns .selection-column select {
+        width: 100%;
+        padding: 8px;
+        font-size: 0.9rem;
     }
 
     /* Right side: Nominativi and Time range */
     .modal-three-columns .center-column {
-        flex: 0 0 55%;
-        order: 2;
+        flex: 0 0 50%;
     }
 
     .modal-body {
