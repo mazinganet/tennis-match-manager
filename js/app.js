@@ -743,15 +743,14 @@ const App = {
         `;
 
         const footer = `
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    ${hasExisting ? `<button class="btn btn-danger" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">Elimina Range</button>` : ''}
-                    <button class="btn btn-warning" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')" title="Elimina tutte le prenotazioni di oggi per questo campo">🗑️ Giornata</button>
-                    <button class="btn btn-outline" onclick="App.clearAllReservations()" title="Elimina TUTTO da tutti i campi" style="border-color: #ef4444; color: #ef4444;">🧹 Pulisci Tutto</button>
+            <div class="modal-footer-grid">
+                <div class="footer-left">
+                    ${hasExisting ? `<button class="btn btn-danger btn-footer-sm" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">Elimina Range</button>` : ''}
+                    <button class="btn btn-warning btn-footer-sm" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">🗑️ Giornata</button>
                 </div>
-                <div>
-                    <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
-                    <button class="btn btn-primary" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
+                <div class="footer-right">
+                    <button class="btn btn-secondary btn-footer-sm" onclick="App.closeModal()">Annulla</button>
+                    <button class="btn btn-primary btn-footer-lg" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
                         ${hasExisting ? 'Salva Modifiche' : 'Conferma'}
                     </button>
                 </div>

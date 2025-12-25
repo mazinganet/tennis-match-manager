@@ -1584,32 +1584,42 @@ body {
     }
 
     /* Modal footer buttons for mobile */
-    .modal-footer {
-        flex-direction: column;
+    .modal-footer-grid {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
         gap: 10px;
     }
 
-    .modal-footer>div {
-        width: 100%;
+    .footer-left {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
         gap: 8px;
-        justify-content: center;
     }
 
-    .modal-footer .btn {
-        flex: 1 1 auto;
-        min-width: 100px;
-        max-width: 48%;
-        padding: 10px 12px;
+    .footer-right {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+    }
+
+    .btn-footer-sm {
+        padding: 8px 14px;
         font-size: 0.8rem;
-        text-align: center;
-        white-space: nowrap;
+        min-width: 100px;
     }
 
-    .modal-footer .btn-primary,
-    .modal-footer .btn-secondary {
-        min-width: 45%;
+    .btn-footer-lg {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        min-width: 130px;
+        font-weight: bold;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
     }
 
     /* Dashboard cards mobile */
