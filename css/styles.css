@@ -2292,6 +2292,11 @@ body {
         overflow-wrap: break-word;
     }
 
+    /* Hide recurring desktop container on mobile */
+    #recurring-flex-container {
+        display: none !important;
+    }
+
     .planning-container.card {
         padding: 10px !important;
     }
