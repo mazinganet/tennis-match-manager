@@ -2387,35 +2387,46 @@ const App = {
             { id: 'manutenzione', label: 'Manutenzione' }
         ];
 
-        const title = `Attività Ricorrente - ${courtName} (${time})`;
+        const title = existing ? `Gestione Attività Ricorrente - ${courtName}` : `Nuova Attività Ricorrente - ${courtName} (${time} - ${endTime})`;
 
         const body = `
             <div class="modal-three-columns">
-                <!-- Colonna sinistra: Tipo Attività -->
-                <div class="selection-column disabled" id="recurring-activity-column">
-                    <div class="column-header">
-                        <input type="radio" name="recurring-insert-source" id="recurring-insert-from-activity" value="activity"
-                               onchange="document.getElementById('recurring-activity-column').classList.remove('disabled'); 
-                                         document.getElementById('recurring-players-column').classList.add('disabled');">
-                        <label for="recurring-insert-from-activity"><h4>Tipo Attività</h4></label>
+                <!-- Row for Activity/Player selection with radio buttons -->
+                <div class="selection-row" id="recurring-selection-row">
+                    <div class="selection-option">
+                        <input type="radio" id="recurring-mode-activity" name="recurring-selection-mode" value="activity" checked onchange="App.toggleRecurringSelectionMode('activity')">
+                        <label for="recurring-mode-activity">Attività</label>
+                        <select id="recurring-activity-type-select" class="form-control" onchange="
+                            var type = this.value;
+                            document.getElementById('recurring-selected-type').value = type;
+                            if(type !== 'match') {
+                                document.getElementById('recurring-slot-player-1').value = this.options[this.selectedIndex].text;
+                                document.getElementById('recurring-slot-player-2').value = '';
+                                document.getElementById('recurring-slot-player-3').value = '';
+                                document.getElementById('recurring-slot-player-4').value = '';
+                            }
+                        ">
+                            <option value="match" ${existing?.type === 'match' || !existing?.type ? 'selected' : ''}>Match</option>
+                            ${activityTypes.map(type => `
+                                <option value="${type.id}" ${existing?.type === type.id ? 'selected' : ''}>${type.label}</option>
+                            `).join('')}
+                        </select>
                     </div>
-                    <div class="scrollable-selection-list">
-                        ${activityTypes.map(a => `
-                            <div class="selection-item activity-type-item ${existing?.type === a.id ? 'active' : ''}" 
-                                 onclick="document.getElementById('recurring-selected-type').value='${a.id}';
-                                          document.querySelectorAll('#recurring-activity-column .selection-item').forEach(el => el.classList.remove('active'));
-                                          this.classList.add('active');
-                                          if(document.getElementById('recurring-insert-from-activity').checked) {
-                                              document.getElementById('recurring-slot-player-1').value = '${a.label}';
-                                              document.getElementById('recurring-slot-player-2').value = '';
-                                              document.getElementById('recurring-slot-player-3').value = '';
-                                              document.getElementById('recurring-slot-player-4').value = '';
-                                          }">
-                                <span>${a.label}</span>
-                            </div>
-                        `).join('')}
+                    <div class="selection-option">
+                        <input type="radio" id="recurring-mode-player" name="recurring-selection-mode" value="player" onchange="App.toggleRecurringSelectionMode('player')">
+                        <label for="recurring-mode-player">Giocatore</label>
+                        <select id="recurring-player-select" class="form-control" disabled onchange="
+                            if(this.value) {
+                                App.insertRecurringPlayerInSlot(this.value);
+                                this.value = '';
+                            }
+                        ">
+                            <option value="">-- Scegli --</option>
+                            ${allPlayers.map(p => `
+                                <option value="${p.name}">${p.name} (${p.level || 'N/A'})</option>
+                            `).join('')}
+                        </select>
                     </div>
-                </div>
                 
                 <!-- Colonna centrale: Nominativi + Orario -->
                 <div class="center-column">
@@ -2434,7 +2445,7 @@ const App = {
                         <input type="hidden" id="recurring-slot-label" value="${existing?.label || ''}">
                     </div>
                     
-                    <div class="time-selection" style="margin-top: 15px;">
+                    <div class="time-selection" style="margin-top: 10px;">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Orario Inizio</label>
@@ -2473,44 +2484,39 @@ const App = {
                     <input type="hidden" id="recurring-court-id" value="${courtId}">
                     <input type="hidden" id="recurring-original-time" value="${time}">
                 </div>
-                
-                <!-- Colonna destra: Giocatori -->
-                <div class="selection-column" id="recurring-players-column">
-                    <div class="column-header">
-                        <input type="radio" name="recurring-insert-source" id="recurring-insert-from-players" value="players" checked
-                               onchange="document.getElementById('recurring-players-column').classList.remove('disabled'); 
-                                         document.getElementById('recurring-activity-column').classList.add('disabled');">
-                        <label for="recurring-insert-from-players"><h4>Giocatori (${allPlayers.length})</h4></label>
-                    </div>
-                    <div class="scrollable-selection-list" id="recurring-modal-players-list">
-                        ${allPlayers.map(p => `
-                            <div class="selection-item player-selection-item player-level-${(p.level || '').toLowerCase()}" 
-                                 onclick="if(document.getElementById('recurring-insert-from-players').checked) {
-                                              App.insertRecurringPlayerInSlot('${p.name}');
-                                          }">
-                                <span>${p.name}</span>
-                                <span class="item-sub level-badge-${(p.level || '').toLowerCase()}">${p.level || ''}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
             </div>
         `;
 
         const footer = `
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-                <div>
-                    ${existing ? `<button class="btn btn-danger" onclick="App.deleteRecurringSlot('${courtId}', '${time}')">Elimina</button>` : ''}
+            <div class="modal-footer-buttons">
+                <div class="footer-left-buttons">
+                    ${existing ? `<button class="btn btn-danger btn-sm" onclick="App.deleteRecurringSlot('${courtId}', '${time}')">🗑️ Elimina</button>` : ''}
                 </div>
-                <div>
+                <div class="footer-right-buttons">
                     <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
-                    <button class="btn btn-primary" onclick="App.confirmRecurringSlot()">Conferma</button>
+                    <button class="btn btn-primary" onclick="App.confirmRecurringSlot()">
+                        ${existing ? '💾 Salva' : '✓ Conferma'}
+                    </button>
                 </div>
             </div>
         `;
 
         this.showModal(title, body, footer);
         this.activeRecurringPlayerSlot = 1;
+    },
+
+    // Toggle selection mode for recurring modal
+    toggleRecurringSelectionMode(mode) {
+        const activitySelect = document.getElementById('recurring-activity-type-select');
+        const playerSelect = document.getElementById('recurring-player-select');
+
+        if (mode === 'activity') {
+            activitySelect.disabled = false;
+            playerSelect.disabled = true;
+        } else {
+            activitySelect.disabled = true;
+            playerSelect.disabled = false;
+        }
     },
 
     activeRecurringPlayerSlot: 1,
