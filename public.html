@@ -272,6 +272,112 @@
             min-height: 40px;
         }
 
+        /* Mobile Time Editable */
+        .mobile-vertical-table .mobile-time-editable {
+            cursor: pointer;
+            position: relative;
+            -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .mobile-vertical-table .mobile-time-editable:hover {
+            background: rgba(255, 215, 0, 0.15) !important;
+            color: #ffd700 !important;
+        }
+
+        .mobile-vertical-table .mobile-time-editable:active {
+            background: rgba(255, 215, 0, 0.3) !important;
+        }
+
+        .mobile-vertical-table .mobile-time-editable::after {
+            content: "✏️";
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 0.6rem;
+            opacity: 0.5;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 25px;
+            min-width: 300px;
+            max-width: 90vw;
+            border: 2px solid #2d8a4e;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-title {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-body {
+            color: #a0aec0;
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .modal-btn-primary {
+            background: #2d8a4e;
+            color: #fff;
+        }
+
+        .modal-btn-primary:hover {
+            background: #3da862;
+        }
+
+        .modal-btn-secondary {
+            background: #4a5568;
+            color: #fff;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #5a6578;
+        }
+
+        .time-select {
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            min-width: 80px;
+            border-radius: 8px;
+            border: 1px solid #2d8a4e;
+            background: #16213e;
+            color: #fff;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
 
@@ -712,7 +818,7 @@
                     }
 
                     tableHtml += '<tr>';
-                    tableHtml += '<td class="time-column">' + time + '</td>';
+                    tableHtml += '<td class="time-column mobile-time-editable" data-court="' + court.id + '" data-index="' + t + '">' + time + '</td>';
                     tableHtml += '<td class="activity-cell ' + cellClass + '">' + cellContent + '</td>';
                     tableHtml += '</tr>';
                 }
@@ -720,9 +826,112 @@
                 tableHtml += '</tbody>';
                 mobileTable.innerHTML = tableHtml;
 
+                // Bind click events for mobile time cells (edit time on tap)
+                mobileTable.querySelectorAll('.mobile-time-editable').forEach(function (cell) {
+                    cell.addEventListener('click', function (e) {
+                        showMobileTimeEditModal(e);
+                    });
+                });
+
             } catch (e) {
                 console.error('Error rendering mobile planning:', e);
             }
+        }
+
+        // Modal per modificare l'orario di una cella da mobile
+        function showMobileTimeEditModal(e) {
+            var cell = e.target.closest('.mobile-time-editable');
+            if (!cell) return;
+
+            var courtId = cell.dataset.court;
+            var index = parseInt(cell.dataset.index);
+            var currentTime = cell.textContent.trim();
+            var dateStr = currentDate.toISOString().split('T')[0];
+
+            // Parse current time
+            var timeParts = currentTime.replace('.', ':').split(':');
+            var currentHour = timeParts[0] || '08';
+            var currentMin = timeParts[1] || '00';
+
+            // Get court name
+            var season = document.getElementById('season-select').value;
+            var courts = Courts.getAvailable(season);
+            var court = courts.find(function (c) { return c.id === courtId; });
+            var courtName = court ? court.name : 'Campo';
+
+            // Build hour options
+            var hourOptions = '';
+            for (var h = 8; h <= 23; h++) {
+                var hourStr = String(h).padStart(2, '0');
+                var selected = hourStr === currentHour ? 'selected' : '';
+                hourOptions += '<option value="' + hourStr + '" ' + selected + '>' + hourStr + '</option>';
+            }
+
+            // Create modal HTML
+            var modalHtml = '<div class="modal-overlay" id="time-edit-modal">' +
+                '<div class="modal-content">' +
+                '<div class="modal-title">✏️ Modifica Orario - ' + courtName + '</div>' +
+                '<div class="modal-body" style="text-align: center;">' +
+                '<p style="margin-bottom: 20px;">Orario attuale: <strong style="color: #2d8a4e;">' + currentTime + '</strong></p>' +
+                '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">' +
+                '<select id="mobile-time-hour" class="time-select">' + hourOptions + '</select>' +
+                '<span style="font-size: 1.5rem; font-weight: bold; color: #fff;">:</span>' +
+                '<select id="mobile-time-min" class="time-select">' +
+                '<option value="00" ' + (currentMin === '00' ? 'selected' : '') + '>00</option>' +
+                '<option value="30" ' + (currentMin === '30' ? 'selected' : '') + '>30</option>' +
+                '</select>' +
+                '</div>' +
+                '</div>' +
+                '<div class="modal-footer">' +
+                '<button class="modal-btn modal-btn-secondary" onclick="closeTimeEditModal()">Annulla</button>' +
+                '<button class="modal-btn modal-btn-primary" onclick="confirmMobileTimeEdit(\'' + courtId + '\', ' + index + ')">✓ Salva</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Close on background click
+            document.getElementById('time-edit-modal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeTimeEditModal();
+                }
+            });
+        }
+
+        // Chiudi modal
+        function closeTimeEditModal() {
+            var modal = document.getElementById('time-edit-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Conferma modifica orario da mobile
+        function confirmMobileTimeEdit(courtId, index) {
+            var hourEl = document.getElementById('mobile-time-hour');
+            var minEl = document.getElementById('mobile-time-min');
+
+            if (!hourEl || !minEl) {
+                console.error('[MOBILE TIME] Elements not found');
+                return;
+            }
+
+            var newTime = hourEl.value + '.' + minEl.value;
+            var dateStr = currentDate.toISOString().split('T')[0];
+
+            var planningTemplates = Storage.load('planning_templates', {}) || {};
+            if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
+            if (!planningTemplates[dateStr][courtId]) {
+                planningTemplates[dateStr][courtId] = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+            }
+
+            planningTemplates[dateStr][courtId][index] = newTime;
+            Storage.save('planning_templates', planningTemplates);
+
+            closeTimeEditModal();
+            renderPlanning();
         }
 
         // Initialize with Firebase support
