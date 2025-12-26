@@ -2163,9 +2163,17 @@ const App = {
 
     renderRecurringPlanning() {
         const container = document.getElementById('recurring-flex-container');
+        console.log('[RECURRING] Container found:', !!container);
         if (!container) return;
 
         const courts = Courts.getAvailable(this.currentSeason);
+        console.log('[RECURRING] Courts available:', courts?.length, 'Season:', this.currentSeason);
+
+        if (!courts || courts.length === 0) {
+            container.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Nessun campo disponibile per questa stagione. Vai alla sezione Campi per aggiungerne.</p>';
+            return;
+        }
+
         const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
 
         // Build horizontal table: courts as rows, each with its own time headers (same as planning)
