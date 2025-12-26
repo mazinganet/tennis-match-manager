@@ -511,7 +511,7 @@ const App = {
                 }
 
                 tableHtml += '<tr>';
-                tableHtml += '<td class="time-column">' + time + '</td>';
+                tableHtml += '<td class="time-column mobile-time-editable" data-court="' + court.id + '" data-index="' + t + '">' + time + '</td>';
                 tableHtml += '<td class="activity-cell ' + cellClass + '" data-court="' + court.id + '" data-time="' + standardizedTime + '" data-index="' + t + '">' + cellContent + '</td>';
                 tableHtml += '</tr>';
             }
@@ -522,6 +522,11 @@ const App = {
             // Bind click events for mobile cells
             mobileTable.querySelectorAll('.activity-cell').forEach(cell => {
                 cell.addEventListener('click', (e) => this.handlePlanningAction(e));
+            });
+
+            // Bind click events for mobile time cells (edit time on tap)
+            mobileTable.querySelectorAll('.mobile-time-editable').forEach(cell => {
+                cell.addEventListener('click', (e) => this.showMobileTimeEditModal(e));
             });
         } catch (e) {
             console.error('[MOBILE] Error in renderMobilePlanning:', e);
@@ -543,6 +548,80 @@ const App = {
 
         planningTemplates[dateStr][courtId][index] = newTime;
         Storage.save('planning_templates', planningTemplates);
+        this.renderPlanning();
+    },
+
+    // Modal semplificato per modificare l'orario di una cella da mobile
+    showMobileTimeEditModal(e) {
+        const cell = e.target.closest('.mobile-time-editable');
+        if (!cell) return;
+
+        const courtId = cell.dataset.court;
+        const index = parseInt(cell.dataset.index);
+        const currentTime = cell.textContent.trim();
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+
+        // Parse current time
+        const timeParts = currentTime.replace('.', ':').split(':');
+        const currentHour = timeParts[0] || '08';
+        const currentMin = timeParts[1] || '00';
+
+        const court = Courts.getById(courtId);
+        const courtName = court?.name || 'Campo';
+
+        const title = `✏️ Modifica Orario - ${courtName}`;
+
+        const body = `
+            <div style="text-align: center; padding: 10px 0;">
+                <p style="color: #a0aec0; margin-bottom: 20px;">Orario attuale: <strong style="color: #2d8a4e;">${currentTime}</strong></p>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    <select id="mobile-time-hour" class="filter-select" style="padding: 12px 20px; font-size: 1.2rem; min-width: 80px;">
+                        ${Array.from({ length: 16 }, (_, i) => i + 8)
+                .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === currentHour ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
+                .join('')}
+                    </select>
+                    <span style="font-size: 1.5rem; font-weight: bold;">:</span>
+                    <select id="mobile-time-min" class="filter-select" style="padding: 12px 20px; font-size: 1.2rem; min-width: 80px;">
+                        <option value="00" ${currentMin === '00' ? 'selected' : ''}>00</option>
+                        <option value="30" ${currentMin === '30' ? 'selected' : ''}>30</option>
+                    </select>
+                </div>
+            </div>
+        `;
+
+        const footer = `
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
+                <button class="btn btn-primary" onclick="App.confirmMobileTimeEdit('${courtId}', ${index})">✓ Salva</button>
+            </div>
+        `;
+
+        this.showModal(title, body, footer);
+    },
+
+    // Conferma modifica orario da mobile
+    confirmMobileTimeEdit(courtId, index) {
+        const hourEl = document.getElementById('mobile-time-hour');
+        const minEl = document.getElementById('mobile-time-min');
+
+        if (!hourEl || !minEl) {
+            console.error('[MOBILE TIME] Elements not found');
+            return;
+        }
+
+        const newTime = `${hourEl.value}.${minEl.value}`;
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+
+        const planningTemplates = Storage.load('planning_templates', {});
+        if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
+        if (!planningTemplates[dateStr][courtId]) {
+            planningTemplates[dateStr][courtId] = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        }
+
+        planningTemplates[dateStr][courtId][index] = newTime;
+        Storage.save('planning_templates', planningTemplates);
+
+        this.closeModal();
         this.renderPlanning();
     },
 
