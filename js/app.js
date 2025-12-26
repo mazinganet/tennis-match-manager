@@ -2258,6 +2258,95 @@ const App = {
             threeMonths.setMonth(threeMonths.getMonth() + 3);
             endInput.value = threeMonths.toISOString().split('T')[0];
         }
+
+        // Also render mobile version
+        this.populateRecurringMobileCourtSelector();
+        this.renderRecurringMobilePlanning();
+    },
+
+    // Populate the mobile court selector for recurring planning
+    populateRecurringMobileCourtSelector() {
+        try {
+            const select = document.getElementById('recurring-mobile-court-select');
+            if (!select) return;
+
+            const courts = Courts.getAvailable(this.currentSeason) || [];
+            if (courts.length === 0) {
+                select.innerHTML = '<option value="">Nessun campo</option>';
+                return;
+            }
+
+            const currentValue = select.value;
+            select.innerHTML = '';
+            courts.forEach((court, index) => {
+                const option = document.createElement('option');
+                option.value = court.id;
+                option.textContent = court.name;
+                if (court.id === currentValue || (index === 0 && !currentValue)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        } catch (e) {
+            console.error('[RECURRING MOBILE] Error in populateRecurringMobileCourtSelector:', e);
+        }
+    },
+
+    // Render mobile vertical table for recurring planning
+    renderRecurringMobilePlanning() {
+        try {
+            const mobileTable = document.getElementById('recurring-mobile-planning-table');
+            const select = document.getElementById('recurring-mobile-court-select');
+            if (!mobileTable || !select) return;
+
+            const courts = Courts.getAvailable(this.currentSeason) || [];
+            const selectedCourtId = select.value;
+            const court = courts.find(c => c.id === selectedCourtId) || courts[0];
+
+            if (!court) {
+                mobileTable.innerHTML = '<tbody><tr><td colspan="2" style="padding:20px;text-align:center;">Nessun campo disponibile.</td></tr></tbody>';
+                return;
+            }
+
+            const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+
+            let tableHtml = '<colgroup><col style="width:75px"><col style="width:auto"></colgroup>';
+            tableHtml += '<tbody>';
+            tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
+
+            for (let t = 0; t < defaultTimes.length; t++) {
+                const time = defaultTimes[t];
+                const standardizedTime = time.replace('.', ':');
+                const key = `${court.id}_${standardizedTime}`;
+                const activity = this.recurringTemplate ? this.recurringTemplate[key] : null;
+
+                let cellClass = activity ? `activity-${activity.type}` : 'activity-free';
+                let cellContent = '-';
+
+                if (activity) {
+                    if (activity.players && activity.players.some(p => p && p.trim())) {
+                        cellContent = activity.players.filter(p => p && p.trim()).join('<br>');
+                    } else if (activity.label) {
+                        cellContent = activity.label;
+                    }
+                }
+
+                tableHtml += '<tr>';
+                tableHtml += '<td class="time-column">' + time + '</td>';
+                tableHtml += '<td class="activity-cell recurring-cell ' + cellClass + '" data-court="' + court.id + '" data-time="' + standardizedTime + '" data-index="' + t + '">' + cellContent + '</td>';
+                tableHtml += '</tr>';
+            }
+
+            tableHtml += '</tbody>';
+            mobileTable.innerHTML = tableHtml;
+
+            // Bind click events for mobile recurring cells
+            mobileTable.querySelectorAll('.recurring-cell').forEach(cell => {
+                cell.addEventListener('click', (e) => this.handleRecurringCellClick(e));
+            });
+        } catch (e) {
+            console.error('[RECURRING MOBILE] Error in renderRecurringMobilePlanning:', e);
+        }
     },
 
     handleRecurringCellClick(e) {
