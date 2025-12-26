@@ -596,8 +596,9 @@ const App = {
                     </select>
                     <span style="font-size: 1.5rem; font-weight: bold;">:</span>
                     <select id="mobile-time-min" class="filter-select" style="padding: 12px 20px; font-size: 1.2rem; min-width: 80px;">
-                        <option value="00" ${currentMin === '00' ? 'selected' : ''}>00</option>
-                        <option value="30" ${currentMin === '30' ? 'selected' : ''}>30</option>
+                        ${Array.from({ length: 60 }, (_, i) => i)
+                .map(m => `<option value="${String(m).padStart(2, '0')}" ${String(m).padStart(2, '0') === currentMin ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`)
+                .join('')}
                     </select>
                 </div>
             </div>

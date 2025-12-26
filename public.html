@@ -867,6 +867,14 @@
                 hourOptions += '<option value="' + hourStr + '" ' + selected + '>' + hourStr + '</option>';
             }
 
+            // Build minute options
+            var minOptions = '';
+            for (var m = 0; m < 60; m++) {
+                var minStr = String(m).padStart(2, '0');
+                var selectedMin = minStr === currentMin ? 'selected' : '';
+                minOptions += '<option value="' + minStr + '" ' + selectedMin + '>' + minStr + '</option>';
+            }
+
             // Create modal HTML
             var modalHtml = '<div class="modal-overlay" id="time-edit-modal">' +
                 '<div class="modal-content">' +
@@ -876,10 +884,7 @@
                 '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">' +
                 '<select id="mobile-time-hour" class="time-select">' + hourOptions + '</select>' +
                 '<span style="font-size: 1.5rem; font-weight: bold; color: #fff;">:</span>' +
-                '<select id="mobile-time-min" class="time-select">' +
-                '<option value="00" ' + (currentMin === '00' ? 'selected' : '') + '>00</option>' +
-                '<option value="30" ' + (currentMin === '30' ? 'selected' : '') + '>30</option>' +
-                '</select>' +
+                '<select id="mobile-time-min" class="time-select">' + minOptions + '</select>' +
                 '</div>' +
                 '</div>' +
                 '<div class="modal-footer">' +
