@@ -13,6 +13,20 @@ const App = {
         this.bindEvents();
         this.showTab('dashboard');
         this.updateDashboard();
+
+        // Subscribe to real-time updates for planning templates
+        if (Storage.isFirebaseConnected && Storage.isFirebaseConnected()) {
+            Storage.subscribe(Storage.KEYS.PLANNING_TEMPLATES, () => {
+                console.log('📡 Admin: Planning templates aggiornati da remoto');
+                if (this.currentTab === 'planning') {
+                    this.renderPlanning();
+                }
+            });
+            Storage.subscribe(Storage.KEYS.COURTS, () => {
+                console.log('📡 Admin: Courts aggiornati da remoto');
+                this.refreshCurrentTab();
+            });
+        }
     },
 
     loadSettings() {
