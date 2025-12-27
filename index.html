@@ -161,6 +161,45 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Court Rates Settings -->
+                <div class="section-card" style="margin-top: 20px;">
+                    <h3>💰 Tariffe Orarie per Persona</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Imposta le quote orarie a persona in base al tipo di campo e se il giocatore è socio.
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="rate-group">
+                            <h4 style="color: #60a5fa; margin-bottom: 10px;">❄️ Campo Coperto</h4>
+                            <div class="form-group">
+                                <label>🏅 Socio (€/ora)</label>
+                                <input type="number" id="rate-member-covered" min="0" step="0.5" value="5"
+                                    style="width: 100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>👤 Non Socio (€/ora)</label>
+                                <input type="number" id="rate-nonmember-covered" min="0" step="0.5" value="8"
+                                    style="width: 100%;">
+                            </div>
+                        </div>
+                        <div class="rate-group">
+                            <h4 style="color: #f87171; margin-bottom: 10px;">☀️ Campo Scoperto</h4>
+                            <div class="form-group">
+                                <label>🏅 Socio (€/ora)</label>
+                                <input type="number" id="rate-member-uncovered" min="0" step="0.5" value="3"
+                                    style="width: 100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>👤 Non Socio (€/ora)</label>
+                                <input type="number" id="rate-nonmember-uncovered" min="0" step="0.5" value="5"
+                                    style="width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="App.saveCourtRates()" style="margin-top: 15px;">
+                        💾 Salva Tariffe
+                    </button>
+                </div>
             </section>
 
             <!-- Players Tab -->

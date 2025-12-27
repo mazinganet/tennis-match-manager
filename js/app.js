@@ -40,6 +40,62 @@ const App = {
         const settings = Storage.load(Storage.KEYS.SETTINGS, {});
         this.currentSeason = settings.season || 'winter';
         document.getElementById('season-select').value = this.currentSeason;
+
+        // Load court rates
+        this.loadCourtRates();
+    },
+
+    loadCourtRates() {
+        const rates = Storage.load(Storage.KEYS.COURT_RATES, {
+            memberCovered: 5,
+            nonMemberCovered: 8,
+            memberUncovered: 3,
+            nonMemberUncovered: 5
+        });
+
+        // Populate form if elements exist
+        const mc = document.getElementById('rate-member-covered');
+        const nmc = document.getElementById('rate-nonmember-covered');
+        const mu = document.getElementById('rate-member-uncovered');
+        const nmu = document.getElementById('rate-nonmember-uncovered');
+
+        if (mc) mc.value = rates.memberCovered;
+        if (nmc) nmc.value = rates.nonMemberCovered;
+        if (mu) mu.value = rates.memberUncovered;
+        if (nmu) nmu.value = rates.nonMemberUncovered;
+    },
+
+    saveCourtRates() {
+        const rates = {
+            memberCovered: parseFloat(document.getElementById('rate-member-covered').value) || 5,
+            nonMemberCovered: parseFloat(document.getElementById('rate-nonmember-covered').value) || 8,
+            memberUncovered: parseFloat(document.getElementById('rate-member-uncovered').value) || 3,
+            nonMemberUncovered: parseFloat(document.getElementById('rate-nonmember-uncovered').value) || 5
+        };
+
+        Storage.save(Storage.KEYS.COURT_RATES, rates);
+        alert('✅ Tariffe salvate!');
+        console.log('💰 Tariffe salvate:', rates);
+    },
+
+    getPlayerRate(playerId, courtId) {
+        const player = Players.getById(playerId);
+        const court = Courts.getById(courtId);
+        const rates = Storage.load(Storage.KEYS.COURT_RATES, {
+            memberCovered: 5, nonMemberCovered: 8,
+            memberUncovered: 3, nonMemberUncovered: 5
+        });
+
+        if (!player || !court) return 0;
+
+        const isCovered = court.winterCover === true;
+        const isMember = player.isMember === true;
+
+        if (isCovered) {
+            return isMember ? rates.memberCovered : rates.nonMemberCovered;
+        } else {
+            return isMember ? rates.memberUncovered : rates.nonMemberUncovered;
+        }
     },
 
     bindEvents() {
@@ -1536,6 +1592,12 @@ const App = {
                         </label>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label class="checkbox-label" style="font-size: 1rem;">
+                        <input type="checkbox" id="is-member" ${player?.isMember ? 'checked' : ''}>
+                        🏅 Socio del circolo
+                    </label>
+                </div>
                 
                 <!-- Sezione Disponibilità -->
                 <div class="availability-section">
@@ -1922,17 +1984,15 @@ const App = {
             return;
         }
 
+        const isMember = document.getElementById('is-member').checked;
+
         if (playerId) {
             console.log('📝 [SAVE] Updating existing player:', playerId);
-            console.log('📝 [SAVE] preferredPlayers:', preferredPlayers);
-            console.log('📝 [SAVE] avoidPlayers:', avoidPlayers);
-            Players.update(playerId, { name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
+            Players.update(playerId, { name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers, isMember });
         } else {
             console.log('📝 [SAVE] Creating new player');
-            console.log('📝 [SAVE] preferredPlayers:', preferredPlayers);
-            console.log('📝 [SAVE] avoidPlayers:', avoidPlayers);
             // Pass all data in one call to ensure single Firebase sync
-            Players.add({ name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
+            Players.add({ name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers, isMember });
         }
 
         // Rimosso explicit save che causava race condition

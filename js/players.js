@@ -24,6 +24,7 @@ const Players = {
             compatibility: {},
             preferredPlayers: playerData.preferredPlayers || [],
             avoidPlayers: playerData.avoidPlayers || [],
+            isMember: playerData.isMember || false,
             createdAt: new Date().toISOString()
         };
         players.push(newPlayer);
