@@ -1280,6 +1280,29 @@ const App = {
             }
         }
 
+        // Trova il giocatore selezionato
+        const allPlayers = Players.getAll();
+        const selectedPlayer = allPlayers.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+
+        // Controlla se uno dei giocatori già inseriti ha messo "non vuole giocare con" il giocatore selezionato
+        if (selectedPlayer) {
+            for (let i = 1; i <= 4; i++) {
+                if (i === this.activePlayerSlot) continue;
+                const slot = document.getElementById(`slot-player-${i}`);
+                if (slot && slot.value.trim()) {
+                    const existingPlayerName = slot.value.trim();
+                    const existingPlayer = allPlayers.find(p => p.name.toLowerCase() === existingPlayerName.toLowerCase());
+                    if (existingPlayer && existingPlayer.avoidPlayers && existingPlayer.avoidPlayers.includes(selectedPlayer.id)) {
+                        alert(`⚠️ Attenzione: ${existingPlayer.name} ha impostato di NON voler giocare con ${playerName}!`);
+                    }
+                    // Controlla anche il contrario: se il giocatore selezionato non vuole giocare con quello già inserito
+                    if (selectedPlayer.avoidPlayers && existingPlayer && selectedPlayer.avoidPlayers.includes(existingPlayer.id)) {
+                        alert(`⚠️ Attenzione: ${playerName} ha impostato di NON voler giocare con ${existingPlayer.name}!`);
+                    }
+                }
+            }
+        }
+
         // Controlla se il giocatore è già prenotato in un'altra cella della giornata
         const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
         const dayName = Matching.getDayNameFromDate(dateStr);
