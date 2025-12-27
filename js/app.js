@@ -838,16 +838,32 @@ const App = {
                 <!-- Colonna centrale: Nominativi + Orario -->
                 <div class="center-column">
                     <div class="form-group">
-                        <label>Nominativi</label>
+                        <label>Nominativi e Quote (€)</label>
                         <div class="players-grid-input">
-                            <input type="text" id="slot-player-1" class="player-input" placeholder="Giocatore 1" 
-                                   value="${existingRes?.players?.[0] || ''}" onfocus="App.setActivePlayerInput(1)">
-                            <input type="text" id="slot-player-2" class="player-input" placeholder="Giocatore 2"
-                                   value="${existingRes?.players?.[1] || ''}" onfocus="App.setActivePlayerInput(2)">
-                            <input type="text" id="slot-player-3" class="player-input" placeholder="Giocatore 3"
-                                   value="${existingRes?.players?.[2] || ''}" onfocus="App.setActivePlayerInput(3)">
-                            <input type="text" id="slot-player-4" class="player-input" placeholder="Giocatore 4"
-                                   value="${existingRes?.players?.[3] || ''}" onfocus="App.setActivePlayerInput(4)">
+                            <div class="player-row">
+                                <input type="text" id="slot-player-1" class="player-input" placeholder="Giocatore 1" 
+                                       value="${existingRes?.players?.[0] || ''}" onfocus="App.setActivePlayerInput(1)">
+                                <input type="number" id="slot-payment-1" class="payment-input" placeholder="€" min="0" step="0.5"
+                                       value="${existingRes?.payments?.[0] || ''}" style="width: 60px;">
+                            </div>
+                            <div class="player-row">
+                                <input type="text" id="slot-player-2" class="player-input" placeholder="Giocatore 2"
+                                       value="${existingRes?.players?.[1] || ''}" onfocus="App.setActivePlayerInput(2)">
+                                <input type="number" id="slot-payment-2" class="payment-input" placeholder="€" min="0" step="0.5"
+                                       value="${existingRes?.payments?.[1] || ''}" style="width: 60px;">
+                            </div>
+                            <div class="player-row">
+                                <input type="text" id="slot-player-3" class="player-input" placeholder="Giocatore 3"
+                                       value="${existingRes?.players?.[2] || ''}" onfocus="App.setActivePlayerInput(3)">
+                                <input type="number" id="slot-payment-3" class="payment-input" placeholder="€" min="0" step="0.5"
+                                       value="${existingRes?.payments?.[2] || ''}" style="width: 60px;">
+                            </div>
+                            <div class="player-row">
+                                <input type="text" id="slot-player-4" class="player-input" placeholder="Giocatore 4"
+                                       value="${existingRes?.players?.[3] || ''}" onfocus="App.setActivePlayerInput(4)">
+                                <input type="number" id="slot-payment-4" class="payment-input" placeholder="€" min="0" step="0.5"
+                                       value="${existingRes?.payments?.[3] || ''}" style="width: 60px;">
+                            </div>
                         </div>
                         <input type="hidden" id="slot-label" value="${existingRes?.label || ''}">
                     </div>
@@ -982,9 +998,19 @@ const App = {
             }
         }
 
+        // Collect 4 payments
+        const paymentsArray = [];
+        for (let i = 1; i <= 4; i++) {
+            const input = document.getElementById(`slot-payment-${i}`);
+            if (input) {
+                paymentsArray.push(parseFloat(input.value) || 0);
+            }
+        }
+
         console.log('[CONFIRM] Starting confirmPlanningSlot', { courtId, day, existingIndex });
         console.log('[CONFIRM] Time range:', time, '-', endTime);
         console.log('[CONFIRM] Players:', playersArray);
+        console.log('[CONFIRM] Payments:', paymentsArray);
 
         // Check if there's any content to save
         const hasPlayers = playersArray.some(p => p && p.length > 0);
@@ -1011,6 +1037,7 @@ const App = {
             type: type,
             label: label,
             players: playersArray,
+            payments: paymentsArray,
             price: price
         };
 

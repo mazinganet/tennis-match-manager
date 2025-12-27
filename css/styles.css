@@ -2581,3 +2581,36 @@ body {
     font-size: 0.6rem;
     opacity: 0.5;
 }
+
+/* Player row with payment input */
+.player-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.player-row .player-input {
+    flex: 1;
+}
+
+.payment-input {
+    width: 60px;
+    padding: 8px;
+    background: var(--bg-card-hover);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.payment-input::placeholder {
+    color: var(--text-muted);
+}
+
+.payment-input:focus {
+    outline: none;
+    border-color: var(--success);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
