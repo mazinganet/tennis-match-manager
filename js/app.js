@@ -1896,6 +1896,12 @@ const App = {
         const preferredPlayers = Array.from(document.querySelectorAll('input[name="preferred"]:checked')).map(el => el.value);
         const avoidPlayers = Array.from(document.querySelectorAll('input[name="avoid"]:checked')).map(el => el.value);
 
+        // Debug: mostra cosa è stato letto
+        console.log('🔍 [DEBUG] preferredPlayers checkboxes found:', document.querySelectorAll('input[name="preferred"]:checked').length);
+        console.log('🔍 [DEBUG] avoidPlayers checkboxes found:', document.querySelectorAll('input[name="avoid"]:checked').length);
+        console.log('🔍 [DEBUG] preferredPlayers values:', preferredPlayers);
+        console.log('🔍 [DEBUG] avoidPlayers values:', avoidPlayers);
+
         if (!name) {
             alert('Inserisci il nome del giocatore');
             return;
