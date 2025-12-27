@@ -1959,6 +1959,12 @@ const App = {
                         <option value="erba" ${court?.surface === 'erba' ? 'selected' : ''}>Erba</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="court-winter-cover" ${court?.winterCover ? 'checked' : ''}>
+                        ❄️ Coperto in inverno
+                    </label>
+                </div>
             </form>
         `;
 
@@ -1974,6 +1980,7 @@ const App = {
         const name = document.getElementById('court-name').value.trim();
         const type = document.getElementById('court-type').value;
         const surface = document.getElementById('court-surface').value;
+        const winterCover = document.getElementById('court-winter-cover').checked;
 
         if (!name) {
             alert('Inserisci il nome del campo');
@@ -1981,9 +1988,9 @@ const App = {
         }
 
         if (courtId) {
-            Courts.update(courtId, { name, type, surface });
+            Courts.update(courtId, { name, type, surface, winterCover });
         } else {
-            Courts.add({ name, type, surface });
+            Courts.add({ name, type, surface, winterCover });
         }
 
         this.closeModal();
@@ -1996,19 +2003,12 @@ const App = {
         if (!card) return;
         const courtId = card.dataset.id;
 
-        if (e.target.classList.contains('toggle-court')) {
-            Courts.toggleAvailability(courtId);
-            Courts.renderGrid(this.currentSeason);
-        } else if (e.target.classList.contains('edit-court')) {
-            this.showCourtModal(courtId);
-        } else if (e.target.classList.contains('delete-court')) {
+        if (e.target.classList.contains('delete-court')) {
             if (confirm('Eliminare questo campo?')) {
                 Courts.delete(courtId);
                 Courts.renderGrid(this.currentSeason);
                 this.updateDashboard();
             }
-        } else if (e.target.classList.contains('edit-reservations')) {
-            this.showReservationsModal(courtId);
         }
     },
 

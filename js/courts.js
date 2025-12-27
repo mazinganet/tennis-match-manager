@@ -27,7 +27,8 @@ const Courts = {
             id: Storage.generateId(),
             name: courtData.name,
             type: courtData.type || 'winter',
-            surface: 'terra-rossa',
+            surface: courtData.surface || 'terra-rossa',
+            winterCover: courtData.winterCover || false,
             available: true,
             reservations: []
         };
@@ -108,28 +109,18 @@ const Courts = {
         }
 
         container.innerHTML = courts.map(c => {
-            const resCount = c.reservations ? c.reservations.length : 0;
+            const winterCoverBadge = c.winterCover ? '<span style="color: #60a5fa;">❄️ Coperto in inverno</span>' : '';
             return `
                 <div class="court-card ${c.type}" data-id="${c.id}">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <h4>🏟️ ${c.name}</h4>
-                        <span class="status-dot ${c.available ? '' : 'unavailable'}"></span>
                     </div>
                     <div class="court-info">
                         <span>Superficie: <strong>${this.formatSurface(c.surface)}</strong></span>
-                        <div class="reservations-badge">
-                            📅 ${resCount} Prenotazioni fisse
-                        </div>
+                        ${winterCoverBadge}
                     </div>
-                    <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <button class="btn btn-sm btn-secondary toggle-court">
-                            ${c.available ? '🔒 Blocca' : '🔓 Sblocca'}
-                        </button>
-                        <button class="btn btn-sm btn-primary edit-reservations">
-                            📅 Gestisci Ore
-                        </button>
-                        <button class="btn btn-sm btn-secondary edit-court">✏️ Edit</button>
-                        <button class="btn btn-sm btn-danger delete-court">🗑️ Delete</button>
+                    <div style="margin-top: 12px;">
+                        <button class="btn btn-sm btn-danger delete-court">🗑️ Elimina</button>
                     </div>
                 </div>
             `;
