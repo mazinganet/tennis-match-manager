@@ -2612,6 +2612,14 @@ body {
     color: var(--text-primary);
     font-size: 0.85rem;
     text-align: center;
+    -moz-appearance: textfield;
+}
+
+/* Hide number input spinners */
+.payment-input::-webkit-outer-spin-button,
+.payment-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .payment-input::placeholder {
