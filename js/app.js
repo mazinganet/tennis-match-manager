@@ -1293,11 +1293,13 @@ const App = {
                     const existingPlayerName = slot.value.trim();
                     const existingPlayer = allPlayers.find(p => p.name.toLowerCase() === existingPlayerName.toLowerCase());
                     if (existingPlayer && existingPlayer.avoidPlayers && existingPlayer.avoidPlayers.includes(selectedPlayer.id)) {
-                        alert(`⚠️ Attenzione: ${existingPlayer.name} ha impostato di NON voler giocare con ${playerName}!`);
+                        const proceed = confirm(`⚠️ Attenzione: ${existingPlayer.name} ha impostato di NON voler giocare con ${playerName}!\n\nVuoi inserirlo comunque?`);
+                        if (!proceed) return;
                     }
                     // Controlla anche il contrario: se il giocatore selezionato non vuole giocare con quello già inserito
                     if (selectedPlayer.avoidPlayers && existingPlayer && selectedPlayer.avoidPlayers.includes(existingPlayer.id)) {
-                        alert(`⚠️ Attenzione: ${playerName} ha impostato di NON voler giocare con ${existingPlayer.name}!`);
+                        const proceed = confirm(`⚠️ Attenzione: ${playerName} ha impostato di NON voler giocare con ${existingPlayer.name}!\n\nVuoi inserirlo comunque?`);
+                        if (!proceed) return;
                     }
                 }
             }
