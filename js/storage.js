@@ -138,9 +138,11 @@ const Storage = {
     },
 
     async initializeDefaults() {
+        console.log('🚀 [INIT] initializeDefaults called');
+
         // Se Firebase è connesso, carica i dati prima
         if (this.isFirebaseConnected()) {
-            console.log('🔄 Caricamento dati da Firebase...');
+            console.log('🔄 [INIT] Firebase connected, loading data...');
             await Promise.all([
                 this.loadFromFirebase(this.KEYS.PLAYERS, []),
                 this.loadFromFirebase(this.KEYS.COURTS, []),
@@ -149,12 +151,28 @@ const Storage = {
                 this.loadFromFirebase(this.KEYS.SETTINGS, {}),
                 this.loadFromFirebase(this.KEYS.PLANNING_TEMPLATES, {})
             ]);
-            console.log('✅ Dati caricati da Firebase');
+            console.log('✅ [INIT] Data loaded from Firebase');
+            console.log('📊 [INIT] Players in cache:', this.cache[this.KEYS.PLAYERS]?.length || 0);
+            console.log('📊 [INIT] Courts in cache:', this.cache[this.KEYS.COURTS]?.length || 0);
+
+            // Se abbiamo caricato dati da Firebase, NON sovrascrivere con defaults
+            if (this.cache[this.KEYS.PLAYERS] && this.cache[this.KEYS.PLAYERS].length > 0) {
+                console.log('✅ [INIT] Players loaded from Firebase, skipping defaults');
+                return; // Exit early, don't overwrite with defaults
+            }
+            if (this.cache[this.KEYS.COURTS] && this.cache[this.KEYS.COURTS].length > 0) {
+                console.log('✅ [INIT] Courts loaded from Firebase, skipping defaults');
+                return; // Exit early, don't overwrite with defaults  
+            }
+        } else {
+            console.log('⚠️ [INIT] Firebase not connected, using localStorage');
         }
 
-        // Inizializza defaults se mancanti
+        // Inizializza defaults SOLO se NON abbiamo dati da Firebase o localStorage
+        console.log('🔧 [INIT] Checking if defaults needed...');
         const courts = this.load(this.KEYS.COURTS);
         if (!courts || !Array.isArray(courts) || courts.length === 0) {
+            console.log('🔧 [INIT] No courts found, creating defaults');
             const defaultCourts = [
                 { id: this.generateId(), name: 'Campo 1', type: 'winter', surface: 'terra-rossa', available: true, reservations: [] },
                 { id: this.generateId(), name: 'Campo 2', type: 'winter', surface: 'terra-rossa', available: true, reservations: [] },
@@ -165,7 +183,15 @@ const Storage = {
             ];
             this.save(this.KEYS.COURTS, defaultCourts);
         }
-        if (!this.load(this.KEYS.PLAYERS)) this.save(this.KEYS.PLAYERS, []);
+
+        const players = this.load(this.KEYS.PLAYERS);
+        if (!players || !Array.isArray(players)) {
+            console.log('🔧 [INIT] No players array found, initializing empty');
+            this.save(this.KEYS.PLAYERS, []);
+        } else {
+            console.log('✅ [INIT] Players already exist:', players.length);
+        }
+
         if (!this.load(this.KEYS.MATCHES)) this.save(this.KEYS.MATCHES, []);
         if (!this.load(this.KEYS.SCHEDULED)) this.save(this.KEYS.SCHEDULED, []);
         if (!this.load(this.KEYS.SETTINGS)) {
