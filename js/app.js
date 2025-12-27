@@ -1833,7 +1833,7 @@ const App = {
                         <div class="checkbox-list scrollable-list" id="preferred-list">
                             ${otherPlayers.map(p => `
                                 <label class="checkbox-label preference-item" data-name="${p.name.toLowerCase()}">
-                                    <input type="checkbox" name="preferred" value="${p.id}" ${preferred.includes(p.id) ? 'checked' : ''}>
+                                    <input type="checkbox" name="preferred" value="${p.id}" ${preferred.includes(p.id) ? 'checked' : ''} onchange="App.handlePreferenceChange(this, 'preferred')">
                                     ${p.name}
                                 </label>
                             `).join('')}
@@ -1844,7 +1844,7 @@ const App = {
                         <div class="checkbox-list scrollable-list" id="avoid-list">
                             ${otherPlayers.map(p => `
                                 <label class="checkbox-label preference-item" data-name="${p.name.toLowerCase()}">
-                                    <input type="checkbox" name="avoid" value="${p.id}" ${avoid.includes(p.id) ? 'checked' : ''}>
+                                    <input type="checkbox" name="avoid" value="${p.id}" ${avoid.includes(p.id) ? 'checked' : ''} onchange="App.handlePreferenceChange(this, 'avoid')">
                                     ${p.name}
                                 </label>
                             `).join('')}
@@ -1882,6 +1882,21 @@ const App = {
             const name = item.dataset.name;
             item.style.display = name.includes(q) ? 'flex' : 'none';
         });
+    },
+
+    // Mutua esclusione: se selezioni in "preferred", deseleziona in "avoid" e viceversa
+    handlePreferenceChange(checkbox, type) {
+        if (!checkbox.checked) return; // Solo quando viene selezionato
+
+        const playerId = checkbox.value;
+        const oppositeType = type === 'preferred' ? 'avoid' : 'preferred';
+
+        // Trova e deseleziona il checkbox opposto per lo stesso giocatore
+        const oppositeCheckbox = document.querySelector(`input[name="${oppositeType}"][value="${playerId}"]`);
+        if (oppositeCheckbox && oppositeCheckbox.checked) {
+            oppositeCheckbox.checked = false;
+            console.log(`🔄 Rimosso ${playerId} da ${oppositeType} (mutua esclusione)`);
+        }
     },
 
     savePlayer(playerId) {
