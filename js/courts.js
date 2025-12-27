@@ -109,7 +109,9 @@ const Courts = {
         }
 
         container.innerHTML = courts.map(c => {
-            const winterCoverBadge = c.winterCover ? '<span style="color: #60a5fa;">❄️ Coperto in inverno</span>' : '';
+            const winterCoverBadge = c.winterCover
+                ? '<div style="margin-top: 8px; color: #60a5fa; font-weight: 500;">❄️ Coperto in inverno</div>'
+                : '<div style="margin-top: 8px; color: #f87171; font-weight: 500;">☀️ Non coperto</div>';
             return `
                 <div class="court-card ${c.type}" data-id="${c.id}">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
