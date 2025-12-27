@@ -50,7 +50,9 @@ const App = {
             memberCovered: 5,
             nonMemberCovered: 8,
             memberUncovered: 3,
-            nonMemberUncovered: 5
+            nonMemberUncovered: 5,
+            seasonCoveredStart: '',
+            seasonUncoveredStart: ''
         });
 
         // Populate form if elements exist
@@ -58,11 +60,15 @@ const App = {
         const nmc = document.getElementById('rate-nonmember-covered');
         const mu = document.getElementById('rate-member-uncovered');
         const nmu = document.getElementById('rate-nonmember-uncovered');
+        const scs = document.getElementById('season-covered-start');
+        const sus = document.getElementById('season-uncovered-start');
 
         if (mc) mc.value = rates.memberCovered;
         if (nmc) nmc.value = rates.nonMemberCovered;
         if (mu) mu.value = rates.memberUncovered;
         if (nmu) nmu.value = rates.nonMemberUncovered;
+        if (scs) scs.value = rates.seasonCoveredStart || '';
+        if (sus) sus.value = rates.seasonUncoveredStart || '';
     },
 
     saveCourtRates() {
@@ -70,7 +76,9 @@ const App = {
             memberCovered: parseFloat(document.getElementById('rate-member-covered').value) || 5,
             nonMemberCovered: parseFloat(document.getElementById('rate-nonmember-covered').value) || 8,
             memberUncovered: parseFloat(document.getElementById('rate-member-uncovered').value) || 3,
-            nonMemberUncovered: parseFloat(document.getElementById('rate-nonmember-uncovered').value) || 5
+            nonMemberUncovered: parseFloat(document.getElementById('rate-nonmember-uncovered').value) || 5,
+            seasonCoveredStart: document.getElementById('season-covered-start')?.value || '',
+            seasonUncoveredStart: document.getElementById('season-uncovered-start')?.value || ''
         };
 
         Storage.save(Storage.KEYS.COURT_RATES, rates);
@@ -78,18 +86,40 @@ const App = {
         console.log('💰 Tariffe salvate:', rates);
     },
 
-    getPlayerRate(playerId, courtId) {
-        const player = Players.getById(playerId);
-        const court = Courts.getById(courtId);
+    getPlayerRate(playerName, bookingDate) {
+        // Find player by name
+        const players = Players.getAll();
+        const player = players.find(p => p.name === playerName);
         const rates = Storage.load(Storage.KEYS.COURT_RATES, {
             memberCovered: 5, nonMemberCovered: 8,
-            memberUncovered: 3, nonMemberUncovered: 5
+            memberUncovered: 3, nonMemberUncovered: 5,
+            seasonCoveredStart: '',
+            seasonUncoveredStart: ''
         });
 
-        if (!player || !court) return 0;
+        if (!player) return 0;
 
-        const isCovered = court.winterCover === true;
         const isMember = player.isMember === true;
+
+        // Determine if date falls in covered or uncovered season
+        let isCovered = true; // Default to covered
+
+        if (rates.seasonCoveredStart && rates.seasonUncoveredStart) {
+            const currentDate = new Date(bookingDate);
+            const coveredStart = new Date(rates.seasonCoveredStart);
+            const uncoveredStart = new Date(rates.seasonUncoveredStart);
+
+            // If both dates are set, determine which season we're in
+            // Covered season: from coveredStart to uncoveredStart
+            // Uncovered season: from uncoveredStart to coveredStart
+            if (coveredStart < uncoveredStart) {
+                // Covered: Jan..., Uncovered: May...
+                isCovered = currentDate >= coveredStart && currentDate < uncoveredStart;
+            } else {
+                // Covered: Oct..., Uncovered: Apr...
+                isCovered = currentDate >= coveredStart || currentDate < uncoveredStart;
+            }
+        }
 
         if (isCovered) {
             return isMember ? rates.memberCovered : rates.nonMemberCovered;
@@ -1423,6 +1453,17 @@ const App = {
         const input = document.getElementById(`slot-player-${this.activePlayerSlot}`);
         if (input) {
             input.value = playerName;
+
+            // Auto-fill payment based on player membership and date
+            const paymentInput = document.getElementById(`slot-payment-${this.activePlayerSlot}`);
+            if (paymentInput) {
+                const bookingDate = this.currentPlanningDate.toISOString().split('T')[0];
+                const rate = this.getPlayerRate(playerName, bookingDate);
+                if (rate > 0) {
+                    paymentInput.value = rate;
+                }
+            }
+
             // Passa automaticamente allo slot successivo
             if (this.activePlayerSlot < 4) {
                 this.setActivePlayerInput(this.activePlayerSlot + 1);
