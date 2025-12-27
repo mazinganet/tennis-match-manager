@@ -26,6 +26,13 @@ const App = {
                 console.log('📡 Admin: Courts aggiornati da remoto');
                 this.refreshCurrentTab();
             });
+            Storage.subscribe(Storage.KEYS.PLAYERS, () => {
+                console.log('📡 Admin: Players aggiornati da remoto');
+                Players.renderTable();
+                if (this.currentTab === 'players') {
+                    this.refreshCurrentTab();
+                }
+            });
         }
     },
 
