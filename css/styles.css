@@ -2582,7 +2582,13 @@ body {
     opacity: 0.5;
 }
 
-/* Player row with payment input */
+/* Player row with payment input - stacked vertically */
+.players-grid-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
 .player-row {
     display: flex;
     align-items: center;
@@ -2592,10 +2598,12 @@ body {
 
 .player-row .player-input {
     flex: 1;
+    min-width: 0;
 }
 
 .payment-input {
-    width: 60px;
+    width: 70px;
+    min-width: 70px;
     padding: 8px;
     background: var(--bg-card-hover);
     border: 1px solid rgba(255, 255, 255, 0.1);
