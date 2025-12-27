@@ -1,6 +1,5 @@
 /**
- * Storage Module - Gestione persistenza dati con Firebase
- * Supporta sia Firebase (online) che localStorage (offline/fallback)
+ * Storage Module - Gestione salvataggio dati con Firebase Realtime Database
  */
 const Storage = {
     KEYS: {
@@ -9,20 +8,29 @@ const Storage = {
         MATCHES: 'tennis_matches',
         SCHEDULED: 'tennis_scheduled',
         SETTINGS: 'tennis_settings',
-        PLANNING_TEMPLATES: 'planning_templates'
+        PLANNING_TEMPLATES: 'planning_templates',
+        RECURRING_PLANNING: 'recurring_planning'
     },
+
+    // Cache locale per evitare letture ripetute
+    cache: {},
 
     // Listeners per aggiornamenti real-time
     listeners: {},
 
-    // Cache locale per evitare letture ripetute
-    cache: {},
+    isInitialized: false, // Flag per bloccare salvataggi durante init
 
     /**
      * Salva dati - Firebase se disponibile, altrimenti localStorage
      * Ora è SINCRONA per compatibilità, ma salva su Firebase in background
      */
     save(key, data) {
+        // Durante l'inizializzazione, blocca salvataggi per evitare di sovrascrivere Firebase
+        if (!this.isInitialized && key === this.KEYS.PLAYERS) {
+            console.warn(`⚠️ [STORAGE] Blocking save for ${key} during initialization`);
+            return false;
+        }
+
         console.log(`💾 [STORAGE] Saving ${key}, items:`, Array.isArray(data) ? data.length : 'object');
 
         // Aggiorna cache
@@ -158,10 +166,12 @@ const Storage = {
             // Se abbiamo caricato dati da Firebase, NON sovrascrivere con defaults
             if (this.cache[this.KEYS.PLAYERS] && this.cache[this.KEYS.PLAYERS].length > 0) {
                 console.log('✅ [INIT] Players loaded from Firebase, skipping defaults');
+                this.isInitialized = true;
                 return; // Exit early, don't overwrite with defaults
             }
             if (this.cache[this.KEYS.COURTS] && this.cache[this.KEYS.COURTS].length > 0) {
                 console.log('✅ [INIT] Courts loaded from Firebase, skipping defaults');
+                this.isInitialized = true;
                 return; // Exit early, don't overwrite with defaults  
             }
         } else {
@@ -197,6 +207,9 @@ const Storage = {
         if (!this.load(this.KEYS.SETTINGS)) {
             this.save(this.KEYS.SETTINGS, { season: 'winter', minCompatibility: 30, maxLevelDifference: 1 });
         }
+
+        this.isInitialized = true;
+        console.log('✅ [INIT] Initialization complete, saves enabled');
     },
 
     /**
