@@ -163,54 +163,147 @@
                 </div>
 
                 <!-- Court Rates Settings -->
+                <!-- Court Rates Settings -->
                 <div class="section-card" style="margin-top: 20px;">
-                    <h3>💰 Tariffe Orarie per Persona</h3>
+                    <h3>💰 Tariffe e Fasce Orarie</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
-                        Imposta le quote orarie a persona in base al tipo di campo e se il giocatore è socio.
+                        Definisci le stagioni, gli orari delle fasce e le relative tariffe.
                     </p>
 
                     <!-- Season dates -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div class="form-group">
-                            <label>❄️ Inizio stagione campi coperti</label>
-                            <input type="date" id="season-covered-start" style="width: 100%;">
-                        </div>
-                        <div class="form-group">
-                            <label>☀️ Inizio stagione campi scoperti</label>
-                            <input type="date" id="season-uncovered-start" style="width: 100%;">
+                    <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">📅 Stagioni</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label>❄️ Inizio stagione campi coperti</label>
+                                <input type="date" id="season-covered-start" style="width: 100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>☀️ Inizio stagione campi scoperti</label>
+                                <input type="date" id="season-uncovered-start" style="width: 100%;">
+                            </div>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="rate-group">
-                            <h4 style="color: #60a5fa; margin-bottom: 10px;">❄️ Campo Coperto</h4>
+                    <!-- Time Slots Definition -->
+                    <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">⏰ Definizione Fasce Orarie</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                             <div class="form-group">
-                                <label>🏅 Socio (€/ora)</label>
-                                <input type="number" id="rate-member-covered" min="0" step="0.5" value="5"
-                                    style="width: 100%;">
+                                <label>🌅 Inizio Mattina</label>
+                                <input type="time" id="slot-morning-start" value="08:00" style="width: 100%;">
                             </div>
                             <div class="form-group">
-                                <label>👤 Non Socio (€/ora)</label>
-                                <input type="number" id="rate-nonmember-covered" min="0" step="0.5" value="8"
-                                    style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="rate-group">
-                            <h4 style="color: #f87171; margin-bottom: 10px;">☀️ Campo Scoperto</h4>
-                            <div class="form-group">
-                                <label>🏅 Socio (€/ora)</label>
-                                <input type="number" id="rate-member-uncovered" min="0" step="0.5" value="3"
-                                    style="width: 100%;">
+                                <label>☀️ Inizio Pomeriggio</label>
+                                <input type="time" id="slot-afternoon-start" value="13:00" style="width: 100%;">
                             </div>
                             <div class="form-group">
-                                <label>👤 Non Socio (€/ora)</label>
-                                <input type="number" id="rate-nonmember-uncovered" min="0" step="0.5" value="5"
-                                    style="width: 100%;">
+                                <label>🌙 Inizio Sera</label>
+                                <input type="time" id="slot-evening-start" value="19:00" style="width: 100%;">
                             </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="App.saveCourtRates()" style="margin-top: 15px;">
-                        💾 Salva Tariffe
+
+                    <!-- Rates Matrix -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Covered Court Rates -->
+                        <div class="rate-group"
+                            style="background: rgba(96, 165, 250, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(96, 165, 250, 0.3);">
+                            <h4
+                                style="color: #60a5fa; margin-bottom: 15px; border-bottom: 1px solid rgba(96, 165, 250, 0.3); padding-bottom: 5px;">
+                                ❄️ Campo Coperto</h4>
+
+                            <div style="margin-bottom: 15px;">
+                                <h5 style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85rem;">🌅
+                                    Mattina</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group"><label>🏅 Socio</label><input type="number"
+                                            id="rate-covered-morning-member" class="payment-input" style="width: 100%;"
+                                            step="0.5"></div>
+                                    <div class="form-group"><label>👤 Non Socio</label><input type="number"
+                                            id="rate-covered-morning-nonmember" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <h5 style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85rem;">☀️
+                                    Pomeriggio</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group"><label>🏅 Socio</label><input type="number"
+                                            id="rate-covered-afternoon-member" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                    <div class="form-group"><label>👤 Non Socio</label><input type="number"
+                                            id="rate-covered-afternoon-nonmember" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h5 style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85rem;">🌙
+                                    Sera</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group"><label>🏅 Socio</label><input type="number"
+                                            id="rate-covered-evening-member" class="payment-input" style="width: 100%;"
+                                            step="0.5"></div>
+                                    <div class="form-group"><label>👤 Non Socio</label><input type="number"
+                                            id="rate-covered-evening-nonmember" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Uncovered Court Rates -->
+                        <div class="rate-group"
+                            style="background: rgba(248, 113, 113, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(248, 113, 113, 0.3);">
+                            <h4
+                                style="color: #f87171; margin-bottom: 15px; border-bottom: 1px solid rgba(248, 113, 113, 0.3); padding-bottom: 5px;">
+                                ☀️ Campo Scoperto</h4>
+
+                            <div style="margin-bottom: 15px;">
+                                <h5 style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85rem;">🌅
+                                    Mattina</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group"><label>🏅 Socio</label><input type="number"
+                                            id="rate-uncovered-morning-member" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                    <div class="form-group"><label>👤 Non Socio</label><input type="number"
+                                            id="rate-uncovered-morning-nonmember" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <h5 style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85rem;">☀️
+                                    Pomeriggio</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group"><label>🏅 Socio</label><input type="number"
+                                            id="rate-uncovered-afternoon-member" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                    <div class="form-group"><label>👤 Non Socio</label><input type="number"
+                                            id="rate-uncovered-afternoon-nonmember" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h5 style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85rem;">🌙
+                                    Sera</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="form-group"><label>🏅 Socio</label><input type="number"
+                                            id="rate-uncovered-evening-member" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                    <div class="form-group"><label>👤 Non Socio</label><input type="number"
+                                            id="rate-uncovered-evening-nonmember" class="payment-input"
+                                            style="width: 100%;" step="0.5"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="App.saveCourtRates()"
+                        style="margin-top: 15px; width: 100%; padding: 15px; font-size: 1.1rem;">
+                        💾 Salva Tutte le Configurazioni
                     </button>
                 </div>
             </section>

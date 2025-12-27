@@ -211,9 +211,25 @@ const Storage = {
         }
         if (!this.load(this.KEYS.COURT_RATES)) {
             this.save(this.KEYS.COURT_RATES, {
-                memberCovered: 5, nonMemberCovered: 8,
-                memberUncovered: 3, nonMemberUncovered: 5,
-                seasonCoveredStart: '', seasonUncoveredStart: ''
+                seasonCoveredStart: '',
+                seasonUncoveredStart: '',
+                timeSlots: {
+                    morningStart: '08:00',
+                    afternoonStart: '13:00',
+                    eveningStart: '19:00'
+                },
+                rates: {
+                    covered: {
+                        morning: { member: 5, nonMember: 8 },
+                        afternoon: { member: 7, nonMember: 10 },
+                        evening: { member: 8, nonMember: 12 }
+                    },
+                    uncovered: {
+                        morning: { member: 3, nonMember: 5 },
+                        afternoon: { member: 5, nonMember: 7 },
+                        evening: { member: 6, nonMember: 8 }
+                    }
+                }
             });
         }
 

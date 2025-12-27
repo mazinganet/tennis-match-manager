@@ -50,86 +50,210 @@ const App = {
     },
 
     loadCourtRates() {
-        const rates = Storage.load(Storage.KEYS.COURT_RATES, {
-            memberCovered: 5,
-            nonMemberCovered: 8,
-            memberUncovered: 3,
-            nonMemberUncovered: 5,
+        const defaultRates = {
             seasonCoveredStart: '',
-            seasonUncoveredStart: ''
-        });
+            seasonUncoveredStart: '',
+            timeSlots: {
+                morningStart: '08:00',
+                afternoonStart: '13:00',
+                eveningStart: '19:00'
+            },
+            rates: {
+                covered: {
+                    morning: { member: 5, nonMember: 8 },
+                    afternoon: { member: 7, nonMember: 10 },
+                    evening: { member: 8, nonMember: 12 }
+                },
+                uncovered: {
+                    morning: { member: 3, nonMember: 5 },
+                    afternoon: { member: 5, nonMember: 7 },
+                    evening: { member: 6, nonMember: 8 }
+                }
+            }
+        };
 
-        // Populate form if elements exist
-        const mc = document.getElementById('rate-member-covered');
-        const nmc = document.getElementById('rate-nonmember-covered');
-        const mu = document.getElementById('rate-member-uncovered');
-        const nmu = document.getElementById('rate-nonmember-uncovered');
+        const storedRates = Storage.load(Storage.KEYS.COURT_RATES, defaultRates);
+
+        // Merge with defaults to ensure structure exists if upgrading from old version
+        const rates = {
+            ...defaultRates,
+            ...storedRates,
+            timeSlots: { ...defaultRates.timeSlots, ...(storedRates.timeSlots || {}) },
+            rates: {
+                covered: {
+                    morning: { ...defaultRates.rates.covered.morning, ...(storedRates.rates?.covered?.morning || {}) },
+                    afternoon: { ...defaultRates.rates.covered.afternoon, ...(storedRates.rates?.covered?.afternoon || {}) },
+                    evening: { ...defaultRates.rates.covered.evening, ...(storedRates.rates?.covered?.evening || {}) }
+                },
+                uncovered: {
+                    morning: { ...defaultRates.rates.uncovered.morning, ...(storedRates.rates?.uncovered?.morning || {}) },
+                    afternoon: { ...defaultRates.rates.uncovered.afternoon, ...(storedRates.rates?.uncovered?.afternoon || {}) },
+                    evening: { ...defaultRates.rates.uncovered.evening, ...(storedRates.rates?.uncovered?.evening || {}) }
+                }
+            }
+        };
+
+        // Populate Season Dates
         const scs = document.getElementById('season-covered-start');
         const sus = document.getElementById('season-uncovered-start');
-
-        if (mc) mc.value = rates.memberCovered;
-        if (nmc) nmc.value = rates.nonMemberCovered;
-        if (mu) mu.value = rates.memberUncovered;
-        if (nmu) nmu.value = rates.nonMemberUncovered;
         if (scs) scs.value = rates.seasonCoveredStart || '';
         if (sus) sus.value = rates.seasonUncoveredStart || '';
+
+        // Populate Time Slots
+        const tsm = document.getElementById('slot-morning-start');
+        const tsa = document.getElementById('slot-afternoon-start');
+        const tse = document.getElementById('slot-evening-start');
+        if (tsm) tsm.value = rates.timeSlots.morningStart;
+        if (tsa) tsa.value = rates.timeSlots.afternoonStart;
+        if (tse) tse.value = rates.timeSlots.eveningStart;
+
+        // Helper to safely set values
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        };
+
+        // Populate Covered Rates
+        setVal('rate-covered-morning-member', rates.rates.covered.morning.member);
+        setVal('rate-covered-morning-nonmember', rates.rates.covered.morning.nonMember);
+        setVal('rate-covered-afternoon-member', rates.rates.covered.afternoon.member);
+        setVal('rate-covered-afternoon-nonmember', rates.rates.covered.afternoon.nonMember);
+        setVal('rate-covered-evening-member', rates.rates.covered.evening.member);
+        setVal('rate-covered-evening-nonmember', rates.rates.covered.evening.nonMember);
+
+        // Populate Uncovered Rates
+        setVal('rate-uncovered-morning-member', rates.rates.uncovered.morning.member);
+        setVal('rate-uncovered-morning-nonmember', rates.rates.uncovered.morning.nonMember);
+        setVal('rate-uncovered-afternoon-member', rates.rates.uncovered.afternoon.member);
+        setVal('rate-uncovered-afternoon-nonmember', rates.rates.uncovered.afternoon.nonMember);
+        setVal('rate-uncovered-evening-member', rates.rates.uncovered.evening.member);
+        setVal('rate-uncovered-evening-nonmember', rates.rates.uncovered.evening.nonMember);
     },
 
     saveCourtRates() {
+        const getVal = (id, def) => parseFloat(document.getElementById(id)?.value) || def;
+        const getStr = (id, def) => document.getElementById(id)?.value || def;
+
         const rates = {
-            memberCovered: parseFloat(document.getElementById('rate-member-covered').value) || 5,
-            nonMemberCovered: parseFloat(document.getElementById('rate-nonmember-covered').value) || 8,
-            memberUncovered: parseFloat(document.getElementById('rate-member-uncovered').value) || 3,
-            nonMemberUncovered: parseFloat(document.getElementById('rate-nonmember-uncovered').value) || 5,
-            seasonCoveredStart: document.getElementById('season-covered-start')?.value || '',
-            seasonUncoveredStart: document.getElementById('season-uncovered-start')?.value || ''
+            seasonCoveredStart: getStr('season-covered-start', ''),
+            seasonUncoveredStart: getStr('season-uncovered-start', ''),
+            timeSlots: {
+                morningStart: getStr('slot-morning-start', '08:00'),
+                afternoonStart: getStr('slot-afternoon-start', '13:00'),
+                eveningStart: getStr('slot-evening-start', '19:00')
+            },
+            rates: {
+                covered: {
+                    morning: {
+                        member: getVal('rate-covered-morning-member', 5),
+                        nonMember: getVal('rate-covered-morning-nonmember', 8)
+                    },
+                    afternoon: {
+                        member: getVal('rate-covered-afternoon-member', 7),
+                        nonMember: getVal('rate-covered-afternoon-nonmember', 10)
+                    },
+                    evening: {
+                        member: getVal('rate-covered-evening-member', 8),
+                        nonMember: getVal('rate-covered-evening-nonmember', 12)
+                    }
+                },
+                uncovered: {
+                    morning: {
+                        member: getVal('rate-uncovered-morning-member', 3),
+                        nonMember: getVal('rate-uncovered-morning-nonmember', 5)
+                    },
+                    afternoon: {
+                        member: getVal('rate-uncovered-afternoon-member', 5),
+                        nonMember: getVal('rate-uncovered-afternoon-nonmember', 7)
+                    },
+                    evening: {
+                        member: getVal('rate-uncovered-evening-member', 6),
+                        nonMember: getVal('rate-uncovered-evening-nonmember', 8)
+                    }
+                }
+            }
         };
 
         Storage.save(Storage.KEYS.COURT_RATES, rates);
-        alert('✅ Tariffe salvate!');
+        alert('✅ Configurazioni e Tariffe salvate!');
         console.log('💰 Tariffe salvate:', rates);
     },
 
-    getPlayerRate(playerName, bookingDate) {
+    getPlayerRate(playerName, bookingDate, bookingTime) {
         // Find player by name
         const players = Players.getAll();
         const player = players.find(p => p.name === playerName);
-        const rates = Storage.load(Storage.KEYS.COURT_RATES, {
-            memberCovered: 5, nonMemberCovered: 8,
-            memberUncovered: 3, nonMemberUncovered: 5,
+
+        const defaultRates = {
             seasonCoveredStart: '',
-            seasonUncoveredStart: ''
-        });
+            seasonUncoveredStart: '',
+            timeSlots: { morningStart: '08:00', afternoonStart: '13:00', eveningStart: '19:00' },
+            rates: {
+                covered: { morning: { member: 5, nonMember: 8 }, afternoon: { member: 5, nonMember: 8 }, evening: { member: 5, nonMember: 8 } },
+                uncovered: { morning: { member: 3, nonMember: 5 }, afternoon: { member: 3, nonMember: 5 }, evening: { member: 3, nonMember: 5 } }
+            }
+        };
+
+        const storedRates = Storage.load(Storage.KEYS.COURT_RATES, defaultRates);
+
+        // Ensure structure (simple merge for safety)
+        const rates = { ...defaultRates, ...storedRates };
+        if (!rates.timeSlots) rates.timeSlots = defaultRates.timeSlots;
+        if (!rates.rates) rates.rates = defaultRates.rates;
 
         if (!player) return 0;
-
         const isMember = player.isMember === true;
 
-        // Determine if date falls in covered or uncovered season
-        let isCovered = true; // Default to covered
-
+        // 1. Determine Season (Covered vs Uncovered)
+        let isCovered = true; // Default
         if (rates.seasonCoveredStart && rates.seasonUncoveredStart) {
             const currentDate = new Date(bookingDate);
             const coveredStart = new Date(rates.seasonCoveredStart);
             const uncoveredStart = new Date(rates.seasonUncoveredStart);
 
-            // If both dates are set, determine which season we're in
-            // Covered season: from coveredStart to uncoveredStart
-            // Uncovered season: from uncoveredStart to coveredStart
             if (coveredStart < uncoveredStart) {
-                // Covered: Jan..., Uncovered: May...
                 isCovered = currentDate >= coveredStart && currentDate < uncoveredStart;
             } else {
-                // Covered: Oct..., Uncovered: Apr...
                 isCovered = currentDate >= coveredStart || currentDate < uncoveredStart;
             }
         }
 
-        if (isCovered) {
-            return isMember ? rates.memberCovered : rates.nonMemberCovered;
+        // 2. Determine Time Slot
+        // bookingTime format is "HH:MM", e.g., "14:30"
+        // We compare simple strings since they are fixed length HH:MM (24h)
+        const time = bookingTime || '12:00';
+        let timeSlot = 'morning'; // Default
+
+        const { morningStart, afternoonStart, eveningStart } = rates.timeSlots;
+
+        if (time >= morningStart && time < afternoonStart) {
+            timeSlot = 'morning';
+        } else if (time >= afternoonStart && time < eveningStart) {
+            timeSlot = 'afternoon';
+        } else if (time >= eveningStart) {
+            timeSlot = 'evening';
         } else {
-            return isMember ? rates.memberUncovered : rates.nonMemberUncovered;
+            // Handle pre-morning times (e.g. 07:00). 
+            // Logic: if it's before morningStart, what is it?
+            // Usually clubs are closed, or we can treat as morning/evening default?
+            // Let's assume matches 'evening' of previous day or 'morning' depending on club rules.
+            // For simplicity, anything before afternoonStart is morning if we follow logic above,
+            // BUT if time < morningStart (e.g. 06:00), we probably want morning rate or distinct.
+            // Given the requirements, we'll stick to the 3 slots defined.
+            // If time < morningStart, default to 'morning' rate as catch-all for early birds.
+            timeSlot = 'morning';
         }
+
+        // 3. Get Rate
+        const seasonKey = isCovered ? 'covered' : 'uncovered';
+        const rateObj = rates.rates?.[seasonKey]?.[timeSlot];
+
+        // Fallback for missing deep objects
+        const fallback = isCovered ? 5 : 3;
+
+        if (!rateObj) return fallback;
+
+        return isMember ? rateObj.member : rateObj.nonMember;
     },
 
     bindEvents() {
@@ -755,6 +879,9 @@ const App = {
     },
 
     showPlanningSlotModal(courtId, dateStr, time, index) {
+        // Save context for other functions to use (e.g. rate calculation)
+        this.activePlanningSlot = { courtId, dateStr, time, index };
+
         const allPlayers = Players.getAll() || [];
         console.log(`[MODAL] Apertura. Giocatori presenti in archivio: ${allPlayers.length}`);
 
@@ -1462,7 +1589,8 @@ const App = {
             const paymentInput = document.getElementById(`slot-payment-${this.activePlayerSlot}`);
             if (paymentInput) {
                 const bookingDate = this.currentPlanningDate.toISOString().split('T')[0];
-                const rate = this.getPlayerRate(playerName, bookingDate);
+                const bookingTime = this.activePlanningSlot?.time || '12:00';
+                const rate = this.getPlayerRate(playerName, bookingDate, bookingTime);
                 if (rate > 0) {
                     paymentInput.value = rate;
                 }
