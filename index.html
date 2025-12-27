@@ -45,7 +45,7 @@
 
         <!-- Navigation -->
         <nav class="main-nav">
-            <button class="nav-btn active" data-tab="dashboard">
+            <button class="nav-btn admin-only" data-tab="dashboard" style="display: none;">
                 <span class="nav-icon">📊</span>
                 Dashboard
             </button>
@@ -66,9 +66,9 @@
                 <span class="nav-icon">🔁</span>
                 Ricorrente
             </button>
-            <button class="nav-btn" data-tab="history">
-                <span class="nav-icon">📜</span>
-                Storico
+            <button class="nav-btn admin-only" data-tab="history" style="display: none;">
+                <span class="nav-icon">📈</span>
+                Statistiche
             </button>
         </nav>
 
@@ -432,7 +432,31 @@
     <script src="js/matching.js"></script>
     <script src="js/history.js"></script>
     <script src="js/seed_players.js"></script>
-    <script src="js/app.js?v=4"></script>
+    <script src="js/app.js?v=5"></script>
+
+    <!-- Admin access check -->
+    <script>
+        (function () {
+            // Check if admin parameter is in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const isAdmin = urlParams.get('admin') === '1';
+
+            if (isAdmin) {
+                // Show admin-only elements
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.style.display = '';
+                });
+                console.log('🔐 Modalità Admin attivata');
+            } else {
+                // Non-admin: make sure players tab is shown as default
+                setTimeout(() => {
+                    if (typeof App !== 'undefined') {
+                        App.showTab('players');
+                    }
+                }, 100);
+            }
+        })();
+    </script>
 </body>
 
 </html>
