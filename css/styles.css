@@ -2600,12 +2600,16 @@ body {
     flex: 1;
     min-width: 0;
     padding: 6px 10px;
+    height: 32px;
+    box-sizing: border-box;
 }
 
 .payment-input {
     width: 70px;
     min-width: 70px;
     padding: 6px 10px;
+    height: 32px;
+    box-sizing: border-box;
     background: var(--bg-card-hover);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
