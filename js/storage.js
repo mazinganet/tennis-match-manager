@@ -75,19 +75,24 @@ const Storage = {
      * Usato all'inizializzazione per popolare la cache
      */
     async loadFromFirebase(key, defaultValue = null) {
+        console.log(`📥 [LOAD] Loading ${key} from Firebase...`);
         if (typeof firebaseReady !== 'undefined' && firebaseReady && database) {
             try {
                 const snapshot = await database.ref('tennis-manager/' + key).once('value');
                 const data = snapshot.val();
+                console.log(`📥 [LOAD] Firebase returned for ${key}:`, data !== null ? (Array.isArray(data) ? `${data.length} items` : 'object') : 'null');
                 if (data !== null) {
                     // Aggiorna cache e localStorage
                     this.cache[key] = data;
                     localStorage.setItem(key, JSON.stringify(data));
+                    console.log(`📥 [LOAD] Cache updated for ${key}`);
                     return data;
                 }
             } catch (e) {
-                console.error('Errore caricamento Firebase:', e);
+                console.error('❌ [LOAD] Errore caricamento Firebase:', e);
             }
+        } else {
+            console.warn(`⚠️ [LOAD] Firebase not ready, using localStorage for ${key}`);
         }
         // Fallback su localStorage
         return this.load(key, defaultValue);
@@ -101,6 +106,7 @@ const Storage = {
             const ref = database.ref('tennis-manager/' + key);
             ref.on('value', (snapshot) => {
                 const data = snapshot.val();
+                console.log(`📡 [SUBSCRIBE] Received update for ${key}:`, data !== null ? (Array.isArray(data) ? `${data.length} items` : 'object') : 'null');
                 this.cache[key] = data;
                 // Aggiorna localStorage
                 try {
@@ -109,7 +115,7 @@ const Storage = {
                 if (callback) callback(data);
             });
             this.listeners[key] = ref;
-            console.log(`📡 Sottoscritto a aggiornamenti: ${key}`);
+            console.log(`📡 [SUBSCRIBE] Sottoscritto a aggiornamenti: ${key}`);
         }
     },
 
