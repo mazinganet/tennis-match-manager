@@ -1902,11 +1902,21 @@ const App = {
         }
 
         if (playerId) {
+            console.log('📝 [SAVE] Updating existing player:', playerId);
+            console.log('📝 [SAVE] Data:', { name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
             Players.update(playerId, { name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
         } else {
+            console.log('📝 [SAVE] Creating new player');
+            console.log('📝 [SAVE] Data:', { name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
             // Pass all data in one call to ensure single Firebase sync
             Players.add({ name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
         }
+
+        // Force explicit save to ensure Firebase sync
+        const allPlayers = Players.getAll();
+        console.log('📝 [SAVE] All players after save:', allPlayers);
+        Storage.save(Storage.KEYS.PLAYERS, allPlayers);
+        console.log('📝 [SAVE] Explicit sync triggered');
 
         this.closeModal();
         Players.renderTable();

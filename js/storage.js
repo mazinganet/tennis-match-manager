@@ -23,21 +23,27 @@ const Storage = {
      * Ora è SINCRONA per compatibilità, ma salva su Firebase in background
      */
     save(key, data) {
+        console.log(`💾 [STORAGE] Saving ${key}, items:`, Array.isArray(data) ? data.length : 'object');
+
         // Aggiorna cache
         this.cache[key] = data;
 
         // Salva sempre in localStorage come backup
         try {
             localStorage.setItem(key, JSON.stringify(data));
+            console.log(`💾 [STORAGE] Saved to localStorage: ${key}`);
         } catch (e) {
             console.error('Errore salvataggio localStorage:', e);
         }
 
         // Salva su Firebase se disponibile (in background)
         if (typeof firebaseReady !== 'undefined' && firebaseReady && database) {
+            console.log(`🔥 [FIREBASE] Syncing ${key} to Firebase...`);
             database.ref('tennis-manager/' + key).set(data)
-                .then(() => console.log(`✅ Sincronizzato: ${key}`))
-                .catch(e => console.error('Errore sync Firebase:', e));
+                .then(() => console.log(`✅ [FIREBASE] Sincronizzato: ${key}`))
+                .catch(e => console.error('❌ [FIREBASE] Errore sync:', e));
+        } else {
+            console.warn(`⚠️ [FIREBASE] Not connected, firebaseReady=${typeof firebaseReady !== 'undefined' ? firebaseReady : 'undefined'}, database=${database ? 'exists' : 'null'}`);
         }
         return true;
     },
