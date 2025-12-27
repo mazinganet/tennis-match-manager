@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Data - Tennis Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .card {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #2d8a4e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #3da862;
+        }
+
+        pre {
+            background: #0a0a14;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+        }
+
+        .warning {
+            background: rgba(234, 179, 8, 0.2);
+            border: 1px solid #eab308;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔥 Test Firebase Data</h1>
+
+    <div class="card">
+        <h2>Stato Connessione</h2>
+        <div id="connection-status" class="status warning">Verificando...</div>
+    </div>
+
+    <div class="card">
+        <h2>Azioni</h2>
+        <button onclick="loadPlayersFromFirebase()">📥 Carica Players da Firebase</button>
+        <button onclick="loadCourtsFromFirebase()">📥 Carica Courts da Firebase</button>
+        <button onclick="checkLocalStorage()">💾 Mostra LocalStorage</button>
+        <button onclick="clearLocalStorage()">🗑️ Svuota LocalStorage</button>
+    </div>
+
+    <div class="card">
+        <h2>Players da Firebase</h2>
+        <pre id="players-data">Clicca "Carica Players da Firebase"</pre>
+    </div>
+
+    <div class="card">
+        <h2>Courts da Firebase</h2>
+        <pre id="courts-data">Clicca "Carica Courts da Firebase"</pre>
+    </div>
+
+    <div class="card">
+        <h2>LocalStorage</h2>
+        <pre id="local-data">Clicca "Mostra LocalStorage"</pre>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9TI0w5rMvl0YNcDBaKAtNgxMpFEZL0lk",
+            authDomain: "prenota-5062d.firebaseapp.com",
+            databaseURL: "https://prenota-5062d-default-rtdb.firebaseio.com",
+            projectId: "prenota-5062d",
+            storageBucket: "prenota-5062d.firebasestorage.app",
+            messagingSenderId: "1042421630778",
+            appId: "1:1042421630778:web:ede08e4c3e33d95d103203"
+        };
+
+        let database = null;
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            document.getElementById('connection-status').innerHTML = '✅ Firebase connesso!';
+            document.getElementById('connection-status').className = 'status success';
+        } catch (e) {
+            document.getElementById('connection-status').innerHTML = '❌ Errore: ' + e.message;
+            document.getElementById('connection-status').className = 'status error';
+        }
+
+        async function loadPlayersFromFirebase() {
+            const output = document.getElementById('players-data');
+            output.textContent = 'Caricamento...';
+
+            try {
+                const snapshot = await database.ref('tennis-manager/tennis_players').once('value');
+                const data = snapshot.val();
+
+                if (data) {
+                    output.textContent = JSON.stringify(data, null, 2);
+
+                    // Mostra riepilogo
+                    const count = Array.isArray(data) ? data.length : Object.keys(data).length;
+
+                    // Check for preferences
+                    let withPrefs = 0;
+                    let withAvoid = 0;
+                    const players = Array.isArray(data) ? data : Object.values(data);
+                    players.forEach(p => {
+                        if (p && p.preferredPlayers && p.preferredPlayers.length > 0) withPrefs++;
+                        if (p && p.avoidPlayers && p.avoidPlayers.length > 0) withAvoid++;
+                    });
+
+                    alert(`✅ Trovati ${count} players!\n\nCon preferenze: ${withPrefs}\nCon veti: ${withAvoid}`);
+                } else {
+                    output.textContent = 'Nessun dato trovato in Firebase!';
+                    alert('⚠️ Nessun player trovato in Firebase!');
+                }
+            } catch (e) {
+                output.textContent = 'Errore: ' + e.message;
+                alert('❌ Errore: ' + e.message);
+            }
+        }
+
+        async function loadCourtsFromFirebase() {
+            const output = document.getElementById('courts-data');
+            output.textContent = 'Caricamento...';
+
+            try {
+                const snapshot = await database.ref('tennis-manager/tennis_courts').once('value');
+                const data = snapshot.val();
+
+                if (data) {
+                    output.textContent = JSON.stringify(data, null, 2);
+                    const count = Array.isArray(data) ? data.length : Object.keys(data).length;
+                    alert(`✅ Trovati ${count} courts!`);
+                } else {
+                    output.textContent = 'Nessun dato trovato in Firebase!';
+                    alert('⚠️ Nessun court trovato in Firebase!');
+                }
+            } catch (e) {
+                output.textContent = 'Errore: ' + e.message;
+                alert('❌ Errore: ' + e.message);
+            }
+        }
+
+        function checkLocalStorage() {
+            const output = document.getElementById('local-data');
+            const data = {
+                tennis_players: localStorage.getItem('tennis_players'),
+                tennis_courts: localStorage.getItem('tennis_courts'),
+                tennis_settings: localStorage.getItem('tennis_settings')
+            };
+
+            // Parse and count
+            let playerCount = 0;
+            let courtCount = 0;
+            try {
+                const players = JSON.parse(data.tennis_players);
+                playerCount = players ? players.length : 0;
+            } catch (e) { }
+            try {
+                const courts = JSON.parse(data.tennis_courts);
+                courtCount = courts ? courts.length : 0;
+            } catch (e) { }
+
+            output.textContent = `Players: ${playerCount}\nCourts: ${courtCount}\n\n--- Raw Data ---\n` + JSON.stringify(data, null, 2);
+        }
+
+        function clearLocalStorage() {
+            if (confirm('Sei sicuro di voler svuotare il localStorage?')) {
+                localStorage.clear();
+                alert('LocalStorage svuotato!');
+                checkLocalStorage();
+            }
+        }
+    </script>
+</body>
+
+</html>
