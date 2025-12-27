@@ -2555,3 +2555,29 @@ body {
     font-size: 0.6rem;
     opacity: 0.5;
 }
+
+/* Recurring Mobile Time Cell - Editable on tap */
+#recurring-mobile-planning-table .recurring-mobile-time-editable {
+    cursor: pointer;
+    position: relative;
+    -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3);
+    transition: background 0.2s, color 0.2s;
+}
+
+#recurring-mobile-planning-table .recurring-mobile-time-editable:hover {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+}
+
+#recurring-mobile-planning-table .recurring-mobile-time-editable:active {
+    background: rgba(255, 215, 0, 0.3);
+}
+
+#recurring-mobile-planning-table .recurring-mobile-time-editable::after {
+    content: "✏️";
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 0.6rem;
+    opacity: 0.5;
+}
