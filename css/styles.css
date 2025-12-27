@@ -2593,23 +2593,24 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .player-row .player-input {
     flex: 1;
     min-width: 0;
+    padding: 6px 10px;
 }
 
 .payment-input {
     width: 70px;
     min-width: 70px;
-    padding: 8px;
+    padding: 6px;
     background: var(--bg-card-hover);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-align: center;
 }
 
