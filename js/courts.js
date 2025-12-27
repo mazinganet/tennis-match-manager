@@ -121,7 +121,8 @@ const Courts = {
                         <span>Superficie: <strong>${this.formatSurface(c.surface)}</strong></span>
                         ${winterCoverBadge}
                     </div>
-                    <div style="margin-top: 12px;">
+                    <div style="margin-top: 12px; display: flex; gap: 8px;">
+                        <button class="btn btn-sm btn-secondary edit-court">✏️ Modifica</button>
                         <button class="btn btn-sm btn-danger delete-court">🗑️ Elimina</button>
                     </div>
                 </div>

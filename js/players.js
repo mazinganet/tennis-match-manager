@@ -20,10 +20,10 @@ const Players = {
             playsSingles: playerData.playsSingles !== false,
             playsDoubles: playerData.playsDoubles !== false,
             matchesPerWeek: playerData.matchesPerWeek || 2,
-            availability: { recurring: [], extra: [] },
+            availability: playerData.availability || { recurring: [], extra: [] },
             compatibility: {},
-            preferredPlayers: [],
-            avoidPlayers: [],
+            preferredPlayers: playerData.preferredPlayers || [],
+            avoidPlayers: playerData.avoidPlayers || [],
             createdAt: new Date().toISOString()
         };
         players.push(newPlayer);

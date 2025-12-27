@@ -1904,8 +1904,8 @@ const App = {
         if (playerId) {
             Players.update(playerId, { name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
         } else {
-            const newPlayer = Players.add({ name, phone, level, playsSingles, playsDoubles, matchesPerWeek });
-            Players.update(newPlayer.id, { availability, preferredPlayers, avoidPlayers });
+            // Pass all data in one call to ensure single Firebase sync
+            Players.add({ name, phone, level, playsSingles, playsDoubles, matchesPerWeek, availability, preferredPlayers, avoidPlayers });
         }
 
         this.closeModal();
@@ -2003,7 +2003,9 @@ const App = {
         if (!card) return;
         const courtId = card.dataset.id;
 
-        if (e.target.classList.contains('delete-court')) {
+        if (e.target.classList.contains('edit-court')) {
+            this.showCourtModal(courtId);
+        } else if (e.target.classList.contains('delete-court')) {
             if (confirm('Eliminare questo campo?')) {
                 Courts.delete(courtId);
                 Courts.renderGrid(this.currentSeason);
