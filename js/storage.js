@@ -158,7 +158,8 @@ const Storage = {
                 this.loadFromFirebase(this.KEYS.MATCHES, []),
                 this.loadFromFirebase(this.KEYS.SCHEDULED, []),
                 this.loadFromFirebase(this.KEYS.SETTINGS, {}),
-                this.loadFromFirebase(this.KEYS.PLANNING_TEMPLATES, {})
+                this.loadFromFirebase(this.KEYS.PLANNING_TEMPLATES, {}),
+                this.loadFromFirebase(this.KEYS.COURT_RATES, {})
             ]);
             console.log('✅ [INIT] Data loaded from Firebase');
             console.log('📊 [INIT] Players in cache:', this.cache[this.KEYS.PLAYERS]?.length || 0);
@@ -207,6 +208,13 @@ const Storage = {
         if (!this.load(this.KEYS.SCHEDULED)) this.save(this.KEYS.SCHEDULED, []);
         if (!this.load(this.KEYS.SETTINGS)) {
             this.save(this.KEYS.SETTINGS, { season: 'winter', minCompatibility: 30, maxLevelDifference: 1 });
+        }
+        if (!this.load(this.KEYS.COURT_RATES)) {
+            this.save(this.KEYS.COURT_RATES, {
+                memberCovered: 5, nonMemberCovered: 8,
+                memberUncovered: 3, nonMemberUncovered: 5,
+                seasonCoveredStart: '', seasonUncoveredStart: ''
+            });
         }
 
         this.isInitialized = true;

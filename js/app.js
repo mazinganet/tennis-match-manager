@@ -33,6 +33,10 @@ const App = {
                     this.refreshCurrentTab();
                 }
             });
+            Storage.subscribe(Storage.KEYS.COURT_RATES, () => {
+                console.log('📡 Admin: Tariffe aggiornate da remoto');
+                this.loadCourtRates();
+            });
         }
     },
 
