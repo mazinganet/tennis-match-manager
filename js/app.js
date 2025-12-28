@@ -339,7 +339,10 @@ const App = {
             }
         };
 
-        const storedRates = Storage.load(Storage.KEYS.COURT_RATES, defaultRates);
+        // Load rates per club (winter = Viserba, summer = Rivabella)
+        const allRates = Storage.load(Storage.KEYS.COURT_RATES, {});
+        const clubKey = this.currentSeason; // 'winter' or 'summer'
+        const storedRates = allRates[clubKey] || defaultRates;
 
         // Ensure structure (simple merge for safety)
         const rates = { ...defaultRates, ...storedRates };
