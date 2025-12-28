@@ -2152,10 +2152,16 @@ body {
 .planning-vertical-container {
     padding: 10px;
     background: var(--bg-main);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: flex-start;
 }
 
 .vertical-court-section {
-    margin-bottom: 30px;
+    flex: 1 1 calc(50% - 15px);
+    min-width: 300px;
+    max-width: calc(50% - 8px);
     background: var(--bg-card);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -2242,6 +2248,11 @@ body {
     .vertical-court-header {
         font-size: 1rem;
         padding: 10px 15px;
+    }
+
+    .vertical-court-section {
+        flex: 1 1 100%;
+        max-width: 100%;
     }
 }
 
