@@ -2153,15 +2153,15 @@ body {
     padding: 10px;
     background: var(--bg-main);
     display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    flex-wrap: nowrap;
+    gap: 10px;
     justify-content: flex-start;
+    overflow-x: auto;
 }
 
 .vertical-court-section {
-    flex: 1 1 calc(50% - 15px);
-    min-width: 300px;
-    max-width: calc(50% - 8px);
+    flex: 0 0 calc(25% - 8px);
+    min-width: 200px;
     background: var(--bg-card);
     border-radius: var(--radius-md);
     overflow: hidden;
