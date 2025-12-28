@@ -72,7 +72,10 @@ const App = {
             }
         };
 
-        const storedRates = Storage.load(Storage.KEYS.COURT_RATES, defaultRates);
+        // Load rates per club (winter = Viserba, summer = Rivabella)
+        const allRates = Storage.load(Storage.KEYS.COURT_RATES, {});
+        const clubKey = this.currentSeason; // 'winter' or 'summer'
+        const storedRates = allRates[clubKey] || defaultRates;
 
         // Merge with defaults to ensure structure exists if upgrading from old version
         const rates = {
@@ -137,7 +140,7 @@ const App = {
         const getVal = (id, def) => parseFloat(document.getElementById(id)?.value) || def;
         const getStr = (id, def) => document.getElementById(id)?.value || def;
 
-        const rates = {
+        const clubRates = {
             seasonCoveredStart: getStr('season-covered-start', ''),
             seasonUncoveredStart: getStr('season-uncovered-start', ''),
             timeSlots: {
@@ -177,9 +180,15 @@ const App = {
             }
         };
 
-        Storage.save(Storage.KEYS.COURT_RATES, rates);
-        alert('✅ Configurazioni e Tariffe salvate!');
-        console.log('💰 Tariffe salvate:', rates);
+        // Save rates per club (winter = Viserba, summer = Rivabella)
+        const allRates = Storage.load(Storage.KEYS.COURT_RATES, {});
+        const clubKey = this.currentSeason; // 'winter' or 'summer'
+        allRates[clubKey] = clubRates;
+
+        Storage.save(Storage.KEYS.COURT_RATES, allRates);
+        const clubName = clubKey === 'winter' ? 'Viserba' : 'Rivabella';
+        alert(`✅ Tariffe per ${clubName} salvate!`);
+        console.log(`💰 Tariffe ${clubName} salvate:`, clubRates);
         // Update mobile summary
         this.renderMobileRatesSummary();
     },
@@ -207,8 +216,12 @@ const App = {
             }
         };
 
-        const storedRates = Storage.load(Storage.KEYS.COURT_RATES, defaultRates);
+        // Load rates per club (winter = Viserba, summer = Rivabella)
+        const allRates = Storage.load(Storage.KEYS.COURT_RATES, {});
+        const clubKey = this.currentSeason; // 'winter' or 'summer'
+        const storedRates = allRates[clubKey] || defaultRates;
         const rates = { ...defaultRates, ...storedRates };
+        const clubName = clubKey === 'winter' ? 'Viserba' : 'Rivabella';
 
         // Format date for display
         const formatDate = (dateStr) => {
@@ -394,12 +407,13 @@ const App = {
             btn.addEventListener('click', () => this.showTab(btn.dataset.tab));
         });
 
-        // Season toggle
+        // Season toggle - also reload rates for the new club
         document.getElementById('season-select').addEventListener('change', (e) => {
             this.currentSeason = e.target.value;
             const settings = Storage.load(Storage.KEYS.SETTINGS, {});
             settings.season = this.currentSeason;
             Storage.save(Storage.KEYS.SETTINGS, settings);
+            this.loadCourtRates(); // Reload rates for the selected club
             this.refreshCurrentTab();
         });
 
