@@ -374,6 +374,23 @@
                     </div>
                 </div>
                 <input type="hidden" id="planning-date">
+
+                <!-- View Selector -->
+                <div class="view-selector"
+                    style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding: 10px 15px; background: var(--bg-card); border-radius: var(--radius-md);">
+                    <span style="color: var(--text-secondary); font-size: 0.9rem;">📊 Vista:</span>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="planning-view" value="horizontal" checked
+                            onchange="App.togglePlanningView('horizontal')">
+                        <span style="color: var(--text-primary);">Orizzontale</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="radio" name="planning-view" value="vertical"
+                            onchange="App.togglePlanningView('vertical')">
+                        <span style="color: var(--text-primary);">Verticale (con Quote)</span>
+                    </label>
+                </div>
+
                 <div class="planning-container card">
                     <!-- Mobile Court Selector (visible only on mobile) -->
                     <div class="admin-mobile-court-selector" id="admin-mobile-court-selector">
@@ -394,6 +411,12 @@
                     <!-- Desktop: Horizontal tables -->
                     <div id="planning-flex-container" class="planning-flex-container desktop-planning-element">
                         <!-- Tables for each court injected by JS -->
+                    </div>
+
+                    <!-- Desktop: Vertical tables with quotes -->
+                    <div id="planning-vertical-container" class="planning-vertical-container desktop-planning-element"
+                        style="display: none;">
+                        <!-- Vertical tables with quotes injected by JS -->
                     </div>
 
                     <!-- Mobile: Vertical table -->

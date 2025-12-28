@@ -2148,6 +2148,104 @@ body {
     background-color: #fff;
 }
 
+/* ===== Vertical Planning View with Quotes ===== */
+.planning-vertical-container {
+    padding: 10px;
+    background: var(--bg-main);
+}
+
+.vertical-court-section {
+    margin-bottom: 30px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.vertical-court-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: #fff;
+    padding: 12px 20px;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.vertical-planning-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.vertical-planning-table thead th {
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
+}
+
+.vertical-planning-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+.vertical-planning-table tbody tr:hover {
+    background: rgba(45, 138, 78, 0.1);
+}
+
+.vertical-time-cell {
+    padding: 12px 10px;
+    font-weight: 600;
+    color: var(--primary);
+    background: rgba(45, 138, 78, 0.1);
+    text-align: center;
+}
+
+.vertical-activity-cell {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.vertical-activity-cell:hover {
+    filter: brightness(0.9);
+}
+
+.vertical-quote-cell {
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--success);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+/* View selector responsive */
+@media (max-width: 768px) {
+    .view-selector {
+        flex-wrap: wrap;
+        gap: 10px !important;
+    }
+
+    .view-selector label {
+        font-size: 0.85rem;
+    }
+
+    .vertical-planning-table {
+        font-size: 0.8rem;
+    }
+
+    .vertical-court-header {
+        font-size: 1rem;
+        padding: 10px 15px;
+    }
+}
+
+
 /* Editable time row per court */
 .court-time-row {
     background: #f0f0f0;

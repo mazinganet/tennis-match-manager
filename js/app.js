@@ -635,6 +635,141 @@ const App = {
         // Also render mobile view
         this.populateMobileCourtSelector();
         this.renderMobilePlanning();
+
+        // Also render vertical view with quotes if in that mode
+        if (this.planningViewMode === 'vertical') {
+            this.renderVerticalPlanning();
+        }
+    },
+
+    planningViewMode: 'horizontal', // 'horizontal' or 'vertical'
+
+    togglePlanningView(mode) {
+        this.planningViewMode = mode;
+
+        const horizontalContainer = document.getElementById('planning-flex-container');
+        const verticalContainer = document.getElementById('planning-vertical-container');
+        const topScroll = document.getElementById('planning-top-scroll');
+
+        if (mode === 'horizontal') {
+            if (horizontalContainer) horizontalContainer.style.display = 'block';
+            if (verticalContainer) verticalContainer.style.display = 'none';
+            if (topScroll) topScroll.style.display = 'block';
+        } else {
+            if (horizontalContainer) horizontalContainer.style.display = 'none';
+            if (verticalContainer) verticalContainer.style.display = 'block';
+            if (topScroll) topScroll.style.display = 'none';
+            this.renderVerticalPlanning();
+        }
+
+        // Save preference
+        localStorage.setItem('planningViewMode', mode);
+    },
+
+    renderVerticalPlanning() {
+        const container = document.getElementById('planning-vertical-container');
+        if (!container) return;
+
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dayName = Matching.getDayNameFromDate(dateStr);
+        const courts = Courts.getAvailable(this.currentSeason);
+        const planningTemplates = Storage.load('planning_templates', {});
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+
+        let html = '';
+
+        courts.forEach(court => {
+            const dayTemplate = planningTemplates[dateStr] || {};
+            const times = dayTemplate[court.id] || [...defaultTimes];
+            const reservations = court.reservations || [];
+
+            html += `
+                <div class="vertical-court-section">
+                    <h3 class="vertical-court-header">${court.name}</h3>
+                    <table class="vertical-planning-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Orario</th>
+                                <th>Attività / Giocatori</th>
+                                <th style="width: 100px;">Quote €</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            times.forEach((time, index) => {
+                const standardizedTime = time.replace('.', ':');
+                const nextTime = times[index + 1] || Matching.addTime(standardizedTime, 60);
+                const standardizedNextTime = nextTime.replace('.', ':');
+
+                // Find reservation for this slot
+                let res = reservations.find(r => {
+                    return r.date === dateStr && (standardizedTime < r.to && standardizedNextTime > r.from);
+                });
+                if (!res) {
+                    res = reservations.find(r => {
+                        return !r.date && r.day === dayName && (standardizedTime < r.to && standardizedNextTime > r.from);
+                    });
+                }
+
+                let activityClass = 'activity-free';
+                let activityContent = '-';
+                let quotesContent = '-';
+
+                if (res?.players && res.players.some(p => p && p.trim())) {
+                    const filledPlayers = res.players.filter(p => p && p.trim());
+                    const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
+                    const hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                    const firstPlayerLower = (res.players[0] || '').toLowerCase();
+                    const isActivity = activityLabels.includes(firstPlayerLower);
+
+                    if (hasOnlyFirst && isActivity) {
+                        activityClass = 'activity-' + firstPlayerLower;
+                        activityContent = res.players[0];
+                    } else {
+                        activityClass = 'activity-players';
+                        activityContent = filledPlayers.join(' | ');
+
+                        // Calculate quotes for each player
+                        const quotes = [];
+                        filledPlayers.forEach((playerName, i) => {
+                            const payment = res.payments?.[i];
+                            if (payment) {
+                                quotes.push(`${payment}€`);
+                            } else {
+                                // Try to calculate rate
+                                const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
+                                if (rate > 0) {
+                                    quotes.push(`${rate}€`);
+                                }
+                            }
+                        });
+                        quotesContent = quotes.length > 0 ? quotes.join(' | ') : '-';
+                    }
+                } else if (res) {
+                    activityClass = 'activity-' + (res.type || 'reserved');
+                    activityContent = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                }
+
+                html += `
+                    <tr>
+                        <td class="vertical-time-cell">${time}</td>
+                        <td class="vertical-activity-cell ${activityClass}" 
+                            data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
+                            onclick="App.handlePlanningAction(event)">${activityContent}</td>
+                        <td class="vertical-quote-cell">${quotesContent}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
     },
 
     // Populate the mobile court selector dropdown
