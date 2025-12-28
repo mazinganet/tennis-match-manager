@@ -929,6 +929,10 @@ const App = {
             return ''; // No preferences for this day
         };
 
+        // Get day name BEFORE using it in the player mapping
+        const court = Courts.getById(courtId);
+        const dayName = Matching.getDayNameFromDate(dateStr);
+
         // Mark players with availability status and time preferences
         const players = allPlayers.map(p => {
             const timePrefs = getPlayerTimePrefsForDay(p, dateStr, dayName);
@@ -940,8 +944,6 @@ const App = {
         });
 
         console.log(`[MODAL] Giocatori disponibili: ${availablePlayers.length}, totali: ${allPlayers.length}`);
-        const court = Courts.getById(courtId);
-        const dayName = Matching.getDayNameFromDate(dateStr);
 
         // Helper function to convert time to minutes for accurate comparison
         const timeToMin = (t) => {
