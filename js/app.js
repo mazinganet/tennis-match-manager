@@ -689,9 +689,9 @@ const App = {
                     <table class="vertical-planning-table">
                         <thead>
                             <tr>
-                                <th style="width: 70px;">Orario</th>
-                                <th>Attività / Giocatori</th>
-                                <th style="width: 100px;">Quote €</th>
+                                <th style="width: 55px;">Ora</th>
+                                <th style="min-width: 120px;">Attività / Giocatori</th>
+                                <th style="width: 60px;">€</th>
                             </tr>
                         </thead>
                         <tbody>
