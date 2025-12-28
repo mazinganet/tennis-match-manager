@@ -386,6 +386,21 @@ const App = {
         this.renderPlanning();
     },
 
+    // Alias for HTML onclick compatibility
+    changeDay(days) {
+        this.changePlanningDay(days);
+    },
+
+    // Direct date selection from date picker
+    goToDate(dateStr) {
+        if (!dateStr) return;
+        this.currentPlanningDate = new Date(dateStr);
+        this.renderPlanning();
+        // Update the date picker to reflect the selected date
+        const picker = document.getElementById('planning-date-picker');
+        if (picker) picker.value = dateStr;
+    },
+
     renderPlanning() {
         const container = document.getElementById('planning-flex-container');
         const dateInput = document.getElementById('planning-date');
@@ -414,6 +429,10 @@ const App = {
             const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
             headerDayEl.textContent = days[dateObj.getDay()];
         }
+
+        // Sync date picker input
+        const datePicker = document.getElementById('planning-date-picker');
+        if (datePicker) datePicker.value = dateStr;
 
         const courts = Courts.getAvailable(this.currentSeason);
         const scheduled = Storage.load(Storage.KEYS.SCHEDULED, []) || [];
@@ -889,11 +908,36 @@ const App = {
         const availablePlayers = Availability.getAvailablePlayers(dateStr, time, 'singles');
         const availableIds = new Set(availablePlayers.map(p => p.id));
 
-        // Mark players with availability status
-        const players = allPlayers.map(p => ({
-            ...p,
-            isAvailable: availableIds.has(p.id)
-        }));
+        // Helper function to get player time preferences for the selected day
+        const getPlayerTimePrefsForDay = (player, dateStr, dayName) => {
+            const av = player?.availability || {};
+            const rec = Array.isArray(av.recurring) ? av.recurring : [];
+            const ext = Array.isArray(av.extra) ? av.extra : [];
+
+            // First check extra (date-specific) preferences
+            const todayExtras = ext.filter(e => e.date === dateStr);
+            if (todayExtras.length > 0) {
+                return todayExtras.map(e => `${e.from}-${e.to}`).join(', ');
+            }
+
+            // Then check recurring (day-based) preferences
+            const todayRecs = rec.filter(r => r.day.toLowerCase().trim() === dayName.toLowerCase());
+            if (todayRecs.length > 0) {
+                return todayRecs.map(r => `${r.from}-${r.to}`).join(', ');
+            }
+
+            return ''; // No preferences for this day
+        };
+
+        // Mark players with availability status and time preferences
+        const players = allPlayers.map(p => {
+            const timePrefs = getPlayerTimePrefsForDay(p, dateStr, dayName);
+            return {
+                ...p,
+                isAvailable: availableIds.has(p.id),
+                timePrefsDisplay: timePrefs ? `🕒 ${timePrefs}` : ''
+            };
+        });
 
         console.log(`[MODAL] Giocatori disponibili: ${availablePlayers.length}, totali: ${allPlayers.length}`);
         const court = Courts.getById(courtId);
@@ -991,7 +1035,7 @@ const App = {
                         ">
                             <option value="">-- Scegli --</option>
                             ${players.map(p => `
-                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${!p.isAvailable ? ' ⚠️' : ''}</option>
+                                <option value="${p.name}" ${!p.isAvailable ? 'style="color:#999;"' : ''}>${p.name} (${p.level || 'N/A'})${p.timePrefsDisplay ? ' ' + p.timePrefsDisplay : ''}${!p.isAvailable ? ' ⚠️' : ''}</option>
                             `).join('')}
                         </select>
                     </div>

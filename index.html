@@ -365,6 +365,13 @@
                         <div id="current-date-display">25/12/2024</div>
                     </div>
                     <button class="btn-nav" onclick="App.changeDay(1)">Domani ▶</button>
+                    <div class="date-picker-container" style="margin-left: auto;">
+                        <label for="planning-date-picker"
+                            style="color: var(--text-secondary); font-size: 0.85rem; margin-right: 8px;">📅 Vai
+                            a:</label>
+                        <input type="date" id="planning-date-picker" class="date-picker-input"
+                            onchange="App.goToDate(this.value)">
+                    </div>
                 </div>
                 <input type="hidden" id="planning-date">
                 <div class="planning-container card">

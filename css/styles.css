@@ -2458,6 +2458,55 @@ body {
     }
 }
 
+/* Date Picker in Planning Navigation */
+.date-picker-container {
+    display: flex;
+    align-items: center;
+}
+
+.date-picker-input {
+    padding: 10px 15px;
+    font-size: 1rem;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    min-width: 160px;
+}
+
+.date-picker-input:hover {
+    border-color: var(--primary-light);
+    background: var(--bg-card);
+}
+
+.date-picker-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+}
+
+/* Responsive date picker */
+@media (max-width: 768px) {
+    .planning-date-nav {
+        flex-wrap: wrap;
+    }
+
+    .date-picker-container {
+        width: 100%;
+        margin-left: 0 !important;
+        margin-top: 10px;
+        justify-content: center;
+    }
+
+    .date-picker-input {
+        min-width: 140px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+}
+
 /* Mobile Planning Table Cells */
 #admin-mobile-planning-table {
     width: 100%;
