@@ -2807,3 +2807,69 @@ body {
     border-color: var(--success);
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }
+
+/* ===== Mobile Responsive - Hide Desktop-Only Elements ===== */
+/* Desktop: hide mobile-only elements */
+.mobile-only {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: block !important;
+    }
+}
+
+/* Mobile Rates Summary Table */
+.rates-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin-top: 10px;
+}
+
+.rates-summary-table th,
+.rates-summary-table td {
+    padding: 8px 6px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rates-summary-table th {
+    background: var(--primary-dark);
+    color: white;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.rates-summary-table td {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.rates-summary-table .row-header {
+    background: var(--bg-card-hover);
+    font-weight: 600;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.rates-summary-table .season-info {
+    background: rgba(45, 138, 78, 0.1);
+    color: var(--primary-light);
+    font-size: 0.75rem;
+}
+
+.rates-section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 15px 0 8px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}

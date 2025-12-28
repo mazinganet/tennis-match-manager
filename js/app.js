@@ -128,6 +128,9 @@ const App = {
         setVal('rate-uncovered-afternoon-nonmember', rates.rates.uncovered.afternoon.nonMember);
         setVal('rate-uncovered-evening-member', rates.rates.uncovered.evening.member);
         setVal('rate-uncovered-evening-nonmember', rates.rates.uncovered.evening.nonMember);
+
+        // Populate mobile summary table
+        this.renderMobileRatesSummary();
     },
 
     saveCourtRates() {
@@ -177,6 +180,135 @@ const App = {
         Storage.save(Storage.KEYS.COURT_RATES, rates);
         alert('✅ Configurazioni e Tariffe salvate!');
         console.log('💰 Tariffe salvate:', rates);
+        // Update mobile summary
+        this.renderMobileRatesSummary();
+    },
+
+    // Render read-only rates summary for mobile view
+    renderMobileRatesSummary() {
+        const container = document.getElementById('mobile-rates-table');
+        if (!container) return;
+
+        const defaultRates = {
+            seasonCoveredStart: '',
+            seasonUncoveredStart: '',
+            timeSlots: { morningStart: '08:00', afternoonStart: '13:00', eveningStart: '19:00' },
+            rates: {
+                covered: {
+                    morning: { member: 5, nonMember: 8 },
+                    afternoon: { member: 7, nonMember: 10 },
+                    evening: { member: 8, nonMember: 12 }
+                },
+                uncovered: {
+                    morning: { member: 3, nonMember: 5 },
+                    afternoon: { member: 5, nonMember: 7 },
+                    evening: { member: 6, nonMember: 8 }
+                }
+            }
+        };
+
+        const storedRates = Storage.load(Storage.KEYS.COURT_RATES, defaultRates);
+        const rates = { ...defaultRates, ...storedRates };
+
+        // Format date for display
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'Non impostata';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
+
+        // Build HTML
+        let html = `
+            <!-- Season Dates -->
+            <div class="rates-section-title">📅 Stagioni</div>
+            <table class="rates-summary-table">
+                <tr>
+                    <td class="row-header">❄️ Campi Coperti</td>
+                    <td class="season-info">${formatDate(rates.seasonCoveredStart)}</td>
+                </tr>
+                <tr>
+                    <td class="row-header">☀️ Campi Scoperti</td>
+                    <td class="season-info">${formatDate(rates.seasonUncoveredStart)}</td>
+                </tr>
+            </table>
+
+            <!-- Time Slots -->
+            <div class="rates-section-title">⏰ Fasce Orarie</div>
+            <table class="rates-summary-table">
+                <tr>
+                    <td class="row-header">🌅 Mattina</td>
+                    <td>${rates.timeSlots?.morningStart || '08:00'}</td>
+                </tr>
+                <tr>
+                    <td class="row-header">☀️ Pomeriggio</td>
+                    <td>${rates.timeSlots?.afternoonStart || '13:00'}</td>
+                </tr>
+                <tr>
+                    <td class="row-header">🌙 Sera</td>
+                    <td>${rates.timeSlots?.eveningStart || '19:00'}</td>
+                </tr>
+            </table>
+
+            <!-- Covered Rates -->
+            <div class="rates-section-title">❄️ Tariffe Campo Coperto (€)</div>
+            <table class="rates-summary-table">
+                <thead>
+                    <tr>
+                        <th>Fascia</th>
+                        <th>🏅 Socio</th>
+                        <th>👤 Non Socio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="row-header">Mattina</td>
+                        <td>${rates.rates?.covered?.morning?.member || 0}</td>
+                        <td>${rates.rates?.covered?.morning?.nonMember || 0}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Pomeriggio</td>
+                        <td>${rates.rates?.covered?.afternoon?.member || 0}</td>
+                        <td>${rates.rates?.covered?.afternoon?.nonMember || 0}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Sera</td>
+                        <td>${rates.rates?.covered?.evening?.member || 0}</td>
+                        <td>${rates.rates?.covered?.evening?.nonMember || 0}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Uncovered Rates -->
+            <div class="rates-section-title">☀️ Tariffe Campo Scoperto (€)</div>
+            <table class="rates-summary-table">
+                <thead>
+                    <tr>
+                        <th>Fascia</th>
+                        <th>🏅 Socio</th>
+                        <th>👤 Non Socio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="row-header">Mattina</td>
+                        <td>${rates.rates?.uncovered?.morning?.member || 0}</td>
+                        <td>${rates.rates?.uncovered?.morning?.nonMember || 0}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Pomeriggio</td>
+                        <td>${rates.rates?.uncovered?.afternoon?.member || 0}</td>
+                        <td>${rates.rates?.uncovered?.afternoon?.nonMember || 0}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Sera</td>
+                        <td>${rates.rates?.uncovered?.evening?.member || 0}</td>
+                        <td>${rates.rates?.uncovered?.evening?.nonMember || 0}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+
+        container.innerHTML = html;
     },
 
     getPlayerRate(playerName, bookingDate, bookingTime) {
