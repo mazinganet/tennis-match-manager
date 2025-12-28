@@ -2152,20 +2152,25 @@ body {
 .planning-vertical-container {
     padding: 10px;
     background: var(--bg-main);
-    display: flex;
-    flex-wrap: nowrap;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     gap: 10px;
     justify-content: flex-start;
     overflow-x: auto;
+    align-items: flex-start;
 }
 
 .vertical-court-section {
-    flex: 0 0 calc(25% - 8px);
-    min-width: 200px;
+    flex: 0 0 auto !important;
+    width: 23% !important;
+    min-width: 180px !important;
+    max-width: 300px;
     background: var(--bg-card);
     border-radius: var(--radius-md);
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    display: inline-block;
 }
 
 .vertical-court-header {
