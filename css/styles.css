@@ -2249,10 +2249,13 @@ body {
         font-size: 1rem;
         padding: 10px 15px;
     }
+}
 
+/* Force horizontal layout on desktop for vertical view */
+@media (min-width: 769px) {
     .vertical-court-section {
-        flex: 1 1 100%;
-        max-width: 100%;
+        flex: 0 0 23%;
+        min-width: 180px;
     }
 }
 
