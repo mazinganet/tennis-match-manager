@@ -107,58 +107,12 @@
                     </div>
                 </div>
 
-                <!-- WhatsApp Importer Widget -->
-                <div id="whatsapp-importer" class="card" style="margin-top: 2rem; display: none;">
-                    <h3>📥 Importa da WhatsApp</h3>
-                    <p><small>Copia e incolla qui il messaggio del giocatore per aggiornare la sua
-                            disponibilità.</small></p>
-                    <textarea id="wa-import-text" placeholder="Es: 'Ciao, lunedì alle 18 ci sono'..."
-                        style="width: 100%; height: 100px; padding: 10px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); color: var(--text-main); font-family: inherit;"></textarea>
-                    <button class="btn-primary" onclick="App.parseWhatsApp()">Analizza Messaggio</button>
-                </div>
-
-                <div class="dashboard-sections">
-                    <div class="section-card">
-                        <h3>Prossime Partite</h3>
-                        <div id="upcoming-matches" class="upcoming-list">
-                            <p class="empty-state">Nessuna partita programmata</p>
-                        </div>
-                    </div>
-                    <div class="section-card">
-                        <h3>Attività Recenti</h3>
-                        <div id="recent-activity" class="activity-list">
-                            <p class="empty-state">Nessuna attività recente</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Backup Section -->
-                <div class="section-card" style="margin-top: 20px;">
-                    <h3>💾 Backup e Sincronizzazione</h3>
-
-                    <!-- Firebase Status -->
-                    <div id="firebase-status"
-                        style="margin-bottom: 15px; padding: 10px; border-radius: 8px; background: var(--bg-card);">
-                        <span id="firebase-status-icon">⏳</span>
-                        <span id="firebase-status-text">Verifica connessione Firebase...</span>
-                    </div>
-
-                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
-                        Salva i tuoi dati su file per evitare di perderli. Puoi ripristinarli in qualsiasi momento.
-                    </p>
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                        <button class="btn btn-primary" onclick="Storage.downloadBackup()">
-                            📥 Scarica Backup
-                        </button>
-                        <label class="btn btn-secondary" style="cursor: pointer;">
-                            📤 Carica Backup
-                            <input type="file" accept=".json" style="display: none;"
-                                onchange="if(this.files[0]) { Storage.loadFromBackup(this.files[0]).then(() => { alert('Backup caricato! La pagina verrà ricaricata.'); location.reload(); }).catch(e => alert('Errore: ' + e.message)); }">
-                        </label>
-                        <button class="btn btn-primary" id="migrate-firebase-btn" onclick="Storage.migrateToFirebase()"
-                            style="background: #f59e0b;">
-                            🔄 Migra a Firebase
-                        </button>
+                <!-- Mobile-only: Read-only rates summary table -->
+                <div class="section-card mobile-only" id="rates-summary-mobile" style="margin-top: 20px;">
+                    <h3>💰 Tariffe e Stagioni</h3>
+                    <div id="mobile-rates-table">
+                        <!-- Will be populated by JavaScript -->
+                        <p style="color: var(--text-muted); text-align: center;">Caricamento...</p>
                     </div>
                 </div>
 
@@ -306,12 +260,48 @@
                     </button>
                 </div>
 
-                <!-- Mobile-only: Read-only rates summary table -->
-                <div class="section-card mobile-only" id="rates-summary-mobile" style="margin-top: 20px;">
-                    <h3>💰 Tariffe e Stagioni</h3>
-                    <div id="mobile-rates-table">
-                        <!-- Will be populated by JavaScript -->
-                        <p style="color: var(--text-muted); text-align: center;">Caricamento...</p>
+                <div class="dashboard-sections">
+                    <div class="section-card">
+                        <h3>Prossime Partite</h3>
+                        <div id="upcoming-matches" class="upcoming-list">
+                            <p class="empty-state">Nessuna partita programmata</p>
+                        </div>
+                    </div>
+                    <div class="section-card">
+                        <h3>Attività Recenti</h3>
+                        <div id="recent-activity" class="activity-list">
+                            <p class="empty-state">Nessuna attività recente</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup Section - at the bottom -->
+                <div class="section-card" style="margin-top: 20px;">
+                    <h3>💾 Backup e Sincronizzazione</h3>
+
+                    <!-- Firebase Status -->
+                    <div id="firebase-status"
+                        style="margin-bottom: 15px; padding: 10px; border-radius: 8px; background: var(--bg-card);">
+                        <span id="firebase-status-icon">⏳</span>
+                        <span id="firebase-status-text">Verifica connessione Firebase...</span>
+                    </div>
+
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Salva i tuoi dati su file per evitare di perderli. Puoi ripristinarli in qualsiasi momento.
+                    </p>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                        <button class="btn btn-primary" onclick="Storage.downloadBackup()">
+                            📥 Scarica Backup
+                        </button>
+                        <label class="btn btn-secondary" style="cursor: pointer;">
+                            📤 Carica Backup
+                            <input type="file" accept=".json" style="display: none;"
+                                onchange="if(this.files[0]) { Storage.loadFromBackup(this.files[0]).then(() => { alert('Backup caricato! La pagina verrà ricaricata.'); location.reload(); }).catch(e => alert('Errore: ' + e.message)); }">
+                        </label>
+                        <button class="btn btn-primary" id="migrate-firebase-btn" onclick="Storage.migrateToFirebase()"
+                            style="background: #f59e0b;">
+                            🔄 Migra a Firebase
+                        </button>
                     </div>
                 </div>
             </section>
