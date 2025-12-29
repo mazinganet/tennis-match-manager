@@ -62,7 +62,7 @@
                 <span class="nav-icon">📅</span>
                 Planning
             </button>
-            <button class="nav-btn" data-tab="recurring">
+            <button class="nav-btn admin-only" data-tab="recurring" style="display: none;">
                 <span class="nav-icon">🔁</span>
                 Ricorrente
             </button>
@@ -297,13 +297,17 @@
                 </div>
 
                 <div class="players-table-container">
-                    <table class="data-table" id="players-table">
+                    <table class="data-table players-extended-table" id="players-table">
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>Telefono</th>
+                                <th>📞</th>
                                 <th>Livello</th>
-                                <th>Azioni</th>
+                                <th>🏅</th>
+                                <th>🕒 Orari</th>
+                                <th>💚 Preferenze</th>
+                                <th>🚫 Veti</th>
+                                <th class="admin-only-column">Azioni</th>
                             </tr>
                         </thead>
                         <tbody id="players-tbody">

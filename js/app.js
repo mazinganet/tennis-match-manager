@@ -1022,10 +1022,18 @@ const App = {
                                 cellContent = res.players[0];
                             } else if (hasOnlyFirst) {
                                 cellClass = 'activity-single-player';
-                                cellContent = res.players[0];
+                                // Show quote for single player if available
+                                const quote = res.payments && res.payments[0] ? ' (' + res.payments[0] + '€)' : '';
+                                cellContent = res.players[0] + quote;
                             } else {
                                 cellClass = 'activity-players';
-                                cellContent = filledPlayers.join('<br>');
+                                // Show each player with their quote
+                                const playersWithQuotes = filledPlayers.map(function (playerName, idx) {
+                                    const originalIdx = res.players.indexOf(playerName);
+                                    const quote = res.payments && res.payments[originalIdx] ? ' (' + res.payments[originalIdx] + '€)' : '';
+                                    return playerName + quote;
+                                });
+                                cellContent = playersWithQuotes.join('<br>');
                             }
                         } else {
                             cellClass = 'activity-' + (res.type || 'reserved');
@@ -1072,13 +1080,6 @@ const App = {
     },
 
     handleTimeChange(e) {
-        // Block editing if not admin
-        if (!window.isAdmin) {
-            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
-            this.renderPlanning(); // Restore original value
-            return;
-        }
-
         const courtId = e.target.dataset.court;
         const index = parseInt(e.target.dataset.index);
         const newTime = e.target.value;
@@ -1098,12 +1099,6 @@ const App = {
 
     // Modal semplificato per modificare l'orario di una cella da mobile
     showMobileTimeEditModal(e) {
-        // Block editing if not admin
-        if (!window.isAdmin) {
-            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
-            return;
-        }
-
         const cell = e.target.closest('.mobile-time-editable');
         if (!cell) return;
 
@@ -1178,12 +1173,6 @@ const App = {
     },
 
     handlePlanningAction(e) {
-        // Block editing if not admin
-        if (!window.isAdmin) {
-            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
-            return;
-        }
-
         // Support both desktop (.planning-activity-cell) and mobile (.activity-cell) clicks
         let cell = e.target.closest('.planning-activity-cell');
         if (!cell) {

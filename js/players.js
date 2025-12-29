@@ -130,32 +130,97 @@ const Players = {
 
     renderTable() {
         const tbody = document.getElementById('players-tbody');
-        const players = this.getAll();
+        const allPlayers = this.getAll();
 
-        if (players.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessun giocatore registrato</td></tr>';
+        if (allPlayers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Nessun giocatore registrato</td></tr>';
             return;
         }
 
-        tbody.innerHTML = players.map(p => `
+        // Create options for player dropdowns (for preferences/vetos)
+        const createPlayerOptions = (currentPlayerId, selectedIds = []) => {
+            return allPlayers
+                .filter(p => p.id !== currentPlayerId)
+                .map(p => {
+                    const isSelected = selectedIds.includes(p.id);
+                    return `<option value="${p.id}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
+                })
+                .join('');
+        };
+
+        // Format availability for display
+        const formatTimePrefs = (player) => {
+            const av = player.availability;
+            if (!av || !av.recurring || av.recurring.length === 0) {
+                return '<span class="text-muted">-</span>';
+            }
+            const prefs = av.recurring.map(r => {
+                const dayShort = r.day.substring(0, 3);
+                return `${dayShort} ${r.from}-${r.to}`;
+            });
+            // Show first 2 and "..." if more
+            if (prefs.length > 2) {
+                return `<span class="time-prefs-compact">${prefs.slice(0, 2).join('<br>')}<br>+${prefs.length - 2}</span>`;
+            }
+            return `<span class="time-prefs-compact">${prefs.join('<br>')}</span>`;
+        };
+
+        // Get names for preferred/avoid players
+        const getPlayerNames = (ids) => {
+            if (!ids || ids.length === 0) return '-';
+            return ids.map(id => {
+                const p = this.getById(id);
+                return p ? p.name.split(' ')[0] : '?';
+            }).join(', ');
+        };
+
+        tbody.innerHTML = allPlayers.map(p => {
+            const preferredNames = getPlayerNames(p.preferredPlayers);
+            const avoidNames = getPlayerNames(p.avoidPlayers);
+
+            return `
             <tr data-id="${p.id}">
                 <td><strong>${p.name}</strong></td>
-                <td>${p.phone || '-'}</td>
+                <td class="phone-cell">${p.phone || '-'}</td>
                 <td>
                     <select class="level-select level-${p.level || ''}" onchange="Players.updateLevel('${p.id}', this.value)">
-                        <option value="principiante" ${p.level === 'principiante' ? 'selected' : ''}>Principiante</option>
-                        <option value="intermedio" ${p.level === 'intermedio' ? 'selected' : ''}>Intermedio</option>
-                        <option value="avanzato" ${p.level === 'avanzato' ? 'selected' : ''}>Avanzato</option>
-                        <option value="agonista" ${p.level === 'agonista' ? 'selected' : ''}>Agonista</option>
+                        <option value="principiante" ${p.level === 'principiante' ? 'selected' : ''}>Princ.</option>
+                        <option value="intermedio" ${p.level === 'intermedio' ? 'selected' : ''}>Inter.</option>
+                        <option value="avanzato" ${p.level === 'avanzato' ? 'selected' : ''}>Avanz.</option>
+                        <option value="agonista" ${p.level === 'agonista' ? 'selected' : ''}>Agon.</option>
                     </select>
                 </td>
-                <td>
+                <td class="member-cell">${p.isMember ? '✅' : '❌'}</td>
+                <td class="time-prefs-cell">${formatTimePrefs(p)}</td>
+                <td class="pref-cell">
+                    <select class="pref-select" multiple onchange="Players.updatePreferences('${p.id}', 'preferred', this)" title="Preferenze: ${preferredNames}">
+                        ${createPlayerOptions(p.id, p.preferredPlayers || [])}
+                    </select>
+                    <span class="pref-summary">${preferredNames}</span>
+                </td>
+                <td class="veto-cell">
+                    <select class="veto-select" multiple onchange="Players.updatePreferences('${p.id}', 'avoid', this)" title="Veti: ${avoidNames}">
+                        ${createPlayerOptions(p.id, p.avoidPlayers || [])}
+                    </select>
+                    <span class="veto-summary">${avoidNames}</span>
+                </td>
+                <td class="admin-only-column">
                     <button class="btn-icon send-wa" title="Chiedi Disponibilità">💬</button>
                     <button class="btn-icon edit-player" title="Modifica">✏️</button>
                     <button class="btn-icon delete-player" title="Elimina">🗑️</button>
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
+    },
+
+    // Update preferences or vetos from dropdown
+    updatePreferences(playerId, type, selectEl) {
+        const selectedIds = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+        const updateData = type === 'preferred'
+            ? { preferredPlayers: selectedIds }
+            : { avoidPlayers: selectedIds };
+        this.update(playerId, updateData);
+        // Don't re-render immediately to avoid losing focus
     },
 
     formatAvailability(availability) {

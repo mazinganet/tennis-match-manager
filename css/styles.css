@@ -599,6 +599,112 @@ body {
     color: var(--level-advanced);
 }
 
+/* ===== Extended Players Table ===== */
+.players-extended-table {
+    font-size: 0.85rem;
+}
+
+.players-extended-table th,
+.players-extended-table td {
+    padding: 8px 6px;
+    white-space: nowrap;
+}
+
+.players-extended-table .phone-cell {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.players-extended-table .member-cell {
+    text-align: center;
+}
+
+.players-extended-table .time-prefs-cell {
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.time-prefs-compact {
+    display: block;
+    color: var(--text-secondary);
+}
+
+/* Preferences and Vetos dropdowns */
+.pref-cell,
+.veto-cell {
+    position: relative;
+    min-width: 100px;
+}
+
+.pref-select,
+.veto-select {
+    width: 100%;
+    max-width: 100px;
+    height: 28px;
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.pref-select {
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.veto-select {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.pref-summary,
+.veto-summary {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pref-summary {
+    color: #22c55e;
+}
+
+.veto-summary {
+    color: #ef4444;
+}
+
+/* Hide admin-only columns for non-admin */
+.non-admin-mode .admin-only-column {
+    display: none !important;
+}
+
+/* Mobile responsiveness for players table */
+@media (max-width: 768px) {
+    .players-extended-table {
+        font-size: 0.75rem;
+    }
+
+    .players-extended-table th,
+    .players-extended-table td {
+        padding: 6px 4px;
+    }
+
+    .players-extended-table .phone-cell,
+    .players-extended-table .time-prefs-cell {
+        display: none;
+    }
+
+    .pref-select,
+    .veto-select {
+        max-width: 70px;
+    }
+}
+
 /* ===== Courts Grid ===== */
 .courts-grid {
     display: grid;
@@ -2945,41 +3051,10 @@ body {
     display: none;
 }
 
-/* ===== Planning Read-Only Mode for Non-Admin ===== */
-/* Make planning cells not clickable for non-admin */
-.non-admin-mode .planning-activity-cell,
-.non-admin-mode .activity-cell,
-.non-admin-mode .vertical-activity-cell {
-    pointer-events: none !important;
-    cursor: default !important;
-}
-
-/* Disable time input editing for non-admin */
-.non-admin-mode .time-input,
-.non-admin-mode .time-edit-cell input,
-.non-admin-mode .mobile-time-editable {
-    pointer-events: none !important;
-    cursor: default !important;
-    color: var(--text-muted) !important;
-    background: transparent !important;
-}
-
-/* Add visual hint that planning is read-only */
-.non-admin-mode #planning .planning-container::before {
-    content: "📋 Visualizzazione del planning (sola lettura)";
-    display: block;
-    padding: 12px 15px;
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    border-radius: var(--radius-sm);
-    margin-bottom: 15px;
-    font-size: 0.9rem;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-/* Hide view selector for non-admin on mobile */
+/* ===== Mobile View Improvements ===== */
+/* Hide view selector on mobile for everyone */
 @media (max-width: 768px) {
-    .non-admin-mode .view-selector {
+    .view-selector {
         display: none !important;
     }
 }
