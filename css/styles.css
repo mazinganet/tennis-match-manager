@@ -2873,3 +2873,113 @@ body {
     padding-bottom: 5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* ===== Non-Admin Mode Styles ===== */
+/* Hide action buttons in players table for non-admin */
+.non-admin-mode #players-table .btn-icon,
+.non-admin-mode #players-table .btn-danger,
+.non-admin-mode #players-table .btn-sm {
+    display: none !important;
+}
+
+/* Hide phone column edit functionality for non-admin */
+.non-admin-mode #players-table input[type="tel"] {
+    pointer-events: none;
+    background: transparent;
+    border: none;
+}
+
+/* Make level select read-only for non-admin */
+.non-admin-mode #players-table .level-select {
+    pointer-events: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: none;
+}
+
+/* Hide court card action buttons for non-admin */
+.non-admin-mode .court-card .btn,
+.non-admin-mode .court-card button {
+    display: none !important;
+}
+
+/* Make court cards non-interactive for non-admin */
+.non-admin-mode .court-card {
+    pointer-events: none;
+}
+
+/* Disable recurring section editing for non-admin */
+.non-admin-mode #recurring .planning-cell,
+.non-admin-mode #recurring .activity-cell,
+.non-admin-mode #recurring .admin-mobile-vertical-table .activity-cell,
+.non-admin-mode #recurring .admin-mobile-vertical-table .time-column {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+
+/* Hide recurring controls for non-admin */
+.non-admin-mode #recurring .recurring-config {
+    display: none !important;
+}
+
+/* Show read-only message for recurring section */
+.non-admin-mode #recurring .card:first-of-type::before {
+    content: "📋 Visualizzazione delle prenotazioni ricorrenti (sola lettura)";
+    display: block;
+    padding: 12px 15px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-radius: var(--radius-sm);
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Hide actions column header for non-admin */
+.non-admin-mode #players-table th:last-child {
+    display: none;
+}
+
+/* Hide actions column cells for non-admin */
+.non-admin-mode #players-table td:last-child {
+    display: none;
+}
+
+/* ===== Planning Read-Only Mode for Non-Admin ===== */
+/* Make planning cells not clickable for non-admin */
+.non-admin-mode .planning-activity-cell,
+.non-admin-mode .activity-cell,
+.non-admin-mode .vertical-activity-cell {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+
+/* Disable time input editing for non-admin */
+.non-admin-mode .time-input,
+.non-admin-mode .time-edit-cell input,
+.non-admin-mode .mobile-time-editable {
+    pointer-events: none !important;
+    cursor: default !important;
+    color: var(--text-muted) !important;
+    background: transparent !important;
+}
+
+/* Add visual hint that planning is read-only */
+.non-admin-mode #planning .planning-container::before {
+    content: "📋 Visualizzazione del planning (sola lettura)";
+    display: block;
+    padding: 12px 15px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-radius: var(--radius-sm);
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Hide view selector for non-admin on mobile */
+@media (max-width: 768px) {
+    .non-admin-mode .view-selector {
+        display: none !important;
+    }
+}

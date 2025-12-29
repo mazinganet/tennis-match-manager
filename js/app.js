@@ -1072,6 +1072,13 @@ const App = {
     },
 
     handleTimeChange(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            this.renderPlanning(); // Restore original value
+            return;
+        }
+
         const courtId = e.target.dataset.court;
         const index = parseInt(e.target.dataset.index);
         const newTime = e.target.value;
@@ -1091,6 +1098,12 @@ const App = {
 
     // Modal semplificato per modificare l'orario di una cella da mobile
     showMobileTimeEditModal(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            return;
+        }
+
         const cell = e.target.closest('.mobile-time-editable');
         if (!cell) return;
 
@@ -1165,6 +1178,12 @@ const App = {
     },
 
     handlePlanningAction(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            return;
+        }
+
         // Support both desktop (.planning-activity-cell) and mobile (.activity-cell) clicks
         let cell = e.target.closest('.planning-activity-cell');
         if (!cell) {
@@ -3029,6 +3048,13 @@ const App = {
 
     // Handle time change for recurring planning (PC)
     handleRecurringTimeChange(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            this.renderRecurringPlanning(); // Restore original value
+            return;
+        }
+
         const courtId = e.target.dataset.court;
         const index = parseInt(e.target.dataset.index);
         const newTime = e.target.value;
@@ -3046,6 +3072,12 @@ const App = {
 
     // Modal semplificato per modificare l'orario di una cella da mobile (Ricorrente)
     showRecurringMobileTimeEditModal(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            return;
+        }
+
         const cell = e.target.closest('.recurring-mobile-time-editable');
         if (!cell) return;
 
@@ -3117,6 +3149,12 @@ const App = {
     },
 
     handleRecurringCellClick(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            return;
+        }
+
         const cell = e.target.closest('.recurring-cell');
         if (!cell) return;
 

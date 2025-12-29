@@ -585,6 +585,9 @@
             const urlParams = new URLSearchParams(window.location.search);
             const isAdmin = urlParams.get('admin') === '1';
 
+            // Expose globally for use in app.js
+            window.isAdmin = isAdmin;
+
             if (isAdmin) {
                 // Show admin-only elements
                 document.querySelectorAll('.admin-only').forEach(el => {
@@ -592,6 +595,17 @@
                 });
                 console.log('🔐 Modalità Admin attivata');
             } else {
+                // Non-admin mode: hide edit buttons for Giocatori/Campi sections
+                document.body.classList.add('non-admin-mode');
+
+                // Hide "Nuovo Giocatore" button
+                const addPlayerBtn = document.getElementById('add-player-btn');
+                if (addPlayerBtn) addPlayerBtn.style.display = 'none';
+
+                // Hide "Nuovo Campo" button
+                const addCourtBtn = document.getElementById('add-court-btn');
+                if (addCourtBtn) addCourtBtn.style.display = 'none';
+
                 // Non-admin: make sure players tab is shown as default
                 setTimeout(() => {
                     if (typeof App !== 'undefined') {
