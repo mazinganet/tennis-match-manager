@@ -2540,23 +2540,87 @@ const App = {
         this.updateDashboard();
     },
 
+    showRelationsModal(playerId) {
+        const player = Players.getById(playerId);
+        if (!player) return;
+
+        const allPlayers = Players.getAll().filter(p => p.id !== playerId).sort((a, b) => a.name.localeCompare(b.name));
+
+        const renderList = (type, title, colorClass) => {
+            const list = allPlayers.map(p => {
+                const isChecked = type === 'preferred'
+                    ? (player.preferredPlayers || []).includes(p.id)
+                    : (player.avoidPlayers || []).includes(p.id);
+
+                // Using a unique ID for the input to ensure the label works, though wrapping with label also works
+                const uniqueId = `rel-${type}-${p.id}`;
+
+                return `
+                    <div class="relation-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); align-items:center;">
+                        <span style="color:#eee;">${p.name}</span>
+                        <label for="${uniqueId}" style="position:relative; display:inline-block; width:46px; height:24px; margin:0;">
+                            <input type="checkbox" id="${uniqueId}"
+                                ${isChecked ? 'checked' : ''} 
+                                onchange="Players.setRelation('${player.id}', '${p.id}', '${type}', this.checked); App.showRelationsModal('${player.id}')"
+                                style="opacity:0; width:0; height:0;">
+                            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#4a5568; transition:.4s; border-radius:34px;"></span>
+                            <span class="knob" style="position:absolute; content:''; height:18px; width:18px; left:3px; bottom:3px; background-color:white; transition:.4s; border-radius:50%;"></span>
+                             <style>
+                                #${uniqueId}:checked + .slider { background-color: ${colorClass}; }
+                                #${uniqueId}:focus + .slider { box-shadow: 0 0 1px ${colorClass}; }
+                                #${uniqueId}:checked + .slider .knob { transform: translateX(22px); }
+                            </style>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="relation-column" style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); height:100%; display:flex; flex-direction:column;">
+                    <h4 style="color:${colorClass}; margin-bottom:15px; font-size:1.1rem; border-bottom:1px solid ${colorClass}40; padding-bottom:10px;">
+                        ${title}
+                    </h4>
+                    <div style="flex:1; overflow-y:auto; padding-right:5px; max-height:400px;">${list}</div>
+                </div>
+            `;
+        };
+
+        const modalBody = `
+            <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; max-height:70vh; overflow-y:auto;">
+                ${renderList('preferred', '💚 Preferiti (Vuole giocare)', '#22c55e')}
+                ${renderList('avoid', '🚫 Veti (Non vuole giocare)', '#ef4444')}
+            </div>
+            <p style="font-size:0.85rem; color:#a0aec0; margin-top:15px; text-align:center; font-style:italic;">
+                Nota: Se selezioni un giocatore in una lista, verrà automaticamente rimosso dall'altra.
+            </p>
+        `;
+
+        this.openModal(`Relazioni: ${player.name}`, modalBody);
+    },
+
     handlePlayerAction(e) {
         const row = e.target.closest('tr');
         if (!row) return;
         const playerId = row.dataset.id;
         const player = Players.getById(playerId);
 
-        if (e.target.classList.contains('send-wa')) {
+        // Handle button clicks inside the row
+        const target = e.target.closest('button');
+        if (!target) return;
+
+        if (target.classList.contains('send-wa')) {
             const message = `Ciao ${player.name}! 🎾 Sei disponibile per giocare questa settimana? Rispondi SÌ o NO.`;
             this.openWhatsApp(player.phone, message);
-        } else if (e.target.classList.contains('edit-player')) {
+        } else if (target.classList.contains('edit-player')) {
             this.showPlayerModal(playerId);
-        } else if (e.target.classList.contains('delete-player')) {
+        } else if (target.classList.contains('delete-player')) {
             if (confirm('Eliminare questo giocatore?')) {
                 Players.delete(playerId);
                 Players.renderTable();
                 this.updateDashboard();
             }
+        } else if (target.classList.contains('view-relations')) {
+            this.showRelationsModal(playerId);
         }
     },
 

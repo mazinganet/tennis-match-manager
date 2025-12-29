@@ -192,11 +192,9 @@ const Players = {
                 </td>
                 <td class="member-cell">${p.isMember ? '✅' : '❌'}</td>
                 <td class="time-prefs-cell">${formatTimePrefs(p)}</td>
-                <td class="pref-cell">
-                    <span class="pref-display">${preferredNames}</span>
-                </td>
-                <td class="veto-cell">
-                    <span class="veto-display">${avoidNames}</span>
+                <td style="text-align: center;">
+                    <button class="btn-icon view-relations" title="Gestisci Preferenze e Veti">⚙️</button>
+                    ${(p.preferredPlayers?.length > 0 || p.avoidPlayers?.length > 0) ? '<span style="font-size:0.7rem;">✓</span>' : ''}
                 </td>
                 <td class="admin-only-column">
                     <button class="btn-icon send-wa" title="Chiedi Disponibilità">💬</button>
@@ -215,6 +213,33 @@ const Players = {
             : { avoidPlayers: selectedIds };
         this.update(playerId, updateData);
         // Don't re-render immediately to avoid losing focus
+    },
+
+    setRelation(playerId, targetId, type, isActive) {
+        const player = this.getById(playerId);
+        if (!player) return;
+
+        // Initialize arrays if missing
+        if (!player.preferredPlayers) player.preferredPlayers = [];
+        if (!player.avoidPlayers) player.avoidPlayers = [];
+
+        // Remove from both first to ensure no duplicates or conflicts
+        player.preferredPlayers = player.preferredPlayers.filter(id => id !== targetId);
+        player.avoidPlayers = player.avoidPlayers.filter(id => id !== targetId);
+
+        if (isActive) {
+            // Add to the specific type
+            if (type === 'preferred') player.preferredPlayers.push(targetId);
+            if (type === 'avoid') player.avoidPlayers.push(targetId);
+        }
+
+        this.update(playerId, {
+            preferredPlayers: player.preferredPlayers,
+            avoidPlayers: player.avoidPlayers
+        });
+
+        // Render table to show the checkmark if needed, but only if we are not in modal loop
+        // this.renderTable(); 
     },
 
     formatAvailability(availability) {
