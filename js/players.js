@@ -193,7 +193,11 @@ const Players = {
                 <td class="member-cell">${p.isMember ? '✅' : '❌'}</td>
                 <td class="time-prefs-cell">${formatTimePrefs(p)}</td>
                 <td style="text-align: center;">
-                    <button class="btn-icon view-relations" title="Gestisci Preferenze e Veti">⚙️</button>
+                    <button class="btn-icon view-relations" title="Gestisci Preferenze e Veti">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" width="16" height="16" fill="currentColor">
+                            <path d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 35.6 68.9 86.1 76.6 143.4 16.5-6.5 28.2-22.6 28.2-41v-36c0-46.9-38.1-85-85-85zm-448 0c-46.9 0-85 38.1-85 85v36c0 18.4 11.7 34.6 28.2 41 7.7-57.3 36.3-107.8 76.6-143.4C109.5 263.1 93.6 256 76 256zM224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"/>
+                        </svg>
+                    </button>
                     ${(p.preferredPlayers?.length > 0 || p.avoidPlayers?.length > 0) ? '<span style="font-size:0.7rem;">✓</span>' : ''}
                 </td>
                 <td class="admin-only-column">
