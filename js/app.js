@@ -583,6 +583,12 @@ const App = {
             headerDayEl.textContent = days[dateObj.getDay()];
         }
 
+        // Safety check: ensure view mode matches
+        if (this.planningViewMode === 'horizontal') {
+            const verticalContainer = document.getElementById('planning-vertical-container');
+            if (verticalContainer) verticalContainer.style.setProperty('display', 'none', 'important');
+        }
+
         // Sync date picker input
         const datePicker = document.getElementById('planning-date-picker');
         if (datePicker) datePicker.value = dateStr;
@@ -799,21 +805,29 @@ const App = {
 
     togglePlanningView(mode) {
         this.planningViewMode = mode;
+        console.log(`[VIEW] Switching to ${mode} mode`);
 
-        const horizontalContainer = document.getElementById('planning-flex-container');
-        const verticalContainer = document.getElementById('planning-vertical-container');
-        const topScroll = document.getElementById('planning-top-scroll');
+        const updateView = () => {
+            const horizontalContainer = document.getElementById('planning-flex-container');
+            const verticalContainer = document.getElementById('planning-vertical-container');
+            const topScroll = document.getElementById('planning-top-scroll');
 
-        if (mode === 'horizontal') {
-            if (horizontalContainer) horizontalContainer.style.display = 'block';
-            if (verticalContainer) verticalContainer.style.display = 'none';
-            if (topScroll) topScroll.style.display = 'block';
-        } else {
-            if (horizontalContainer) horizontalContainer.style.display = 'none';
-            if (verticalContainer) verticalContainer.style.display = 'block';
-            if (topScroll) topScroll.style.display = 'none';
-            this.renderVerticalPlanning();
-        }
+            // Force hide/show with explicit priority
+            if (mode === 'horizontal') {
+                if (horizontalContainer) horizontalContainer.style.setProperty('display', 'block', 'important');
+                if (verticalContainer) verticalContainer.style.setProperty('display', 'none', 'important');
+                if (topScroll) topScroll.style.setProperty('display', 'block', 'important');
+            } else {
+                if (horizontalContainer) horizontalContainer.style.setProperty('display', 'none', 'important');
+                if (verticalContainer) verticalContainer.style.setProperty('display', 'block', 'important');
+                if (topScroll) topScroll.style.setProperty('display', 'none', 'important');
+                this.renderVerticalPlanning();
+            }
+        };
+
+        updateView();
+        // Fallback in case DOM is sluggish or overwritten
+        setTimeout(updateView, 50);
 
         // Save preference
         localStorage.setItem('planningViewMode', mode);
@@ -2573,7 +2587,19 @@ const App = {
                 return;
             }
 
-            const allPlayers = Players.getAll().filter(p => p.id !== playerId).sort((a, b) => a.name.localeCompare(b.name));
+            // Defensive check for Players.getAll()
+            const allPlayersRaw = Players.getAll();
+            if (!Array.isArray(allPlayersRaw)) {
+                console.error('ShowRelationsModal: Players.getAll() returned non-array', allPlayersRaw);
+                alert('Errore interno: impossibile recuperare la lista giocatori.');
+                return;
+            }
+
+            const allPlayers = allPlayersRaw.filter(p => p.id !== playerId).sort((a, b) => {
+                const nameA = a.name || '';
+                const nameB = b.name || '';
+                return nameA.localeCompare(nameB);
+            });
 
             const renderList = (type, title, colorClass) => {
                 const listIds = type === 'preferred'
@@ -2589,7 +2615,7 @@ const App = {
                 } else {
                     listHtml = relevantPlayers.map(p => `
                     <div class="relation-item" style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <span style="color: #eee;">${p.name}</span>
+                        <span style="color: #eee;">${(p.name || 'Senza nome')}</span>
                     </div>
                 `).join('');
                 }
@@ -2617,7 +2643,7 @@ const App = {
             this.openModal(`Relazioni: ${player.name}`, modalBody);
         } catch (error) {
             console.error('Error in showRelationsModal:', error);
-            alert('Si è verificato un errore durante l\'apertura delle relazioni. Controlla la console per i dettagli.');
+            alert('Si è verificato un errore durante l\'apertura delle relazioni. Dettaglio: ' + error.message);
         }
     },
 
