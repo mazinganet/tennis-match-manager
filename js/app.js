@@ -2615,39 +2615,43 @@ const App = {
         `;
 
             this.openModal(`Relazioni: ${player.name}`, modalBody);
-        },
+        } catch (error) {
+            console.error('Error in showRelationsModal:', error);
+            alert('Si è verificato un errore durante l\'apertura delle relazioni. Controlla la console per i dettagli.');
+        }
+    },
 
-        handlePlayerAction(e) {
-            const row = e.target.closest('tr');
-            if (!row) return;
-            const playerId = row.dataset.id;
-            const player = Players.getById(playerId);
+    handlePlayerAction(e) {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        const playerId = row.dataset.id;
+        const player = Players.getById(playerId);
 
-            // Handle button clicks inside the row
-            const target = e.target.closest('button');
-            if (!target) return;
+        // Handle button clicks inside the row
+        const target = e.target.closest('button');
+        if (!target) return;
 
-            if (target.classList.contains('send-wa')) {
-                const message = `Ciao ${player.name}! 🎾 Sei disponibile per giocare questa settimana? Rispondi SÌ o NO.`;
-                this.openWhatsApp(player.phone, message);
-            } else if (target.classList.contains('edit-player')) {
-                this.showPlayerModal(playerId);
-            } else if (target.classList.contains('delete-player')) {
-                if (confirm('Eliminare questo giocatore?')) {
-                    Players.delete(playerId);
-                    Players.renderTable();
-                    this.updateDashboard();
-                }
-            } else if (target.classList.contains('view-relations')) {
-                this.showRelationsModal(playerId);
+        if (target.classList.contains('send-wa')) {
+            const message = `Ciao ${player.name}! 🎾 Sei disponibile per giocare questa settimana? Rispondi SÌ o NO.`;
+            this.openWhatsApp(player.phone, message);
+        } else if (target.classList.contains('edit-player')) {
+            this.showPlayerModal(playerId);
+        } else if (target.classList.contains('delete-player')) {
+            if (confirm('Eliminare questo giocatore?')) {
+                Players.delete(playerId);
+                Players.renderTable();
+                this.updateDashboard();
             }
-        },
+        } else if (target.classList.contains('view-relations')) {
+            this.showRelationsModal(playerId);
+        }
+    },
 
-        showCourtModal(courtId = null) {
-            const court = courtId ? Courts.getById(courtId) : null;
-            const title = court ? 'Modifica Campo' : 'Nuovo Campo';
+    showCourtModal(courtId = null) {
+        const court = courtId ? Courts.getById(courtId) : null;
+        const title = court ? 'Modifica Campo' : 'Nuovo Campo';
 
-            const body = `
+        const body = `
             <form id="court-form">
                 <div class="form-group">
                     <label>Nome Campo</label>
@@ -2678,69 +2682,69 @@ const App = {
             </form>
         `;
 
-            const footer = `
+        const footer = `
             <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
             <button class="btn btn-primary" onclick="App.saveCourt('${courtId || ''}')">Salva</button>
         `;
 
-            this.showModal(title, body, footer);
-        },
+        this.showModal(title, body, footer);
+    },
 
-        saveCourt(courtId) {
-            const name = document.getElementById('court-name').value.trim();
-            const type = document.getElementById('court-type').value;
-            const surface = document.getElementById('court-surface').value;
-            const winterCover = document.getElementById('court-winter-cover').checked;
+    saveCourt(courtId) {
+        const name = document.getElementById('court-name').value.trim();
+        const type = document.getElementById('court-type').value;
+        const surface = document.getElementById('court-surface').value;
+        const winterCover = document.getElementById('court-winter-cover').checked;
 
-            if (!name) {
-                alert('Inserisci il nome del campo');
-                return;
+        if (!name) {
+            alert('Inserisci il nome del campo');
+            return;
+        }
+
+        if (courtId) {
+            Courts.update(courtId, { name, type, surface, winterCover });
+        } else {
+            Courts.add({ name, type, surface, winterCover });
+        }
+
+        this.closeModal();
+        Courts.renderGrid(this.currentSeason);
+        this.updateDashboard();
+    },
+
+    handleCourtAction(e) {
+        const card = e.target.closest('.court-card');
+        if (!card) return;
+        const courtId = card.dataset.id;
+
+        if (e.target.classList.contains('edit-court')) {
+            this.showCourtModal(courtId);
+        } else if (e.target.classList.contains('delete-court')) {
+            if (confirm('Eliminare questo campo?')) {
+                Courts.delete(courtId);
+                Courts.renderGrid(this.currentSeason);
+                this.updateDashboard();
             }
+        }
+    },
 
-            if (courtId) {
-                Courts.update(courtId, { name, type, surface, winterCover });
-            } else {
-                Courts.add({ name, type, surface, winterCover });
-            }
+    showReservationsModal(courtId) {
+        const court = Courts.getById(courtId);
+        if (!court) return;
 
-            this.closeModal();
-            Courts.renderGrid(this.currentSeason);
-            this.updateDashboard();
-        },
+        const reservations = court.reservations || [];
+        const days = [
+            { key: 'lunedi', label: 'Lunedì' }, { key: 'martedi', label: 'Martedì' },
+            { key: 'mercoledi', label: 'Mercoledì' }, { key: 'giovedi', label: 'Giovedì' },
+            { key: 'venerdi', label: 'Venerdì' }, { key: 'sabato', label: 'Sabato' },
+            { key: 'domenica', label: 'Domenica' }
+        ];
 
-        handleCourtAction(e) {
-            const card = e.target.closest('.court-card');
-            if (!card) return;
-            const courtId = card.dataset.id;
+        const hoursOptions = Array.from({ length: 15 }, (_, i) => i + 8)
+            .map(h => `<option value="${String(h).padStart(2, '0')}">${String(h).padStart(2, '0')}</option>`)
+            .join('');
 
-            if (e.target.classList.contains('edit-court')) {
-                this.showCourtModal(courtId);
-            } else if (e.target.classList.contains('delete-court')) {
-                if (confirm('Eliminare questo campo?')) {
-                    Courts.delete(courtId);
-                    Courts.renderGrid(this.currentSeason);
-                    this.updateDashboard();
-                }
-            }
-        },
-
-        showReservationsModal(courtId) {
-            const court = Courts.getById(courtId);
-            if (!court) return;
-
-            const reservations = court.reservations || [];
-            const days = [
-                { key: 'lunedi', label: 'Lunedì' }, { key: 'martedi', label: 'Martedì' },
-                { key: 'mercoledi', label: 'Mercoledì' }, { key: 'giovedi', label: 'Giovedì' },
-                { key: 'venerdi', label: 'Venerdì' }, { key: 'sabato', label: 'Sabato' },
-                { key: 'domenica', label: 'Domenica' }
-            ];
-
-            const hoursOptions = Array.from({ length: 15 }, (_, i) => i + 8)
-                .map(h => `<option value="${String(h).padStart(2, '0')}">${String(h).padStart(2, '0')}</option>`)
-                .join('');
-
-            const body = `
+        const body = `
             <div class="reservations-manager">
                 <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.8;">
                     Inserisci le ore in cui il campo è occupato da **abbonati fisici, lezioni o manutenzione**. 
@@ -2801,59 +2805,59 @@ const App = {
             </div>
         `;
 
-            this.showModal(`Gestione Ore - ${court.name}`, body, '<button class="btn btn-secondary" onclick="App.closeModal()">Esci</button>');
-        },
+        this.showModal(`Gestione Ore - ${court.name}`, body, '<button class="btn btn-secondary" onclick="App.closeModal()">Esci</button>');
+    },
 
-        confirmAddCourtReservation(courtId) {
-            const day = document.getElementById('res-day').value;
-            const from = `${document.getElementById('res-from-h').value}:${document.getElementById('res-from-m').value}`;
-            const to = `${document.getElementById('res-to-h').value}:${document.getElementById('res-to-m').value}`;
+    confirmAddCourtReservation(courtId) {
+        const day = document.getElementById('res-day').value;
+        const from = `${document.getElementById('res-from-h').value}:${document.getElementById('res-from-m').value}`;
+        const to = `${document.getElementById('res-to-h').value}:${document.getElementById('res-to-m').value}`;
 
-            if (from >= to) {
-                alert('L\'orario di fine deve essere successivo a quello di inizio');
-                return;
-            }
+        if (from >= to) {
+            alert('L\'orario di fine deve essere successivo a quello di inizio');
+            return;
+        }
 
-            if (Courts.addReservation(courtId, { day, from, to })) {
+        if (Courts.addReservation(courtId, { day, from, to })) {
+            this.showReservationsModal(courtId);
+            Courts.renderGrid(this.currentSeason);
+        }
+    },
+
+    removeCourtReservation(courtId, index) {
+        if (confirm('Rimuovere questo blocco orario?')) {
+            if (Courts.removeReservation(courtId, index)) {
                 this.showReservationsModal(courtId);
                 Courts.renderGrid(this.currentSeason);
             }
-        },
+        }
+    },
 
-        removeCourtReservation(courtId, index) {
-            if (confirm('Rimuovere questo blocco orario?')) {
-                if (Courts.removeReservation(courtId, index)) {
-                    this.showReservationsModal(courtId);
-                    Courts.renderGrid(this.currentSeason);
+    handleHistoryAction(e) {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        const matchId = row.dataset.id;
+
+        if (e.target.classList.contains('edit-match')) {
+            this.showMatchResultModal(matchId);
+        } else if (e.target.classList.contains('delete-match')) {
+            if (confirm('Eliminare questa partita dallo storico?')) {
+                History.delete(matchId);
+                if (this.currentTab === 'history') {
+                    History.renderTable();
+                } else if (this.currentTab === 'planning') {
+                    this.renderPlanning();
                 }
+                this.updateDashboard();
             }
-        },
+        }
+    },
 
-        handleHistoryAction(e) {
-            const row = e.target.closest('tr');
-            if (!row) return;
-            const matchId = row.dataset.id;
+    showMatchResultModal(matchId) {
+        const match = History.getAll().find(m => m.id === matchId);
+        if (!match) return;
 
-            if (e.target.classList.contains('edit-match')) {
-                this.showMatchResultModal(matchId);
-            } else if (e.target.classList.contains('delete-match')) {
-                if (confirm('Eliminare questa partita dallo storico?')) {
-                    History.delete(matchId);
-                    if (this.currentTab === 'history') {
-                        History.renderTable();
-                    } else if (this.currentTab === 'planning') {
-                        this.renderPlanning();
-                    }
-                    this.updateDashboard();
-                }
-            }
-        },
-
-        showMatchResultModal(matchId) {
-            const match = History.getAll().find(m => m.id === matchId);
-            if (!match) return;
-
-            const body = `
+        const body = `
             <form id="result-form">
                 <div class="form-group">
                     <label>Risultato</label>
@@ -2873,67 +2877,67 @@ const App = {
             </form>
         `;
 
-            const footer = `
+        const footer = `
             <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
             <button class="btn btn-primary" onclick="App.saveMatchResult('${matchId}')">Salva</button>
         `;
 
-            this.showModal('Aggiorna Partita', body, footer);
+        this.showModal('Aggiorna Partita', body, footer);
 
-            // Bind star clicks
-            document.querySelectorAll('#feedback-input .star').forEach(star => {
-                star.addEventListener('click', () => {
-                    const value = parseInt(star.dataset.value);
-                    document.getElementById('match-feedback').value = value;
-                    document.querySelectorAll('#feedback-input .star').forEach((s, i) => {
-                        s.className = `star ${i < value ? 'filled' : 'empty'}`;
-                        s.textContent = i < value ? '⭐' : '☆';
-                    });
+        // Bind star clicks
+        document.querySelectorAll('#feedback-input .star').forEach(star => {
+            star.addEventListener('click', () => {
+                const value = parseInt(star.dataset.value);
+                document.getElementById('match-feedback').value = value;
+                document.querySelectorAll('#feedback-input .star').forEach((s, i) => {
+                    s.className = `star ${i < value ? 'filled' : 'empty'}`;
+                    s.textContent = i < value ? '⭐' : '☆';
                 });
             });
-        },
+        });
+    },
 
-        saveMatchResult(matchId) {
-            const result = document.getElementById('match-result').value;
-            const feedback = parseInt(document.getElementById('match-feedback').value);
+    saveMatchResult(matchId) {
+        const result = document.getElementById('match-result').value;
+        const feedback = parseInt(document.getElementById('match-feedback').value);
 
-            History.update(matchId, { result, feedback });
-            this.closeModal();
-            History.renderTable();
-        },
+        History.update(matchId, { result, feedback });
+        this.closeModal();
+        History.renderTable();
+    },
 
-        // ============ RECURRING PLANNING ============
-        recurringTemplate: { }, // Temporary storage for recurring activities
+    // ============ RECURRING PLANNING ============
+    recurringTemplate: {}, // Temporary storage for recurring activities
 
-        renderRecurringPlanning() {
-            const container = document.getElementById('recurring-flex-container');
-            console.log('[RECURRING] Container found:', !!container);
-            if (!container) return;
+    renderRecurringPlanning() {
+        const container = document.getElementById('recurring-flex-container');
+        console.log('[RECURRING] Container found:', !!container);
+        if (!container) return;
 
-            const courts = Courts.getAvailable(this.currentSeason);
-            console.log('[RECURRING] Courts available:', courts?.length, 'Season:', this.currentSeason);
+        const courts = Courts.getAvailable(this.currentSeason);
+        console.log('[RECURRING] Courts available:', courts?.length, 'Season:', this.currentSeason);
 
-            if (!courts || courts.length === 0) {
-                container.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Nessun campo disponibile per questa stagione. Vai alla sezione Campi per aggiungerne.</p>';
-                return;
-            }
+        if (!courts || courts.length === 0) {
+            container.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Nessun campo disponibile per questa stagione. Vai alla sezione Campi per aggiungerne.</p>';
+            return;
+        }
 
-            const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
 
-            // Load custom recurring times per court
-            const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
+        // Load custom recurring times per court
+        const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
 
-            // Build horizontal table: courts as rows, each with its own time headers (same as planning)
-            let tableHtml = `
+        // Build horizontal table: courts as rows, each with its own time headers (same as planning)
+        let tableHtml = `
             <table class="planning-horizontal-table">
                 <tbody>
         `;
 
-            courts.forEach(court => {
-                const times = recurringTimeTemplates[court.id] || [...defaultTimes];
+        courts.forEach(court => {
+            const times = recurringTimeTemplates[court.id] || [...defaultTimes];
 
-                // Riga orari editabili per questo campo
-                tableHtml += `
+            // Riga orari editabili per questo campo
+            tableHtml += `
                 <tr class="court-time-row">
                     <td class="court-name-cell" style="font-size:0.6rem; background:#d0d0d0;">⏰ Orari</td>
                     ${times.map((time, index) => `
@@ -2951,43 +2955,43 @@ const App = {
                 </tr>
             `;
 
-                // Riga attività
-                tableHtml += `<tr><td class="court-name-cell">${court.name}</td>`;
+            // Riga attività
+            tableHtml += `<tr><td class="court-name-cell">${court.name}</td>`;
 
-                times.forEach((time, index) => {
-                    const standardizedTime = time.replace('.', ':');
-                    const key = `${court.id}_${standardizedTime}`;
-                    const activity = this.recurringTemplate ? this.recurringTemplate[key] : null;
+            times.forEach((time, index) => {
+                const standardizedTime = time.replace('.', ':');
+                const key = `${court.id}_${standardizedTime}`;
+                const activity = this.recurringTemplate ? this.recurringTemplate[key] : null;
 
-                    let statusClass = activity ? `activity-${activity.type}` : 'activity-free';
-                    let label = activity ? activity.label : '';
-                    let playersHtml = '';
+                let statusClass = activity ? `activity-${activity.type}` : 'activity-free';
+                let label = activity ? activity.label : '';
+                let playersHtml = '';
 
-                    // Show players if present
-                    if (activity?.players && activity.players.some(p => p && p.trim())) {
-                        const filledPlayers = activity.players.filter(p => p && p.trim());
-                        if (filledPlayers.length === 1) {
-                            playersHtml = `<span class="cell-label">${filledPlayers[0]}</span>`;
-                        } else if (filledPlayers.length === 2) {
-                            playersHtml = `
+                // Show players if present
+                if (activity?.players && activity.players.some(p => p && p.trim())) {
+                    const filledPlayers = activity.players.filter(p => p && p.trim());
+                    if (filledPlayers.length === 1) {
+                        playersHtml = `<span class="cell-label">${filledPlayers[0]}</span>`;
+                    } else if (filledPlayers.length === 2) {
+                        playersHtml = `
                             <div class="cell-players-vertical">
                                 <span class="cell-player-single">${filledPlayers[0]}</span>
                                 <span class="cell-player-single">${filledPlayers[1]}</span>
                             </div>`;
-                        } else {
-                            playersHtml = `
+                    } else {
+                        playersHtml = `
                             <div class="cell-players-grid">
                                 <span class="cell-player">${activity.players[0] || ''}</span>
                                 <span class="cell-player">${activity.players[1] || ''}</span>
                                 <span class="cell-player">${activity.players[2] || ''}</span>
                                 <span class="cell-player">${activity.players[3] || ''}</span>
                             </div>`;
-                        }
-                    } else if (label) {
-                        playersHtml = `<span class="cell-label">${label}</span>`;
                     }
+                } else if (label) {
+                    playersHtml = `<span class="cell-label">${label}</span>`;
+                }
 
-                    tableHtml += `
+                tableHtml += `
                     <td class="planning-cell">
                         <div class="planning-activity-cell recurring-cell ${statusClass}" 
                              data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}">
@@ -2995,270 +2999,270 @@ const App = {
                         </div>
                     </td>
                 `;
-                });
-
-                tableHtml += `</tr>`;
             });
 
-            tableHtml += `</tbody></table>`;
-            container.innerHTML = tableHtml;
+            tableHtml += `</tr>`;
+        });
 
-            // Bind click events
-            container.querySelectorAll('.recurring-cell').forEach(cell => {
+        tableHtml += `</tbody></table>`;
+        container.innerHTML = tableHtml;
+
+        // Bind click events
+        container.querySelectorAll('.recurring-cell').forEach(cell => {
+            cell.addEventListener('click', (e) => this.handleRecurringCellClick(e));
+        });
+
+        // Set default dates
+        const startInput = document.getElementById('recurring-start-date');
+        const endInput = document.getElementById('recurring-end-date');
+        if (startInput && !startInput.value) {
+            const today = new Date();
+            startInput.value = today.toISOString().split('T')[0];
+        }
+        if (endInput && !endInput.value) {
+            const threeMonths = new Date();
+            threeMonths.setMonth(threeMonths.getMonth() + 3);
+            endInput.value = threeMonths.toISOString().split('T')[0];
+        }
+
+        // Also render mobile version
+        this.populateRecurringMobileCourtSelector();
+        this.renderRecurringMobilePlanning();
+    },
+
+    // Populate the mobile court selector for recurring planning
+    populateRecurringMobileCourtSelector() {
+        try {
+            const select = document.getElementById('recurring-mobile-court-select');
+            if (!select) return;
+
+            const courts = Courts.getAvailable(this.currentSeason) || [];
+            if (courts.length === 0) {
+                select.innerHTML = '<option value="">Nessun campo</option>';
+                return;
+            }
+
+            const currentValue = select.value;
+            select.innerHTML = '';
+            courts.forEach((court, index) => {
+                const option = document.createElement('option');
+                option.value = court.id;
+                option.textContent = court.name;
+                if (court.id === currentValue || (index === 0 && !currentValue)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        } catch (e) {
+            console.error('[RECURRING MOBILE] Error in populateRecurringMobileCourtSelector:', e);
+        }
+    },
+
+    // Render mobile vertical table for recurring planning
+    renderRecurringMobilePlanning() {
+        try {
+            const mobileTable = document.getElementById('recurring-mobile-planning-table');
+            const select = document.getElementById('recurring-mobile-court-select');
+            if (!mobileTable || !select) return;
+
+            const courts = Courts.getAvailable(this.currentSeason) || [];
+            const selectedCourtId = select.value;
+            const court = courts.find(c => c.id === selectedCourtId) || courts[0];
+
+            if (!court) {
+                mobileTable.innerHTML = '<tbody><tr><td colspan="2" style="padding:20px;text-align:center;">Nessun campo disponibile.</td></tr></tbody>';
+                return;
+            }
+
+            const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+            const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
+            const times = recurringTimeTemplates[court.id] || defaultTimes;
+
+            let tableHtml = '<colgroup><col style="width:75px"><col style="width:auto"></colgroup>';
+            tableHtml += '<tbody>';
+            tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
+
+            for (let t = 0; t < times.length; t++) {
+                const time = times[t];
+                const standardizedTime = time.replace('.', ':');
+                const key = `${court.id}_${standardizedTime}`;
+                const activity = this.recurringTemplate ? this.recurringTemplate[key] : null;
+
+                let cellClass = activity ? `activity-${activity.type}` : 'activity-free';
+                let cellContent = '-';
+
+                if (activity) {
+                    if (activity.players && activity.players.some(p => p && p.trim())) {
+                        cellContent = activity.players.filter(p => p && p.trim()).join('<br>');
+                    } else if (activity.label) {
+                        cellContent = activity.label;
+                    }
+                }
+
+                tableHtml += '<tr>';
+                tableHtml += '<td class="time-column recurring-mobile-time-editable" data-court="' + court.id + '" data-index="' + t + '">' + time + '</td>';
+                tableHtml += '<td class="activity-cell recurring-cell ' + cellClass + '" data-court="' + court.id + '" data-time="' + standardizedTime + '" data-index="' + t + '">' + cellContent + '</td>';
+                tableHtml += '</tr>';
+            }
+
+            tableHtml += '</tbody>';
+            mobileTable.innerHTML = tableHtml;
+
+            // Bind click events for mobile recurring cells
+            mobileTable.querySelectorAll('.recurring-cell').forEach(cell => {
                 cell.addEventListener('click', (e) => this.handleRecurringCellClick(e));
             });
 
-            // Set default dates
-            const startInput = document.getElementById('recurring-start-date');
-            const endInput = document.getElementById('recurring-end-date');
-            if (startInput && !startInput.value) {
-                const today = new Date();
-                startInput.value = today.toISOString().split('T')[0];
-            }
-            if (endInput && !endInput.value) {
-                const threeMonths = new Date();
-                threeMonths.setMonth(threeMonths.getMonth() + 3);
-                endInput.value = threeMonths.toISOString().split('T')[0];
-            }
+            // Bind click events for mobile recurring time cells (edit time on tap)
+            mobileTable.querySelectorAll('.recurring-mobile-time-editable').forEach(cell => {
+                cell.addEventListener('click', (e) => this.showRecurringMobileTimeEditModal(e));
+            });
+        } catch (e) {
+            console.error('[RECURRING MOBILE] Error in renderRecurringMobilePlanning:', e);
+        }
+    },
 
-            // Also render mobile version
-            this.populateRecurringMobileCourtSelector();
-            this.renderRecurringMobilePlanning();
-        },
+    // Handle time change for recurring planning (PC)
+    handleRecurringTimeChange(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            this.renderRecurringPlanning(); // Restore original value
+            return;
+        }
 
-        // Populate the mobile court selector for recurring planning
-        populateRecurringMobileCourtSelector() {
-            try {
-                const select = document.getElementById('recurring-mobile-court-select');
-                if (!select) return;
+        const courtId = e.target.dataset.court;
+        const index = parseInt(e.target.dataset.index);
+        const newTime = e.target.value;
 
-                const courts = Courts.getAvailable(this.currentSeason) || [];
-                if (courts.length === 0) {
-                    select.innerHTML = '<option value="">Nessun campo</option>';
-                    return;
-                }
+        const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
+        if (!recurringTimeTemplates[courtId]) {
+            // Initial default if not exists
+            recurringTimeTemplates[courtId] = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        }
 
-                const currentValue = select.value;
-                select.innerHTML = '';
-                courts.forEach((court, index) => {
-                    const option = document.createElement('option');
-                    option.value = court.id;
-                    option.textContent = court.name;
-                    if (court.id === currentValue || (index === 0 && !currentValue)) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-            } catch (e) {
-                console.error('[RECURRING MOBILE] Error in populateRecurringMobileCourtSelector:', e);
-            }
-        },
+        recurringTimeTemplates[courtId][index] = newTime;
+        Storage.save('recurring_time_templates', recurringTimeTemplates);
+        this.renderRecurringPlanning();
+    },
 
-        // Render mobile vertical table for recurring planning
-        renderRecurringMobilePlanning() {
-            try {
-                const mobileTable = document.getElementById('recurring-mobile-planning-table');
-                const select = document.getElementById('recurring-mobile-court-select');
-                if (!mobileTable || !select) return;
+    // Modal semplificato per modificare l'orario di una cella da mobile (Ricorrente)
+    showRecurringMobileTimeEditModal(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            return;
+        }
 
-                const courts = Courts.getAvailable(this.currentSeason) || [];
-                const selectedCourtId = select.value;
-                const court = courts.find(c => c.id === selectedCourtId) || courts[0];
+        const cell = e.target.closest('.recurring-mobile-time-editable');
+        if (!cell) return;
 
-                if (!court) {
-                    mobileTable.innerHTML = '<tbody><tr><td colspan="2" style="padding:20px;text-align:center;">Nessun campo disponibile.</td></tr></tbody>';
-                    return;
-                }
+        const courtId = cell.dataset.court;
+        const index = parseInt(cell.dataset.index);
+        const currentTime = cell.textContent.trim();
 
-                const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-                const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
-                const times = recurringTimeTemplates[court.id] || defaultTimes;
+        // Parse current time
+        const timeParts = currentTime.replace('.', ':').split(':');
+        const currentHour = timeParts[0] || '08';
+        const currentMin = timeParts[1] || '00';
 
-                let tableHtml = '<colgroup><col style="width:75px"><col style="width:auto"></colgroup>';
-                tableHtml += '<tbody>';
-                tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
+        const court = Courts.getById(courtId);
+        const courtName = court?.name || 'Campo';
 
-                for (let t = 0; t < times.length; t++) {
-                    const time = times[t];
-                    const standardizedTime = time.replace('.', ':');
-                    const key = `${court.id}_${standardizedTime}`;
-                    const activity = this.recurringTemplate ? this.recurringTemplate[key] : null;
+        const title = `✏️ Modifica Orario Ricorrente - ${courtName}`;
 
-                    let cellClass = activity ? `activity-${activity.type}` : 'activity-free';
-                    let cellContent = '-';
-
-                    if (activity) {
-                        if (activity.players && activity.players.some(p => p && p.trim())) {
-                            cellContent = activity.players.filter(p => p && p.trim()).join('<br>');
-                        } else if (activity.label) {
-                            cellContent = activity.label;
-                        }
-                    }
-
-                    tableHtml += '<tr>';
-                    tableHtml += '<td class="time-column recurring-mobile-time-editable" data-court="' + court.id + '" data-index="' + t + '">' + time + '</td>';
-                    tableHtml += '<td class="activity-cell recurring-cell ' + cellClass + '" data-court="' + court.id + '" data-time="' + standardizedTime + '" data-index="' + t + '">' + cellContent + '</td>';
-                    tableHtml += '</tr>';
-                }
-
-                tableHtml += '</tbody>';
-                mobileTable.innerHTML = tableHtml;
-
-                // Bind click events for mobile recurring cells
-                mobileTable.querySelectorAll('.recurring-cell').forEach(cell => {
-                    cell.addEventListener('click', (e) => this.handleRecurringCellClick(e));
-                });
-
-                // Bind click events for mobile recurring time cells (edit time on tap)
-                mobileTable.querySelectorAll('.recurring-mobile-time-editable').forEach(cell => {
-                    cell.addEventListener('click', (e) => this.showRecurringMobileTimeEditModal(e));
-                });
-            } catch (e) {
-                console.error('[RECURRING MOBILE] Error in renderRecurringMobilePlanning:', e);
-            }
-        },
-
-        // Handle time change for recurring planning (PC)
-        handleRecurringTimeChange(e) {
-            // Block editing if not admin
-            if (!window.isAdmin) {
-                alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
-                this.renderRecurringPlanning(); // Restore original value
-                return;
-            }
-
-            const courtId = e.target.dataset.court;
-            const index = parseInt(e.target.dataset.index);
-            const newTime = e.target.value;
-
-            const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
-            if (!recurringTimeTemplates[courtId]) {
-                // Initial default if not exists
-                recurringTimeTemplates[courtId] = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-            }
-
-            recurringTimeTemplates[courtId][index] = newTime;
-            Storage.save('recurring_time_templates', recurringTimeTemplates);
-            this.renderRecurringPlanning();
-        },
-
-        // Modal semplificato per modificare l'orario di una cella da mobile (Ricorrente)
-        showRecurringMobileTimeEditModal(e) {
-            // Block editing if not admin
-            if (!window.isAdmin) {
-                alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
-                return;
-            }
-
-            const cell = e.target.closest('.recurring-mobile-time-editable');
-            if (!cell) return;
-
-            const courtId = cell.dataset.court;
-            const index = parseInt(cell.dataset.index);
-            const currentTime = cell.textContent.trim();
-
-            // Parse current time
-            const timeParts = currentTime.replace('.', ':').split(':');
-            const currentHour = timeParts[0] || '08';
-            const currentMin = timeParts[1] || '00';
-
-            const court = Courts.getById(courtId);
-            const courtName = court?.name || 'Campo';
-
-            const title = `✏️ Modifica Orario Ricorrente - ${courtName}`;
-
-            const body = `
+        const body = `
             <div style="text-align: center; padding: 10px 0;">
                 <p style="color: #a0aec0; margin-bottom: 20px;">Orario attuale: <strong style="color: #2d8a4e;">${currentTime}</strong></p>
                 <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
                     <select id="recurring-mobile-time-hour" class="filter-select" style="padding: 12px 20px; font-size: 1.2rem; min-width: 80px;">
                         ${Array.from({ length: 16 }, (_, i) => i + 8)
-                    .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === currentHour ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
-                    .join('')}
+                .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === currentHour ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
+                .join('')}
                     </select>
                     <span style="font-size: 1.5rem; font-weight: bold;">:</span>
                     <select id="recurring-mobile-time-min" class="filter-select" style="padding: 12px 20px; font-size: 1.2rem; min-width: 80px;">
                         ${Array.from({ length: 60 }, (_, i) => i)
-                    .map(m => `<option value="${String(m).padStart(2, '0')}" ${String(m).padStart(2, '0') === currentMin ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`)
-                    .join('')}
+                .map(m => `<option value="${String(m).padStart(2, '0')}" ${String(m).padStart(2, '0') === currentMin ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`)
+                .join('')}
                     </select>
                 </div>
             </div>
         `;
 
-            const footer = `
+        const footer = `
             <div style="display: flex; justify-content: center; gap: 15px;">
                 <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
                 <button class="btn btn-primary" onclick="App.confirmRecurringMobileTimeEdit('${courtId}', ${index})">✓ Salva</button>
             </div>
         `;
 
-            this.showModal(title, body, footer);
-        },
+        this.showModal(title, body, footer);
+    },
 
-        // Conferma modifica orario da mobile (Ricorrente)
-        confirmRecurringMobileTimeEdit(courtId, index) {
-            const hourEl = document.getElementById('recurring-mobile-time-hour');
-            const minEl = document.getElementById('recurring-mobile-time-min');
+    // Conferma modifica orario da mobile (Ricorrente)
+    confirmRecurringMobileTimeEdit(courtId, index) {
+        const hourEl = document.getElementById('recurring-mobile-time-hour');
+        const minEl = document.getElementById('recurring-mobile-time-min');
 
-            if (!hourEl || !minEl) {
-                console.error('[RECURRING MOBILE TIME] Elements not found');
-                return;
-            }
+        if (!hourEl || !minEl) {
+            console.error('[RECURRING MOBILE TIME] Elements not found');
+            return;
+        }
 
-            const newTime = `${hourEl.value}.${minEl.value}`;
+        const newTime = `${hourEl.value}.${minEl.value}`;
 
-            const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
-            if (!recurringTimeTemplates[courtId]) {
-                recurringTimeTemplates[courtId] = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-            }
+        const recurringTimeTemplates = Storage.load('recurring_time_templates', {});
+        if (!recurringTimeTemplates[courtId]) {
+            recurringTimeTemplates[courtId] = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        }
 
-            recurringTimeTemplates[courtId][index] = newTime;
-            Storage.save('recurring_time_templates', recurringTimeTemplates);
+        recurringTimeTemplates[courtId][index] = newTime;
+        Storage.save('recurring_time_templates', recurringTimeTemplates);
 
-            this.closeModal();
-            this.renderRecurringPlanning();
-        },
+        this.closeModal();
+        this.renderRecurringPlanning();
+    },
 
-        handleRecurringCellClick(e) {
-            // Block editing if not admin
-            if (!window.isAdmin) {
-                alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
-                return;
-            }
+    handleRecurringCellClick(e) {
+        // Block editing if not admin
+        if (!window.isAdmin) {
+            alert('⚠️ Modalità sola lettura. Accedi come admin per modificare.');
+            return;
+        }
 
-            const cell = e.target.closest('.recurring-cell');
-            if (!cell) return;
+        const cell = e.target.closest('.recurring-cell');
+        if (!cell) return;
 
-            const courtId = cell.dataset.court;
-            const time = cell.dataset.time;
-            const court = Courts.getById(courtId);
+        const courtId = cell.dataset.court;
+        const time = cell.dataset.time;
+        const court = Courts.getById(courtId);
 
-            this.showRecurringSlotModal(courtId, time, court.name);
-        },
+        this.showRecurringSlotModal(courtId, time, court.name);
+    },
 
-        showRecurringSlotModal(courtId, time, courtName) {
-            const allPlayers = Players.getAll() || [];
-            const court = Courts.getById(courtId);
-            const key = `${courtId}_${time}`;
-            const existing = this.recurringTemplate[key];
+    showRecurringSlotModal(courtId, time, courtName) {
+        const allPlayers = Players.getAll() || [];
+        const court = Courts.getById(courtId);
+        const key = `${courtId}_${time}`;
+        const existing = this.recurringTemplate[key];
 
-            // Calculate end time
-            const [h, m] = time.split(':').map(Number);
-            const defaultEndTime = `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            const endTime = existing?.to || defaultEndTime;
+        // Calculate end time
+        const [h, m] = time.split(':').map(Number);
+        const defaultEndTime = `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const endTime = existing?.to || defaultEndTime;
 
-            const activityTypes = [
-                { id: 'scuola', label: 'Scuola' },
-                { id: 'torneo', label: 'Torneo' },
-                { id: 'ago', label: 'AGO' },
-                { id: 'promo', label: 'PROMO' },
-                { id: 'manutenzione', label: 'Manutenzione' }
-            ];
+        const activityTypes = [
+            { id: 'scuola', label: 'Scuola' },
+            { id: 'torneo', label: 'Torneo' },
+            { id: 'ago', label: 'AGO' },
+            { id: 'promo', label: 'PROMO' },
+            { id: 'manutenzione', label: 'Manutenzione' }
+        ];
 
-            const title = existing ? `Gestione Attività Ricorrente - ${courtName}` : `Nuova Attività Ricorrente - ${courtName} (${time} - ${endTime})`;
+        const title = existing ? `Gestione Attività Ricorrente - ${courtName}` : `Nuova Attività Ricorrente - ${courtName} (${time} - ${endTime})`;
 
-            const body = `
+        const body = `
             <div class="modal-three-columns">
                 <!-- Row for Activity/Player selection with radio buttons -->
                 <div class="selection-row" id="recurring-selection-row">
@@ -3321,8 +3325,8 @@ const App = {
                                 <div style="display: flex; gap: 5px; align-items: center;">
                                     <select id="recurring-slot-start-hour" class="filter-select">
                                         ${Array.from({ length: 16 }, (_, i) => i + 8)
-                    .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === time.split(':')[0] ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
-                    .join('')}
+                .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === time.split(':')[0] ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
+                .join('')}
                                     </select>
                                     <span>:</span>
                                     <select id="recurring-slot-start-min" class="filter-select">
@@ -3336,8 +3340,8 @@ const App = {
                                 <div style="display: flex; gap: 5px; align-items: center;">
                                     <select id="recurring-slot-end-hour" class="filter-select">
                                         ${Array.from({ length: 16 }, (_, i) => i + 8)
-                    .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === endTime.split(':')[0] ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
-                    .join('')}
+                .map(h => `<option value="${String(h).padStart(2, '0')}" ${String(h).padStart(2, '0') === endTime.split(':')[0] ? 'selected' : ''}>${String(h).padStart(2, '0')}</option>`)
+                .join('')}
                                     </select>
                                     <span>:</span>
                                     <select id="recurring-slot-end-min" class="filter-select">
@@ -3356,7 +3360,7 @@ const App = {
             </div>
         `;
 
-            const footer = `
+        const footer = `
             <div class="modal-footer-buttons">
                 <div class="footer-left-buttons">
                     ${existing ? `<button class="btn btn-danger btn-sm" onclick="App.deleteRecurringSlot('${courtId}', '${time}')">🗑️ Elimina</button>` : ''}
@@ -3370,250 +3374,250 @@ const App = {
             </div>
         `;
 
-            this.showModal(title, body, footer);
-            this.activeRecurringPlayerSlot = 1;
-        },
+        this.showModal(title, body, footer);
+        this.activeRecurringPlayerSlot = 1;
+    },
 
-        // Toggle selection mode for recurring modal
-        toggleRecurringSelectionMode(mode) {
-            const activitySelect = document.getElementById('recurring-activity-type-select');
-            const playerSelect = document.getElementById('recurring-player-select');
+    // Toggle selection mode for recurring modal
+    toggleRecurringSelectionMode(mode) {
+        const activitySelect = document.getElementById('recurring-activity-type-select');
+        const playerSelect = document.getElementById('recurring-player-select');
 
-            if (mode === 'activity') {
-                activitySelect.disabled = false;
-                playerSelect.disabled = true;
-            } else {
-                activitySelect.disabled = true;
-                playerSelect.disabled = false;
+        if (mode === 'activity') {
+            activitySelect.disabled = false;
+            playerSelect.disabled = true;
+        } else {
+            activitySelect.disabled = true;
+            playerSelect.disabled = false;
+        }
+    },
+
+    activeRecurringPlayerSlot: 1,
+
+    setActiveRecurringPlayerInput(slotNum) {
+        this.activeRecurringPlayerSlot = slotNum;
+        document.querySelectorAll('#recurring-slot-player-1, #recurring-slot-player-2, #recurring-slot-player-3, #recurring-slot-player-4').forEach((input, index) => {
+            input.classList.toggle('active-slot', index + 1 === slotNum);
+        });
+    },
+
+    insertRecurringPlayerInSlot(playerName) {
+        const input = document.getElementById(`recurring-slot-player-${this.activeRecurringPlayerSlot}`);
+        if (input) {
+            input.value = playerName;
+            if (this.activeRecurringPlayerSlot < 4) {
+                this.setActiveRecurringPlayerInput(this.activeRecurringPlayerSlot + 1);
             }
-        },
+        }
+    },
 
-        activeRecurringPlayerSlot: 1,
+    confirmRecurringSlot() {
+        const courtId = document.getElementById('recurring-court-id').value;
+        const originalTime = document.getElementById('recurring-original-time').value;
+        const type = document.getElementById('recurring-selected-type').value;
+        const label = document.getElementById('recurring-slot-label').value.trim();
 
-            setActiveRecurringPlayerInput(slotNum) {
-            this.activeRecurringPlayerSlot = slotNum;
-            document.querySelectorAll('#recurring-slot-player-1, #recurring-slot-player-2, #recurring-slot-player-3, #recurring-slot-player-4').forEach((input, index) => {
-                input.classList.toggle('active-slot', index + 1 === slotNum);
-            });
-        },
+        const startHour = document.getElementById('recurring-slot-start-hour').value;
+        const startMin = document.getElementById('recurring-slot-start-min').value;
+        const endHour = document.getElementById('recurring-slot-end-hour').value;
+        const endMin = document.getElementById('recurring-slot-end-min').value;
 
-        insertRecurringPlayerInSlot(playerName) {
-            const input = document.getElementById(`recurring-slot-player-${this.activeRecurringPlayerSlot}`);
-            if (input) {
-                input.value = playerName;
-                if (this.activeRecurringPlayerSlot < 4) {
-                    this.setActiveRecurringPlayerInput(this.activeRecurringPlayerSlot + 1);
+        const fromTime = `${startHour}:${startMin}`;
+        const toTime = `${endHour}:${endMin}`;
+
+        // Collect players
+        const players = [];
+        for (let i = 1; i <= 4; i++) {
+            const input = document.getElementById(`recurring-slot-player-${i}`);
+            if (input && input.value.trim()) {
+                players.push(input.value.trim());
+            }
+        }
+
+        if (players.length === 0 && !type) {
+            alert('Inserisci almeno un giocatore o seleziona un tipo attività.');
+            return;
+        }
+
+        // Clear old entries in the time range
+        Object.keys(this.recurringTemplate).forEach(key => {
+            if (key.startsWith(courtId + '_')) {
+                const keyTime = key.split('_')[1];
+                if (keyTime >= fromTime && keyTime < toTime) {
+                    delete this.recurringTemplate[key];
                 }
             }
-        },
+        });
 
-        confirmRecurringSlot() {
-            const courtId = document.getElementById('recurring-court-id').value;
-            const originalTime = document.getElementById('recurring-original-time').value;
-            const type = document.getElementById('recurring-selected-type').value;
-            const label = document.getElementById('recurring-slot-label').value.trim();
+        // Create entries for each 1-hour slot in the range
+        const startTimeMinutes = parseInt(startHour) * 60 + parseInt(startMin);
+        const endTimeMinutes = parseInt(endHour) * 60 + parseInt(endMin);
 
-            const startHour = document.getElementById('recurring-slot-start-hour').value;
-            const startMin = document.getElementById('recurring-slot-start-min').value;
-            const endHour = document.getElementById('recurring-slot-end-hour').value;
-            const endMin = document.getElementById('recurring-slot-end-min').value;
+        for (let t = startTimeMinutes; t < endTimeMinutes; t += 60) {
+            const slotHour = Math.floor(t / 60);
+            const slotMin = t % 60;
+            const nextHour = Math.floor((t + 60) / 60);
+            const nextMin = (t + 60) % 60;
 
-            const fromTime = `${startHour}:${startMin}`;
-            const toTime = `${endHour}:${endMin}`;
+            const slotFrom = `${String(slotHour).padStart(2, '0')}:${String(slotMin).padStart(2, '0')}`;
+            const slotTo = `${String(nextHour).padStart(2, '0')}:${String(nextMin).padStart(2, '0')}`;
 
-            // Collect players
-            const players = [];
-            for (let i = 1; i <= 4; i++) {
-                const input = document.getElementById(`recurring-slot-player-${i}`);
-                if (input && input.value.trim()) {
-                    players.push(input.value.trim());
-                }
-            }
+            const key = `${courtId}_${slotFrom}`;
+            const displayLabel = players.length > 0 ? players.join(' / ') : (type ? this.recurringActivityTypes.find(a => a.id === type)?.label || type : '');
+            this.recurringTemplate[key] = {
+                type: type || 'match',
+                label: displayLabel,
+                players,
+                from: slotFrom,
+                to: slotTo
+            };
+        }
 
-            if (players.length === 0 && !type) {
-                alert('Inserisci almeno un giocatore o seleziona un tipo attività.');
-                return;
-            }
+        this.closeModal();
+        this.renderRecurringPlanning();
+    },
 
-            // Clear old entries in the time range
-            Object.keys(this.recurringTemplate).forEach(key => {
-                if (key.startsWith(courtId + '_')) {
-                    const keyTime = key.split('_')[1];
-                    if (keyTime >= fromTime && keyTime < toTime) {
-                        delete this.recurringTemplate[key];
+    // Activity types for recurring (needed in confirmRecurringSlot)
+    recurringActivityTypes: [
+        { id: 'scuola', label: 'Scuola' },
+        { id: 'torneo', label: 'Torneo' },
+        { id: 'ago', label: 'AGO' },
+        { id: 'promo', label: 'PROMO' },
+        { id: 'manutenzione', label: 'Manutenzione' }
+    ],
+
+    deleteRecurringSlot(courtId, time) {
+        const key = `${courtId}_${time}`;
+        delete this.recurringTemplate[key];
+        this.closeModal();
+        this.renderRecurringPlanning();
+    },
+
+    generateRecurringReservations() {
+        const dayOfWeek = parseInt(document.getElementById('recurring-day').value);
+        const startDate = document.getElementById('recurring-start-date').value;
+        const endDate = document.getElementById('recurring-end-date').value;
+
+        if (!startDate || !endDate) {
+            alert('Seleziona data inizio e data fine.');
+            return;
+        }
+
+        if (Object.keys(this.recurringTemplate).length === 0) {
+            alert('Imposta almeno un\'attività cliccando sulle celle.');
+            return;
+        }
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (start >= end) {
+            alert('La data fine deve essere successiva alla data inizio.');
+            return;
+        }
+
+        // Find all dates matching the day of week
+        const dates = [];
+        let current = new Date(start);
+
+        // Move to first matching day
+        while (current.getDay() !== dayOfWeek && current <= end) {
+            current.setDate(current.getDate() + 1);
+        }
+
+        // Collect all matching dates
+        while (current <= end) {
+            dates.push(new Date(current));
+            current.setDate(current.getDate() + 7);
+        }
+
+        if (dates.length === 0) {
+            alert('Nessuna data trovata nel range selezionato.');
+            return;
+        }
+
+        const dayNames = ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
+        const dayName = dayNames[dayOfWeek];
+
+        // Group template by court
+        const courtActivities = {};
+        Object.keys(this.recurringTemplate).forEach(key => {
+            const [courtId, time] = key.split('_');
+            if (!courtActivities[courtId]) courtActivities[courtId] = [];
+            courtActivities[courtId].push({ time, ...this.recurringTemplate[key] });
+        });
+
+        let totalCreated = 0;
+
+        // Generate reservations for each date
+        dates.forEach(date => {
+            const dateStr = date.toISOString().split('T')[0];
+
+            Object.keys(courtActivities).forEach(courtId => {
+                const court = Courts.getById(courtId);
+                if (!court) return;
+
+                court.reservations = court.reservations || [];
+
+                courtActivities[courtId].forEach(activity => {
+                    // Use the saved to time from the activity, or calculate if not present
+                    const endTime = activity.to || (() => {
+                        const [h, m] = activity.time.split(':').map(Number);
+                        return `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    })();
+
+                    // Check if already exists for this specific date and time
+                    const exists = court.reservations.some(r =>
+                        r.date === dateStr && r.from === activity.time
+                    );
+
+                    if (!exists) {
+                        court.reservations.push({
+                            day: dayName,
+                            date: dateStr,  // Save with specific date!
+                            from: activity.time,
+                            to: endTime,
+                            type: activity.type,
+                            label: activity.label,
+                            players: activity.players || [],
+                            price: ''
+                        });
+                        totalCreated++;
                     }
-                }
-            });
-
-            // Create entries for each 1-hour slot in the range
-            const startTimeMinutes = parseInt(startHour) * 60 + parseInt(startMin);
-            const endTimeMinutes = parseInt(endHour) * 60 + parseInt(endMin);
-
-            for (let t = startTimeMinutes; t < endTimeMinutes; t += 60) {
-                const slotHour = Math.floor(t / 60);
-                const slotMin = t % 60;
-                const nextHour = Math.floor((t + 60) / 60);
-                const nextMin = (t + 60) % 60;
-
-                const slotFrom = `${String(slotHour).padStart(2, '0')}:${String(slotMin).padStart(2, '0')}`;
-                const slotTo = `${String(nextHour).padStart(2, '0')}:${String(nextMin).padStart(2, '0')}`;
-
-                const key = `${courtId}_${slotFrom}`;
-                const displayLabel = players.length > 0 ? players.join(' / ') : (type ? this.recurringActivityTypes.find(a => a.id === type)?.label || type : '');
-                this.recurringTemplate[key] = {
-                    type: type || 'match',
-                    label: displayLabel,
-                    players,
-                    from: slotFrom,
-                    to: slotTo
-                };
-            }
-
-            this.closeModal();
-            this.renderRecurringPlanning();
-        },
-
-        // Activity types for recurring (needed in confirmRecurringSlot)
-        recurringActivityTypes: [
-            { id: 'scuola', label: 'Scuola' },
-            { id: 'torneo', label: 'Torneo' },
-            { id: 'ago', label: 'AGO' },
-            { id: 'promo', label: 'PROMO' },
-            { id: 'manutenzione', label: 'Manutenzione' }
-        ],
-
-            deleteRecurringSlot(courtId, time) {
-            const key = `${courtId}_${time}`;
-            delete this.recurringTemplate[key];
-            this.closeModal();
-            this.renderRecurringPlanning();
-        },
-
-        generateRecurringReservations() {
-            const dayOfWeek = parseInt(document.getElementById('recurring-day').value);
-            const startDate = document.getElementById('recurring-start-date').value;
-            const endDate = document.getElementById('recurring-end-date').value;
-
-            if (!startDate || !endDate) {
-                alert('Seleziona data inizio e data fine.');
-                return;
-            }
-
-            if (Object.keys(this.recurringTemplate).length === 0) {
-                alert('Imposta almeno un\'attività cliccando sulle celle.');
-                return;
-            }
-
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-
-            if (start >= end) {
-                alert('La data fine deve essere successiva alla data inizio.');
-                return;
-            }
-
-            // Find all dates matching the day of week
-            const dates = [];
-            let current = new Date(start);
-
-            // Move to first matching day
-            while (current.getDay() !== dayOfWeek && current <= end) {
-                current.setDate(current.getDate() + 1);
-            }
-
-            // Collect all matching dates
-            while (current <= end) {
-                dates.push(new Date(current));
-                current.setDate(current.getDate() + 7);
-            }
-
-            if (dates.length === 0) {
-                alert('Nessuna data trovata nel range selezionato.');
-                return;
-            }
-
-            const dayNames = ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
-            const dayName = dayNames[dayOfWeek];
-
-            // Group template by court
-            const courtActivities = {};
-            Object.keys(this.recurringTemplate).forEach(key => {
-                const [courtId, time] = key.split('_');
-                if (!courtActivities[courtId]) courtActivities[courtId] = [];
-                courtActivities[courtId].push({ time, ...this.recurringTemplate[key] });
-            });
-
-            let totalCreated = 0;
-
-            // Generate reservations for each date
-            dates.forEach(date => {
-                const dateStr = date.toISOString().split('T')[0];
-
-                Object.keys(courtActivities).forEach(courtId => {
-                    const court = Courts.getById(courtId);
-                    if (!court) return;
-
-                    court.reservations = court.reservations || [];
-
-                    courtActivities[courtId].forEach(activity => {
-                        // Use the saved to time from the activity, or calculate if not present
-                        const endTime = activity.to || (() => {
-                            const [h, m] = activity.time.split(':').map(Number);
-                            return `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                        })();
-
-                        // Check if already exists for this specific date and time
-                        const exists = court.reservations.some(r =>
-                            r.date === dateStr && r.from === activity.time
-                        );
-
-                        if (!exists) {
-                            court.reservations.push({
-                                day: dayName,
-                                date: dateStr,  // Save with specific date!
-                                from: activity.time,
-                                to: endTime,
-                                type: activity.type,
-                                label: activity.label,
-                                players: activity.players || [],
-                                price: ''
-                            });
-                            totalCreated++;
-                        }
-                    });
-
-                    Courts.update(courtId, court);
                 });
+
+                Courts.update(courtId, court);
             });
+        });
 
-            alert(`✅ Generate ${totalCreated} prenotazioni per ${dates.length} ${dayName}!`);
+        alert(`✅ Generate ${totalCreated} prenotazioni per ${dates.length} ${dayName}!`);
 
-            // Clear template
-            this.recurringTemplate = {};
-            this.renderRecurringPlanning();
-        },
+        // Clear template
+        this.recurringTemplate = {};
+        this.renderRecurringPlanning();
+    },
 
-        // Mobile times editing modal
-        showMobileTimesModal() {
-            const select = document.getElementById('admin-mobile-court-select');
-            if (!select || !select.value) {
-                alert('Seleziona prima un campo');
-                return;
-            }
-            const courtId = select.value;
-            const courts = Courts.getAvailable(this.currentSeason);
-            const court = courts.find(c => c.id === courtId);
-            if (!court) return;
+    // Mobile times editing modal
+    showMobileTimesModal() {
+        const select = document.getElementById('admin-mobile-court-select');
+        if (!select || !select.value) {
+            alert('Seleziona prima un campo');
+            return;
+        }
+        const courtId = select.value;
+        const courts = Courts.getAvailable(this.currentSeason);
+        const court = courts.find(c => c.id === courtId);
+        if (!court) return;
 
-            const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
-            const planningTemplates = Storage.load('planning_templates', {}) || {};
-            const dayTemplate = planningTemplates[dateStr] || {};
-            const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-            const times = dayTemplate[courtId] || [...defaultTimes];
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        const dayTemplate = planningTemplates[dateStr] || {};
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        const times = dayTemplate[courtId] || [...defaultTimes];
 
-            let timesHtml = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 60vh; overflow-y: auto;">';
-            times.forEach((time, index) => {
-                timesHtml += `
+        let timesHtml = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 60vh; overflow-y: auto;">';
+        times.forEach((time, index) => {
+            timesHtml += `
                 <input type="text" 
                        class="mobile-time-input" 
                        value="${time}" 
@@ -3621,143 +3625,143 @@ const App = {
                        style="padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 1rem;"
                        onclick="this.select()">
             `;
-            });
-            timesHtml += '</div>';
-            timesHtml += `
+        });
+        timesHtml += '</div>';
+        timesHtml += `
             <div style="margin-top: 15px; display: flex; gap: 10px;">
                 <button class="btn btn-outline" onclick="App.addMobileTimeSlot('${courtId}')" style="flex: 1;">+ Aggiungi</button>
                 <button class="btn btn-outline" onclick="App.removeMobileTimeSlot('${courtId}')" style="flex: 1;">- Rimuovi ultimo</button>
             </div>
         `;
 
-            const footer = `
+        const footer = `
             <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
             <button class="btn btn-primary" onclick="App.saveMobileTimes('${courtId}')">Salva Orari</button>
         `;
 
-            this.showModal(`⏰ Orari ${court.name}`, timesHtml, footer);
-        },
+        this.showModal(`⏰ Orari ${court.name}`, timesHtml, footer);
+    },
 
-        // Save mobile times
-        saveMobileTimes(courtId) {
-            const inputs = document.querySelectorAll('.mobile-time-input');
-            const newTimes = [];
-            inputs.forEach(input => {
-                if (input.value.trim()) {
-                    newTimes.push(input.value.trim());
-                }
-            });
-
-            if (newTimes.length === 0) {
-                alert('Devi inserire almeno un orario');
-                return;
+    // Save mobile times
+    saveMobileTimes(courtId) {
+        const inputs = document.querySelectorAll('.mobile-time-input');
+        const newTimes = [];
+        inputs.forEach(input => {
+            if (input.value.trim()) {
+                newTimes.push(input.value.trim());
             }
+        });
 
-            const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
-            const planningTemplates = Storage.load('planning_templates', {}) || {};
-            if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
-            planningTemplates[dateStr][courtId] = newTimes;
-            Storage.save('planning_templates', planningTemplates);
+        if (newTimes.length === 0) {
+            alert('Devi inserire almeno un orario');
+            return;
+        }
 
-            this.closeModal();
-            this.renderPlanning();
-            this.renderMobilePlanning();
-        },
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
+        planningTemplates[dateStr][courtId] = newTimes;
+        Storage.save('planning_templates', planningTemplates);
 
-        // Add time slot in mobile modal
-        addMobileTimeSlot(courtId) {
-            const container = document.querySelector('.modal-body > div');
-            if (!container) return;
-            const inputs = container.querySelectorAll('.mobile-time-input');
-            const lastTime = inputs[inputs.length - 1]?.value || '22.30';
+        this.closeModal();
+        this.renderPlanning();
+        this.renderMobilePlanning();
+    },
 
-            // Try to add +1 hour
-            const [hours, mins] = lastTime.split('.');
-            let newHour = parseInt(hours) + 1;
-            if (newHour > 23) newHour = 23;
-            const newTime = String(newHour).padStart(2, '0') + '.' + (mins || '30');
+    // Add time slot in mobile modal
+    addMobileTimeSlot(courtId) {
+        const container = document.querySelector('.modal-body > div');
+        if (!container) return;
+        const inputs = container.querySelectorAll('.mobile-time-input');
+        const lastTime = inputs[inputs.length - 1]?.value || '22.30';
 
-            const newInput = document.createElement('input');
-            newInput.type = 'text';
-            newInput.className = 'mobile-time-input';
-            newInput.value = newTime;
-            newInput.dataset.index = inputs.length;
-            newInput.style = 'padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 1rem;';
-            newInput.onclick = function () { this.select(); };
-            container.appendChild(newInput);
-        },
+        // Try to add +1 hour
+        const [hours, mins] = lastTime.split('.');
+        let newHour = parseInt(hours) + 1;
+        if (newHour > 23) newHour = 23;
+        const newTime = String(newHour).padStart(2, '0') + '.' + (mins || '30');
 
-        // Remove last time slot in mobile modal
-        removeMobileTimeSlot(courtId) {
-            const inputs = document.querySelectorAll('.mobile-time-input');
-            if (inputs.length > 1) {
-                inputs[inputs.length - 1].remove();
-            }
-        },
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.className = 'mobile-time-input';
+        newInput.value = newTime;
+        newInput.dataset.index = inputs.length;
+        newInput.style = 'padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 1rem;';
+        newInput.onclick = function () { this.select(); };
+        container.appendChild(newInput);
+    },
 
-        // Date navigation for header buttons
-        changeDay(delta) {
-            this.currentPlanningDate.setDate(this.currentPlanningDate.getDate() + delta);
-            this.renderPlanning();
-            this.renderMobilePlanning();
+    // Remove last time slot in mobile modal
+    removeMobileTimeSlot(courtId) {
+        const inputs = document.querySelectorAll('.mobile-time-input');
+        if (inputs.length > 1) {
+            inputs[inputs.length - 1].remove();
+        }
+    },
+
+    // Date navigation for header buttons
+    changeDay(delta) {
+        this.currentPlanningDate.setDate(this.currentPlanningDate.getDate() + delta);
+        this.renderPlanning();
+        this.renderMobilePlanning();
+    }
+};
+
+// Initialize app with Firebase support
+document.addEventListener('DOMContentLoaded', async () => {
+    // Update Firebase status indicator
+    const updateFirebaseStatus = () => {
+        const iconEl = document.getElementById('firebase-status-icon');
+        const textEl = document.getElementById('firebase-status-text');
+        const statusEl = document.getElementById('firebase-status');
+        const migrateBtn = document.getElementById('migrate-firebase-btn');
+
+        if (!iconEl || !textEl || !statusEl) return;
+
+        if (Storage.isFirebaseConnected()) {
+            iconEl.textContent = '✅';
+            textEl.textContent = 'Firebase connesso - Dati sincronizzati in tempo reale';
+            statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+            statusEl.style.border = '1px solid #22c55e';
+            if (migrateBtn) migrateBtn.style.display = 'inline-block';
+        } else {
+            iconEl.textContent = '⚠️';
+            textEl.textContent = 'Firebase non configurato - I dati sono salvati solo localmente';
+            statusEl.style.background = 'rgba(234, 179, 8, 0.2)';
+            statusEl.style.border = '1px solid #eab308';
+            if (migrateBtn) migrateBtn.style.display = 'inline-block';
         }
     };
 
-    // Initialize app with Firebase support
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Update Firebase status indicator
-        const updateFirebaseStatus = () => {
-            const iconEl = document.getElementById('firebase-status-icon');
-            const textEl = document.getElementById('firebase-status-text');
-            const statusEl = document.getElementById('firebase-status');
-            const migrateBtn = document.getElementById('migrate-firebase-btn');
+    // Initialize storage defaults (async now)
+    await Storage.initializeDefaults();
 
-            if (!iconEl || !textEl || !statusEl) return;
+    // Migrate player levels if needed
+    await migratePlayerLevels();
 
-            if (Storage.isFirebaseConnected()) {
-                iconEl.textContent = '✅';
-                textEl.textContent = 'Firebase connesso - Dati sincronizzati in tempo reale';
-                statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
-                statusEl.style.border = '1px solid #22c55e';
-                if (migrateBtn) migrateBtn.style.display = 'inline-block';
-            } else {
-                iconEl.textContent = '⚠️';
-                textEl.textContent = 'Firebase non configurato - I dati sono salvati solo localmente';
-                statusEl.style.background = 'rgba(234, 179, 8, 0.2)';
-                statusEl.style.border = '1px solid #eab308';
-                if (migrateBtn) migrateBtn.style.display = 'inline-block';
-            }
-        };
+    // Subscribe to real-time updates if Firebase is connected
+    if (Storage.isFirebaseConnected()) {
+        Storage.subscribe(Storage.KEYS.PLAYERS, () => {
+            if (App.currentTab === 'players') Players.renderTable();
+            if (App.currentTab === 'dashboard') App.updateDashboard();
+        });
+        Storage.subscribe(Storage.KEYS.COURTS, () => {
+            if (App.currentTab === 'courts') Courts.renderGrid(App.currentSeason);
+            if (App.currentTab === 'planning') App.renderPlanning();
+            if (App.currentTab === 'recurring') App.renderRecurringPlanning();
+        });
+        Storage.subscribe(Storage.KEYS.SCHEDULED, () => {
+            if (App.currentTab === 'planning') App.renderPlanning();
+            if (App.currentTab === 'dashboard') App.updateDashboard();
+        });
+        Storage.subscribe(Storage.KEYS.SETTINGS, () => {
+            App.loadSettings();
+        });
+    }
 
-        // Initialize storage defaults (async now)
-        await Storage.initializeDefaults();
+    // Initialize app
+    App.init();
 
-        // Migrate player levels if needed
-        await migratePlayerLevels();
-
-        // Subscribe to real-time updates if Firebase is connected
-        if (Storage.isFirebaseConnected()) {
-            Storage.subscribe(Storage.KEYS.PLAYERS, () => {
-                if (App.currentTab === 'players') Players.renderTable();
-                if (App.currentTab === 'dashboard') App.updateDashboard();
-            });
-            Storage.subscribe(Storage.KEYS.COURTS, () => {
-                if (App.currentTab === 'courts') Courts.renderGrid(App.currentSeason);
-                if (App.currentTab === 'planning') App.renderPlanning();
-                if (App.currentTab === 'recurring') App.renderRecurringPlanning();
-            });
-            Storage.subscribe(Storage.KEYS.SCHEDULED, () => {
-                if (App.currentTab === 'planning') App.renderPlanning();
-                if (App.currentTab === 'dashboard') App.updateDashboard();
-            });
-            Storage.subscribe(Storage.KEYS.SETTINGS, () => {
-                App.loadSettings();
-            });
-        }
-
-        // Initialize app
-        App.init();
-
-        // Update Firebase status after a short delay to ensure config is loaded
-        setTimeout(updateFirebaseStatus, 500);
-    });
+    // Update Firebase status after a short delay to ensure config is loaded
+    setTimeout(updateFirebaseStatus, 500);
+});
