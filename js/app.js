@@ -840,7 +840,6 @@ const App = {
                             <tr>
                                 <th style="width: 55px;">Ora</th>
                                 <th style="min-width: 120px;">Attività / Giocatori</th>
-                                <th style="width: 60px;">€</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -863,7 +862,6 @@ const App = {
 
                 let activityClass = 'activity-free';
                 let activityContent = '-';
-                let quotesContent = '-';
 
                 if (res?.players && res.players.some(p => p && p.trim())) {
                     const filledPlayers = res.players.filter(p => p && p.trim());
@@ -875,25 +873,32 @@ const App = {
                     if (hasOnlyFirst && isActivity) {
                         activityClass = 'activity-' + firstPlayerLower;
                         activityContent = res.players[0];
+                    } else if (hasOnlyFirst) {
+                        // Single player with quote
+                        activityClass = 'activity-single-player';
+                        let quote = '';
+                        if (res.payments && res.payments[0]) {
+                            quote = ` (${res.payments[0]}€)`;
+                        } else {
+                            const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
+                            if (rate > 0) quote = ` (${rate}€)`;
+                        }
+                        activityContent = res.players[0] + quote;
                     } else {
+                        // Multiple players with quotes
                         activityClass = 'activity-players';
-                        activityContent = filledPlayers.join(' | ');
-
-                        // Calculate quotes for each player
-                        const quotes = [];
-                        filledPlayers.forEach((playerName, i) => {
-                            const payment = res.payments?.[i];
-                            if (payment) {
-                                quotes.push(`${payment}€`);
+                        const playersWithQuotes = filledPlayers.map((playerName, i) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            let quote = '';
+                            if (res.payments && res.payments[originalIdx]) {
+                                quote = ` (${res.payments[originalIdx]}€)`;
                             } else {
-                                // Try to calculate rate
                                 const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
-                                if (rate > 0) {
-                                    quotes.push(`${rate}€`);
-                                }
+                                if (rate > 0) quote = ` (${rate}€)`;
                             }
+                            return playerName + quote;
                         });
-                        quotesContent = quotes.length > 0 ? quotes.join(' | ') : '-';
+                        activityContent = playersWithQuotes.join(' | ');
                     }
                 } else if (res) {
                     activityClass = 'activity-' + (res.type || 'reserved');
@@ -906,7 +911,6 @@ const App = {
                         <td class="vertical-activity-cell ${activityClass}" 
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
                             onclick="App.handlePlanningAction(event)">${activityContent}</td>
-                        <td class="vertical-quote-cell">${quotesContent}</td>
                     </tr>
                 `;
             });

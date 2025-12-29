@@ -2951,8 +2951,8 @@ body {
 }
 
 /* ===== Non-Admin Mode Styles ===== */
-/* Hide action buttons in players table for non-admin */
-.non-admin-mode #players-table .btn-icon,
+/* Hide action buttons in players table for non-admin, except relations view */
+.non-admin-mode #players-table .btn-icon:not(.view-relations),
 .non-admin-mode #players-table .btn-danger,
 .non-admin-mode #players-table .btn-sm {
     display: none !important;
