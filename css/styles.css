@@ -2317,9 +2317,12 @@ body {
     border: 1px solid #000;
 }
 
-.member-cell {
-    text-align: center;
+.member-cell,
+.member-header {
+    text-align: center !important;
+    padding-left: 0 !important;
     padding-right: 0 !important;
+    vertical-align: middle !important;
 }
 
 /* View selector responsive */
