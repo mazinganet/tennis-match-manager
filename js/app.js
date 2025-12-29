@@ -1023,14 +1023,28 @@ const App = {
                             } else if (hasOnlyFirst) {
                                 cellClass = 'activity-single-player';
                                 // Show quote for single player if available
-                                const quote = res.payments && res.payments[0] ? ' (' + res.payments[0] + '€)' : '';
+                                let quote = '';
+                                if (res.payments && res.payments[0]) {
+                                    quote = ' (' + res.payments[0] + '€)';
+                                } else {
+                                    // Try to calculate rate
+                                    const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
+                                    if (rate > 0) quote = ' (' + rate + '€)';
+                                }
                                 cellContent = res.players[0] + quote;
                             } else {
                                 cellClass = 'activity-players';
                                 // Show each player with their quote
-                                const playersWithQuotes = filledPlayers.map(function (playerName, idx) {
+                                const playersWithQuotes = filledPlayers.map((playerName, idx) => {
                                     const originalIdx = res.players.indexOf(playerName);
-                                    const quote = res.payments && res.payments[originalIdx] ? ' (' + res.payments[originalIdx] + '€)' : '';
+                                    let quote = '';
+                                    if (res.payments && res.payments[originalIdx]) {
+                                        quote = ' (' + res.payments[originalIdx] + '€)';
+                                    } else {
+                                        // Try to calculate rate
+                                        const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
+                                        if (rate > 0) quote = ' (' + rate + '€)';
+                                    }
                                     return playerName + quote;
                                 });
                                 cellContent = playersWithQuotes.join('<br>');
