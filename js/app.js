@@ -2027,7 +2027,7 @@ const App = {
         const level = document.getElementById('level-filter').value;
         const players = Players.search(query, level);
         Players.renderTable(players); // Use the centralized render function
-    },,
+    },
 
     filterHistory() {
         const filters = {
