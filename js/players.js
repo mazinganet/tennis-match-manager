@@ -128,18 +128,18 @@ const Players = {
         return players;
     },
 
-    renderTable() {
+    renderTable(players) {
         const tbody = document.getElementById('players-tbody');
-        const allPlayers = this.getAll();
+        const allPlayers = players || this.getAll();
 
         if (allPlayers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Nessun giocatore registrato</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Nessun giocatore trovato</td></tr>';
             return;
         }
 
         // Create options for player dropdowns (for preferences/vetos)
         const createPlayerOptions = (currentPlayerId, selectedIds = []) => {
-            return allPlayers
+            return this.getAll() // Always use full list for options
                 .filter(p => p.id !== currentPlayerId)
                 .map(p => {
                     const isSelected = selectedIds.includes(p.id);

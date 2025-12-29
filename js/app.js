@@ -427,6 +427,7 @@ const App = {
         // Players
         document.getElementById('add-player-btn')?.addEventListener('click', () => this.showPlayerModal());
         document.getElementById('player-search')?.addEventListener('input', () => this.filterPlayers());
+        document.getElementById('search-player-btn')?.addEventListener('click', () => this.filterPlayers());
         document.getElementById('level-filter')?.addEventListener('change', () => this.filterPlayers());
         document.getElementById('players-tbody')?.addEventListener('click', (e) => this.handlePlayerAction(e));
 
@@ -2025,26 +2026,8 @@ const App = {
         const query = document.getElementById('player-search').value;
         const level = document.getElementById('level-filter').value;
         const players = Players.search(query, level);
-
-        const tbody = document.getElementById('players-tbody');
-        if (players.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessun giocatore trovato</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = players.map(p => `
-            <tr data-id="${p.id}">
-                <td><strong>${p.name}</strong></td>
-                <td>${p.phone || '-'}</td>
-                <td><span class="level-badge ${p.level}">${p.level}</span></td>
-                <td>
-                    <button class="btn-icon send-wa" title="Chiedi Disponibilità">💬</button>
-                    <button class="btn-icon edit-player" title="Modifica">✏️</button>
-                    <button class="btn-icon delete-player" title="Elimina">🗑️</button>
-                </td>
-            </tr>
-        `).join('');
-    },
+        Players.renderTable(players); // Use the centralized render function
+    },,
 
     filterHistory() {
         const filters = {

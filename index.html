@@ -286,13 +286,18 @@
                     </button>
                 </div>
 
-                <div class="filters-bar">
-                    <input type="text" id="player-search" placeholder="Cerca giocatore..." class="search-input">
-                    <option value="">Tutti i livelli</option>
-                    <option value="principiante">Principiante</option>
-                    <option value="intermedio">Intermedio</option>
-                    <option value="avanzato">Avanzato</option>
-                    <option value="agonista">Agonista</option>
+                <div class="filters-bar" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <input type="text" id="player-search" placeholder="Cerca..." class="search-input"
+                            style="width: 150px;">
+                        <button class="btn btn-secondary" id="search-player-btn" title="Cerca">🔍</button>
+                    </div>
+                    <select id="level-filter" class="search-input" style="width: auto; flex: 1; max-width: 200px;">
+                        <option value="">Tutti i livelli</option>
+                        <option value="principiante">Principiante</option>
+                        <option value="intermedio">Intermedio</option>
+                        <option value="avanzato">Avanzato</option>
+                        <option value="agonista">Agonista</option>
                     </select>
                 </div>
 
