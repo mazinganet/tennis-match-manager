@@ -427,7 +427,6 @@ const App = {
         // Players
         document.getElementById('add-player-btn')?.addEventListener('click', () => this.showPlayerModal());
         document.getElementById('player-search')?.addEventListener('input', () => this.filterPlayers());
-        document.getElementById('search-player-btn')?.addEventListener('click', () => this.filterPlayers());
         document.getElementById('level-filter')?.addEventListener('change', () => this.filterPlayers());
         document.getElementById('players-tbody')?.addEventListener('click', (e) => this.handlePlayerAction(e));
 
