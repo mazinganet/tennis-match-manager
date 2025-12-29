@@ -2321,8 +2321,11 @@ body {
 .member-header {
     text-align: center !important;
     padding-left: 0 !important;
-    padding-right: 0 !important;
+    padding-right: 40px !important;
+    /* Move content left relative to next col and add space */
     vertical-align: middle !important;
+    width: 80px;
+    /* Ensure sufficient width */
 }
 
 /* View selector responsive */
