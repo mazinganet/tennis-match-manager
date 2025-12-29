@@ -2273,12 +2273,15 @@ body {
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid var(--border);
+    border: 1px solid #000;
 }
 
 .vertical-planning-table tbody tr {
-    border-bottom: 1px solid var(--border);
     transition: background 0.2s;
+}
+
+.vertical-planning-table td {
+    border: 1px solid #000;
 }
 
 .vertical-planning-table tbody tr:hover {
@@ -2287,10 +2290,11 @@ body {
 
 .vertical-time-cell {
     padding: 12px 10px;
-    font-weight: 600;
-    color: var(--primary);
-    background: rgba(45, 138, 78, 0.1);
+    font-weight: bold;
+    color: #fff;
+    background: #2d8a4e;
     text-align: center;
+    border: 1px solid #000;
 }
 
 .vertical-activity-cell {
@@ -2309,6 +2313,12 @@ body {
     font-weight: 600;
     color: var(--success);
     background: rgba(34, 197, 94, 0.1);
+    border: 1px solid #000;
+}
+
+.member-cell {
+    text-align: center;
+    padding-right: 20px !important;
 }
 
 /* View selector responsive */
