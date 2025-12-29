@@ -1847,6 +1847,19 @@ body {
     #planning-day-name {
         font-size: 1rem !important;
     }
+
+    /* Ensure time preferences column is visible on mobile */
+    .time-prefs-cell {
+        display: table-cell !important;
+        font-size: 0.65rem !important;
+        max-width: 80px;
+        word-wrap: break-word;
+    }
+
+    .time-prefs-compact {
+        font-size: 0.6rem !important;
+        line-height: 1.2;
+    }
 }
 
 /* Extra small screens */
