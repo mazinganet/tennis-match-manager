@@ -193,16 +193,10 @@ const Players = {
                 <td class="member-cell">${p.isMember ? '✅' : '❌'}</td>
                 <td class="time-prefs-cell">${formatTimePrefs(p)}</td>
                 <td class="pref-cell">
-                    <select class="pref-select" multiple onchange="Players.updatePreferences('${p.id}', 'preferred', this)" title="Preferenze: ${preferredNames}">
-                        ${createPlayerOptions(p.id, p.preferredPlayers || [])}
-                    </select>
-                    <span class="pref-summary">${preferredNames}</span>
+                    <span class="pref-display">${preferredNames}</span>
                 </td>
                 <td class="veto-cell">
-                    <select class="veto-select" multiple onchange="Players.updatePreferences('${p.id}', 'avoid', this)" title="Veti: ${avoidNames}">
-                        ${createPlayerOptions(p.id, p.avoidPlayers || [])}
-                    </select>
-                    <span class="veto-summary">${avoidNames}</span>
+                    <span class="veto-display">${avoidNames}</span>
                 </td>
                 <td class="admin-only-column">
                     <button class="btn-icon send-wa" title="Chiedi Disponibilità">💬</button>

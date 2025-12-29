@@ -629,52 +629,27 @@ body {
     color: var(--text-secondary);
 }
 
-/* Preferences and Vetos dropdowns */
+/* Preferences and Vetos display */
 .pref-cell,
 .veto-cell {
-    position: relative;
-    min-width: 100px;
+    min-width: 80px;
 }
 
-.pref-select,
-.veto-select {
-    width: 100%;
-    max-width: 100px;
-    height: 28px;
-    font-size: 0.7rem;
-    padding: 2px 4px;
-    background: var(--bg-card);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
-.pref-select {
-    border-color: rgba(34, 197, 94, 0.3);
-}
-
-.veto-select {
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.pref-summary,
-.veto-summary {
+.pref-display,
+.veto-display {
     display: block;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 2px;
+    font-size: 0.8rem;
     max-width: 100px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.pref-summary {
+.pref-display {
     color: #22c55e;
 }
 
-.veto-summary {
+.veto-display {
     color: #ef4444;
 }
 
@@ -697,11 +672,6 @@ body {
     .players-extended-table .phone-cell,
     .players-extended-table .time-prefs-cell {
         display: none;
-    }
-
-    .pref-select,
-    .veto-select {
-        max-width: 70px;
     }
 }
 
