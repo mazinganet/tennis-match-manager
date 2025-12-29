@@ -1191,8 +1191,11 @@ const App = {
     },
 
     handlePlanningAction(e) {
-        // Support both desktop (.planning-activity-cell) and mobile (.activity-cell) clicks
+        // Support desktop (.planning-activity-cell), vertical desktop (.vertical-activity-cell) and mobile (.activity-cell) clicks
         let cell = e.target.closest('.planning-activity-cell');
+        if (!cell) {
+            cell = e.target.closest('.vertical-activity-cell');
+        }
         if (!cell) {
             cell = e.target.closest('.activity-cell');
         }
@@ -2565,40 +2568,30 @@ const App = {
         const allPlayers = Players.getAll().filter(p => p.id !== playerId).sort((a, b) => a.name.localeCompare(b.name));
 
         const renderList = (type, title, colorClass) => {
-            const list = allPlayers.map(p => {
-                const isChecked = type === 'preferred'
-                    ? (player.preferredPlayers || []).includes(p.id)
-                    : (player.avoidPlayers || []).includes(p.id);
+            const listIds = type === 'preferred'
+                ? (player.preferredPlayers || [])
+                : (player.avoidPlayers || []);
 
-                // Using a unique ID for the input to ensure the label works, though wrapping with label also works
-                const uniqueId = `rel-${type}-${p.id}`;
+            // Filter players that are in the list
+            const relevantPlayers = allPlayers.filter(p => listIds.includes(p.id));
 
-                return `
-                    <div class="relation-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); align-items:center;">
-                        <span style="color:#eee;">${p.name}</span>
-                        <label for="${uniqueId}" style="position:relative; display:inline-block; width:46px; height:24px; margin:0;">
-                            <input type="checkbox" id="${uniqueId}"
-                                ${isChecked ? 'checked' : ''} 
-                                onchange="Players.setRelation('${player.id}', '${p.id}', '${type}', this.checked); App.showRelationsModal('${player.id}')"
-                                style="opacity:0; width:0; height:0;">
-                            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#4a5568; transition:.4s; border-radius:34px;"></span>
-                            <span class="knob" style="position:absolute; content:''; height:18px; width:18px; left:3px; bottom:3px; background-color:white; transition:.4s; border-radius:50%;"></span>
-                             <style>
-                                #${uniqueId}:checked + .slider { background-color: ${colorClass}; }
-                                #${uniqueId}:focus + .slider { box-shadow: 0 0 1px ${colorClass}; }
-                                #${uniqueId}:checked + .slider .knob { transform: translateX(22px); }
-                            </style>
-                        </label>
+            let listHtml = '';
+            if (relevantPlayers.length === 0) {
+                listHtml = '<div style="color: #888; padding: 10px; font-style: italic;">Nessun giocatore</div>';
+            } else {
+                listHtml = relevantPlayers.map(p => `
+                    <div class="relation-item" style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span style="color: #eee;">${p.name}</span>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+            }
 
             return `
                 <div class="relation-column" style="flex:1; min-width:300px; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); height:100%; display:flex; flex-direction:column;">
                     <h4 style="color:${colorClass}; margin-bottom:15px; font-size:1.1rem; border-bottom:1px solid ${colorClass}40; padding-bottom:10px;">
                         ${title}
                     </h4>
-                    <div style="flex:1; overflow-y:auto; padding-right:5px; max-height:400px;">${list}</div>
+                    <div style="flex:1; overflow-y:auto; padding-right:5px; max-height:400px;">${listHtml}</div>
                 </div>
             `;
         };
@@ -2609,7 +2602,7 @@ const App = {
                 ${renderList('avoid', '🚫 Veti (Non vuole giocare)', '#ef4444')}
             </div>
             <p style="font-size:0.85rem; color:#a0aec0; margin-top:15px; text-align:center; font-style:italic;">
-                Nota: Se selezioni un giocatore in una lista, verrà automaticamente rimosso dall'altra.
+                Modalità sola lettura. Per modificare queste liste, usa la funzione "Modifica" sul giocatore.
             </p>
         `;
 
