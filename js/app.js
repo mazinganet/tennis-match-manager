@@ -916,7 +916,7 @@ const App = {
                             }
                             return playerName + quote;
                         });
-                        activityContent = playersWithQuotes.join(' | ');
+                        activityContent = playersWithQuotes.join('<br>');
                     }
                 } else if (res) {
                     activityClass = 'activity-' + (res.type || 'reserved');
