@@ -819,7 +819,7 @@ const App = {
                 if (topScroll) topScroll.style.setProperty('display', 'block', 'important');
             } else {
                 if (horizontalContainer) horizontalContainer.style.setProperty('display', 'none', 'important');
-                if (verticalContainer) verticalContainer.style.setProperty('display', 'block', 'important');
+                if (verticalContainer) verticalContainer.style.setProperty('display', 'flex', 'important');
                 if (topScroll) topScroll.style.setProperty('display', 'none', 'important');
                 this.renderVerticalPlanning();
             }
@@ -3723,6 +3723,35 @@ const App = {
         if (inputs.length > 1) {
             inputs[inputs.length - 1].remove();
         }
+    },
+
+    // Generic Modal Opener
+    openModal(title, bodyCallbackOrHtml) {
+        // Remove existing modal if any
+        const existing = document.getElementById('generic-modal-overlay');
+        if (existing) existing.remove();
+
+        const bodyContent = typeof bodyCallbackOrHtml === 'function' ? bodyCallbackOrHtml() : bodyCallbackOrHtml;
+
+        const modalHtml = `
+            <div id="generic-modal-overlay" class="modal-overlay active" style="z-index: 2000;">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3>${title}</h3>
+                        <button class="modal-close" onclick="document.getElementById('generic-modal-overlay').remove()">×</button>
+                    </div>
+                    <div class="modal-body">${bodyContent}</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="document.getElementById('generic-modal-overlay').remove()">Chiudi</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Create a temporary container to turn string into DOM
+        const div = document.createElement('div');
+        div.innerHTML = modalHtml.trim();
+        document.body.appendChild(div.firstChild);
     },
 
     // Date navigation for header buttons
