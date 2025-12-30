@@ -873,19 +873,19 @@ const App = {
         const planningTemplates = Storage.load('planning_templates', {});
         const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
 
-        // Activity colors mapping (same as print)
+        // Activity colors mapping (same as print) - with text colors for readability
         const activityColors = {
-            'ago': '#f97316',
-            'scuola': '#f97316',
-            'promo': '#22c55e',
-            'torneo': '#3b82f6',
-            'manutenzione': '#6b7280',
-            'match': '#ffffff',
-            'players': '#ffffff',
-            'nasty': '#22c55e'
+            'ago': { bg: '#f97316', text: '#fff' },
+            'scuola': { bg: '#f97316', text: '#fff' },
+            'promo': { bg: '#22c55e', text: '#fff' },
+            'torneo': { bg: '#3b82f6', text: '#fff' },
+            'manutenzione': { bg: '#6b7280', text: '#fff' },
+            'match': { bg: '#ffffff', text: '#000' },
+            'players': { bg: '#ffffff', text: '#000' },
+            'nasty': { bg: '#22c55e', text: '#fff' }
         };
 
-        let html = '<div class="vertical-planning-wrapper">';
+        let html = '<div class="vertical-planning-wrapper" style="display: flex; gap: 10px; flex-wrap: nowrap;">';
 
         courts.forEach(court => {
             const dayTemplate = planningTemplates[dateStr] || {};
@@ -909,7 +909,7 @@ const App = {
                 }
 
                 let cellContent = '';
-                let cellStyle = 'background: #fff;';
+                let cellStyle = 'background: #fff; color: #000;';
                 let quotaCol = '';
                 let paidCol = '';
 
@@ -920,52 +920,44 @@ const App = {
                     const isActivity = activityLabels.includes(firstPlayerLower);
 
                     if (isActivity) {
-                        const color = activityColors[firstPlayerLower] || '#f97316';
-                        cellStyle = `background: ${color}; color: ${color === '#ffffff' ? '#000' : '#fff'};`;
+                        const colors = activityColors[firstPlayerLower] || { bg: '#f97316', text: '#fff' };
+                        cellStyle = `background: ${colors.bg}; color: ${colors.text};`;
                         cellContent = res.players[0].toUpperCase();
                     } else {
-                        // Build players content based on count
-                        if (filledPlayers.length === 2) {
-                            // 2 players: stack vertically
-                            cellContent = filledPlayers.join('<br>');
-                        } else if (filledPlayers.length > 2) {
-                            // 3-4 players: 2x2 grid layout
-                            cellContent = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 0.85em;">
+                        // Players - white background, black text
+                        cellStyle = 'background: #fff; color: #000;';
+
+                        // Build quota and paid values
+                        const quotaVals = filledPlayers.map((playerName) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            return res.payments?.[originalIdx] || 0;
+                        });
+                        const paidVals = filledPlayers.map((playerName) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            return res.paid?.[originalIdx] || 0;
+                        });
+
+                        // Build content based on player count - all same fixed height
+                        if (filledPlayers.length <= 2) {
+                            // 1-2 players: stack vertically
+                            cellContent = filledPlayers.map(p => `<div style="line-height: 1.1;">${p}</div>`).join('');
+                            quotaCol = quotaVals.map(q => `<div style="line-height: 1.1;">${q}</div>`).join('');
+                            paidCol = paidVals.map(p => `<div style="line-height: 1.1;">${p}</div>`).join('');
+                        } else {
+                            // 3-4 players: 2x2 grid - fixed height
+                            cellContent = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; line-height: 1.1;">
                                 <span>${filledPlayers[0] || ''}</span>
                                 <span>${filledPlayers[1] || ''}</span>
                                 <span>${filledPlayers[2] || ''}</span>
                                 <span>${filledPlayers[3] || ''}</span>
                             </div>`;
-                        } else {
-                            // 1 player
-                            cellContent = filledPlayers[0] || '';
-                        }
-
-                        // Build quota column - one value per player
-                        const quotaVals = filledPlayers.map((playerName, i) => {
-                            const originalIdx = res.players.indexOf(playerName);
-                            return res.payments?.[originalIdx] || 0;
-                        });
-
-                        // Build paid column - one value per player
-                        const paidVals = filledPlayers.map((playerName, i) => {
-                            const originalIdx = res.players.indexOf(playerName);
-                            return res.paid?.[originalIdx] || 0;
-                        });
-
-                        if (filledPlayers.length <= 2) {
-                            // Stack vertically for 1-2 players
-                            quotaCol = quotaVals.join('<br>');
-                            paidCol = paidVals.join('<br>');
-                        } else {
-                            // 2x2 grid for 3-4 players
-                            quotaCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 0.85em;">
+                            quotaCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; line-height: 1.1;">
                                 <span>${quotaVals[0] || ''}</span>
                                 <span>${quotaVals[1] || ''}</span>
                                 <span>${quotaVals[2] || ''}</span>
                                 <span>${quotaVals[3] || ''}</span>
                             </div>`;
-                            paidCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 0.85em;">
+                            paidCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; line-height: 1.1;">
                                 <span>${paidVals[0] || ''}</span>
                                 <span>${paidVals[1] || ''}</span>
                                 <span>${paidVals[2] || ''}</span>
@@ -974,32 +966,32 @@ const App = {
                         }
                     }
                 } else if (res) {
-                    const color = activityColors[res.type] || '#f97316';
-                    cellStyle = `background: ${color}; color: #fff;`;
+                    const colors = activityColors[res.type] || { bg: '#f97316', text: '#fff' };
+                    cellStyle = `background: ${colors.bg}; color: ${colors.text};`;
                     cellContent = res.label || res.type?.toUpperCase() || 'Prenotato';
                 }
 
                 rowsHtml += `
-                    <tr class="vertical-row" style="height: 28px;">
-                        <td class="vertical-time-cell" style="border: 1px solid #333; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #e5e7eb;">${time}</td>
-                        <td class="vertical-activity-cell" style="border: 1px solid #333; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; line-height: 1.2; cursor: pointer;"
+                    <tr style="height: 22px;">
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle;">${time}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer;"
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
                             onclick="App.handlePlanningAction(event)">${cellContent}</td>
-                        <td class="vertical-quota-cell" style="border: 1px solid #333; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.2; background: #f9fafb;">${quotaCol}</td>
-                        <td class="vertical-paid-cell" style="border: 1px solid #333; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.2; background: #f9fafb;">${paidCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; color: #000;">${quotaCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; color: #000;">${paidCol}</td>
                     </tr>
                 `;
             });
 
             html += `
-                <div class="vertical-court-section" style="flex: 1; min-width: 220px; margin-bottom: 15px;">
-                    <table class="vertical-planning-table" style="border-collapse: collapse; width: 100%; font-size: 0.75rem;">
+                <div style="flex: 1; min-width: 180px;">
+                    <table style="border-collapse: collapse; width: 100%; font-size: 9px;">
                         <thead>
-                            <tr style="height: 28px;">
-                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff; width: 50px;">Ora</th>
-                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff;">${court.name}</th>
-                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff; width: 40px;">Q</th>
-                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff; width: 40px;">P</th>
+                            <tr style="height: 20px;">
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 40px;">Ora</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd;">${court.name}</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">Q</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">P</th>
                             </tr>
                         </thead>
                         <tbody>
