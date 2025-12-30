@@ -3100,3 +3100,13 @@ body {
 .non-admin-mode .rates-readonly-section {
     display: block !important;
 }
+
+/* ===== Non-Admin Only Elements ===== */
+/* Elements visible only for non-admin users */
+.non-admin-only {
+    display: none !important;
+}
+
+.non-admin-mode .non-admin-only {
+    display: flex !important;
+}

@@ -49,6 +49,10 @@
                 <span class="nav-icon">📊</span>
                 Dashboard
             </button>
+            <button class="nav-btn non-admin-only" data-tab="dashboard">
+                <span class="nav-icon">🏠</span>
+                Home
+            </button>
             <button class="nav-btn" data-tab="players">
                 <span class="nav-icon">👥</span>
                 Giocatori
@@ -246,8 +250,8 @@
                     </button>
                 </div>
 
-                <!-- Backup Section - at the bottom -->
-                <div class="section-card" style="margin-top: 20px;">
+                <!-- Backup Section - admin only -->
+                <div class="section-card admin-only" style="margin-top: 20px; display: none;">
                     <h3>💾 Backup e Sincronizzazione</h3>
 
                     <!-- Firebase Status -->
