@@ -3901,7 +3901,7 @@ const App = {
                             courtTotal += paid;
                             return playerName;
                         });
-                        cellContent = playersLines.join(' / ');
+                        cellContent = playersLines.join('<br>');
 
                         // Build quota and paid columns
                         const quotaVals = filledPlayers.map((playerName, i) => {
@@ -3923,11 +3923,11 @@ const App = {
                 }
 
                 rowsHtml += `
-                    <tr>
-                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-weight: bold;">${time}</td>
-                        <td style="border: 1px solid #000; padding: 4px 8px; ${cellStyle} text-align: left;">${cellContent}</td>
-                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-size: 0.8em;">${quotaCol}</td>
-                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-size: 0.8em;">${paidCol}</td>
+                    <tr style="height: ${format === 'A3' ? '28px' : '22px'};">
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle;">${time}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; line-height: 1.1;">${cellContent}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.1;">${quotaCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.1;">${paidCol}</td>
                     </tr>
                 `;
             });
@@ -3935,14 +3935,14 @@ const App = {
             courtTotals.push({ name: court.name, total: courtTotal });
 
             courtsHtml += `
-                <div style="flex: 1; min-width: 200px;">
-                    <table style="border-collapse: collapse; width: 100%; font-size: ${format === 'A3' ? '11px' : '9px'};">
+                <div style="flex: 1; min-width: 180px;">
+                    <table style="border-collapse: collapse; width: 100%; font-size: ${format === 'A3' ? '9px' : '7px'};">
                         <thead>
-                            <tr>
-                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 50px;">Ora</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #ddd;">${court.name}</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 30px;">Q</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 30px;">P</th>
+                            <tr style="height: ${format === 'A3' ? '24px' : '20px'};">
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 40px;">Ora</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd;">${court.name}</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 22px;">Q</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 22px;">P</th>
                             </tr>
                         </thead>
                         <tbody>
