@@ -885,7 +885,7 @@ const App = {
             'nasty': { bg: '#22c55e', text: '#fff' }
         };
 
-        let html = '<div class="vertical-planning-wrapper" style="display: flex; gap: 10px; flex-wrap: nowrap;">';
+        let html = '<div class="vertical-planning-wrapper" style="display: flex; gap: 8px; flex-wrap: nowrap; width: 100%;">';
 
         courts.forEach(court => {
             const dayTemplate = planningTemplates[dateStr] || {};
@@ -973,25 +973,25 @@ const App = {
 
                 rowsHtml += `
                     <tr style="height: 32px; font-family: 'Roboto Condensed', Arial Narrow, sans-serif;">
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #374151; color: #fff;">${time}</td>
-                        <td style="border: 1px solid #000; padding: 2px 6px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer; min-width: 180px;"
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #374151; color: #fff; width: 45px;">${time}</td>
+                        <td style="border: 1px solid #000; padding: 2px 6px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer;"
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
                             onclick="App.handlePlanningAction(event)">${cellContent}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff;">${quotaCol}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff;">${paidCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff; width: 40px;">${quotaCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff; width: 40px;">${paidCol}</td>
                     </tr>
                 `;
             });
 
             html += `
-                <div style="flex: 1; min-width: 350px;">
-                    <table style="border-collapse: collapse; width: 100%; font-size: 11px; font-family: 'Roboto Condensed', Arial Narrow, sans-serif;">
+                <div style="flex: 1;">
+                    <table style="border-collapse: collapse; width: 100%; font-size: 11px; font-family: 'Roboto Condensed', Arial Narrow, sans-serif; table-layout: fixed;">
                         <thead>
                             <tr style="height: 28px;">
-                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 50px;">Ora</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; min-width: 180px;">${court.name}</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 50px;">Q</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 50px;">P</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 45px;">Ora</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff;">${court.name}</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 40px;">Q</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 40px;">P</th>
                             </tr>
                         </thead>
                         <tbody>
