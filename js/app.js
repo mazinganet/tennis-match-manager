@@ -873,26 +873,26 @@ const App = {
         const planningTemplates = Storage.load('planning_templates', {});
         const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
 
-        let html = '';
+        // Activity colors mapping (same as print)
+        const activityColors = {
+            'ago': '#f97316',
+            'scuola': '#f97316',
+            'promo': '#22c55e',
+            'torneo': '#3b82f6',
+            'manutenzione': '#6b7280',
+            'match': '#ffffff',
+            'players': '#ffffff',
+            'nasty': '#22c55e'
+        };
+
+        let html = '<div class="vertical-planning-wrapper">';
 
         courts.forEach(court => {
             const dayTemplate = planningTemplates[dateStr] || {};
             const times = dayTemplate[court.id] || [...defaultTimes];
             const reservations = court.reservations || [];
 
-            html += `
-                <div class="vertical-court-section">
-                    <h3 class="vertical-court-header">${court.name}</h3>
-                    <table class="vertical-planning-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 55px;">Ora</th>
-                                <th style="min-width: 120px;">Attività / Giocatori</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
+            let rowsHtml = '';
             times.forEach((time, index) => {
                 const standardizedTime = time.replace('.', ':');
                 const nextTime = times[index + 1] || Matching.addTime(standardizedTime, 60);
@@ -908,76 +908,109 @@ const App = {
                     });
                 }
 
-                let activityClass = 'activity-free';
-                let activityContent = '-';
+                let cellContent = '';
+                let cellStyle = 'background: #fff;';
+                let quotaCol = '';
+                let paidCol = '';
 
                 if (res?.players && res.players.some(p => p && p.trim())) {
                     const filledPlayers = res.players.filter(p => p && p.trim());
-                    const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
-                    const hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                    const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione', 'nasty'];
                     const firstPlayerLower = (res.players[0] || '').toLowerCase();
                     const isActivity = activityLabels.includes(firstPlayerLower);
 
-                    if (hasOnlyFirst && isActivity) {
-                        activityClass = 'activity-' + firstPlayerLower;
-                        activityContent = res.players[0];
-                    } else if (hasOnlyFirst) {
-                        // Single player with quote and paid amount
-                        activityClass = 'activity-single-player';
-                        let quote = '';
-                        let paidInfo = '';
-                        if (res.payments && res.payments[0]) {
-                            quote = ` (${res.payments[0]}€)`;
-                        } else {
-                            const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
-                            if (rate > 0) quote = ` (${rate}€)`;
-                        }
-                        // Always show paid amount (even if 0)
-                        const paidAmount = (res.paid && res.paid[0] !== undefined) ? res.paid[0] : 0;
-                        paidInfo = ` [${paidAmount}€]`;
-                        activityContent = res.players[0] + quote + paidInfo;
+                    if (isActivity) {
+                        const color = activityColors[firstPlayerLower] || '#f97316';
+                        cellStyle = `background: ${color}; color: ${color === '#ffffff' ? '#000' : '#fff'};`;
+                        cellContent = res.players[0].toUpperCase();
                     } else {
-                        // Multiple players with quotes and paid amounts
-                        activityClass = 'activity-players';
-                        const playersWithQuotes = filledPlayers.map((playerName, i) => {
+                        // Build players content based on count
+                        if (filledPlayers.length === 2) {
+                            // 2 players: stack vertically
+                            cellContent = filledPlayers.join('<br>');
+                        } else if (filledPlayers.length > 2) {
+                            // 3-4 players: 2x2 grid layout
+                            cellContent = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 0.85em;">
+                                <span>${filledPlayers[0] || ''}</span>
+                                <span>${filledPlayers[1] || ''}</span>
+                                <span>${filledPlayers[2] || ''}</span>
+                                <span>${filledPlayers[3] || ''}</span>
+                            </div>`;
+                        } else {
+                            // 1 player
+                            cellContent = filledPlayers[0] || '';
+                        }
+
+                        // Build quota column - one value per player
+                        const quotaVals = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
-                            let quote = '';
-                            let paidInfo = '';
-                            if (res.payments && res.payments[originalIdx]) {
-                                quote = ` (${res.payments[originalIdx]}€)`;
-                            } else {
-                                const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
-                                if (rate > 0) quote = ` (${rate}€)`;
-                            }
-                            // Always show paid amount (even if 0)
-                            const paidAmount = (res.paid && res.paid[originalIdx] !== undefined) ? res.paid[originalIdx] : 0;
-                            paidInfo = ` [${paidAmount}€]`;
-                            return playerName + quote + paidInfo;
+                            return res.payments?.[originalIdx] || 0;
                         });
-                        activityContent = playersWithQuotes.join('<br>');
+
+                        // Build paid column - one value per player
+                        const paidVals = filledPlayers.map((playerName, i) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            return res.paid?.[originalIdx] || 0;
+                        });
+
+                        if (filledPlayers.length <= 2) {
+                            // Stack vertically for 1-2 players
+                            quotaCol = quotaVals.join('<br>');
+                            paidCol = paidVals.join('<br>');
+                        } else {
+                            // 2x2 grid for 3-4 players
+                            quotaCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 0.85em;">
+                                <span>${quotaVals[0] || ''}</span>
+                                <span>${quotaVals[1] || ''}</span>
+                                <span>${quotaVals[2] || ''}</span>
+                                <span>${quotaVals[3] || ''}</span>
+                            </div>`;
+                            paidCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 0.85em;">
+                                <span>${paidVals[0] || ''}</span>
+                                <span>${paidVals[1] || ''}</span>
+                                <span>${paidVals[2] || ''}</span>
+                                <span>${paidVals[3] || ''}</span>
+                            </div>`;
+                        }
                     }
                 } else if (res) {
-                    activityClass = 'activity-' + (res.type || 'reserved');
-                    activityContent = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                    const color = activityColors[res.type] || '#f97316';
+                    cellStyle = `background: ${color}; color: #fff;`;
+                    cellContent = res.label || res.type?.toUpperCase() || 'Prenotato';
                 }
 
-                html += `
-                    <tr>
-                        <td class="vertical-time-cell">${time}</td>
-                        <td class="vertical-activity-cell ${activityClass}" 
+                rowsHtml += `
+                    <tr class="vertical-row" style="height: 28px;">
+                        <td class="vertical-time-cell" style="border: 1px solid #333; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #e5e7eb;">${time}</td>
+                        <td class="vertical-activity-cell" style="border: 1px solid #333; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; line-height: 1.2; cursor: pointer;"
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
-                            onclick="App.handlePlanningAction(event)">${activityContent}</td>
+                            onclick="App.handlePlanningAction(event)">${cellContent}</td>
+                        <td class="vertical-quota-cell" style="border: 1px solid #333; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.2; background: #f9fafb;">${quotaCol}</td>
+                        <td class="vertical-paid-cell" style="border: 1px solid #333; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.2; background: #f9fafb;">${paidCol}</td>
                     </tr>
                 `;
             });
 
             html += `
+                <div class="vertical-court-section" style="flex: 1; min-width: 220px; margin-bottom: 15px;">
+                    <table class="vertical-planning-table" style="border-collapse: collapse; width: 100%; font-size: 0.75rem;">
+                        <thead>
+                            <tr style="height: 28px;">
+                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff; width: 50px;">Ora</th>
+                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff;">${court.name}</th>
+                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff; width: 40px;">Q</th>
+                                <th style="border: 1px solid #333; padding: 4px; background: #374151; color: #fff; width: 40px;">P</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
                         </tbody>
                     </table>
                 </div>
             `;
         });
 
+        html += '</div>';
         container.innerHTML = html;
     },
 
