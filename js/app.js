@@ -932,10 +932,9 @@ const App = {
                             const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
                             if (rate > 0) quote = ` (${rate}€)`;
                         }
-                        // Add paid amount if available
-                        if (res.paid && res.paid[0]) {
-                            paidInfo = ` [${res.paid[0]}€]`;
-                        }
+                        // Always show paid amount (even if 0)
+                        const paidAmount = (res.paid && res.paid[0] !== undefined) ? res.paid[0] : 0;
+                        paidInfo = ` [${paidAmount}€]`;
                         activityContent = res.players[0] + quote + paidInfo;
                     } else {
                         // Multiple players with quotes and paid amounts
@@ -950,10 +949,9 @@ const App = {
                                 const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
                                 if (rate > 0) quote = ` (${rate}€)`;
                             }
-                            // Add paid amount if available
-                            if (res.paid && res.paid[originalIdx]) {
-                                paidInfo = ` [${res.paid[originalIdx]}€]`;
-                            }
+                            // Always show paid amount (even if 0)
+                            const paidAmount = (res.paid && res.paid[originalIdx] !== undefined) ? res.paid[originalIdx] : 0;
+                            paidInfo = ` [${paidAmount}€]`;
                             return playerName + quote + paidInfo;
                         });
                         activityContent = playersWithQuotes.join('<br>');
@@ -1094,10 +1092,9 @@ const App = {
                                     const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
                                     if (rate > 0) quote = ' (' + rate + '€)';
                                 }
-                                // Add paid amount if available
-                                if (res.paid && res.paid[0]) {
-                                    paidInfo = ' [' + res.paid[0] + '€]';
-                                }
+                                // Always show paid amount (even if 0)
+                                const paidAmount = (res.paid && res.paid[0] !== undefined) ? res.paid[0] : 0;
+                                paidInfo = ' [' + paidAmount + '€]';
                                 cellContent = res.players[0] + quote + paidInfo;
                             } else {
                                 cellClass = 'activity-players';
@@ -1113,10 +1110,9 @@ const App = {
                                         const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
                                         if (rate > 0) quote = ' (' + rate + '€)';
                                     }
-                                    // Add paid amount if available
-                                    if (res.paid && res.paid[originalIdx]) {
-                                        paidInfo = ' [' + res.paid[originalIdx] + '€]';
-                                    }
+                                    // Always show paid amount (even if 0)
+                                    const paidAmount = (res.paid && res.paid[originalIdx] !== undefined) ? res.paid[originalIdx] : 0;
+                                    paidInfo = ' [' + paidAmount + '€]';
                                     return playerName + quote + paidInfo;
                                 });
                                 cellContent = playersWithQuotes.join('<br>');
