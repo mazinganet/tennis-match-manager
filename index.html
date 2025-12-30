@@ -93,8 +93,8 @@
                     </div>
                 </div>
 
-                <!-- Mobile-only: Read-only rates summary table -->
-                <div class="section-card mobile-only" id="rates-summary-mobile" style="margin-top: 20px;">
+                <!-- Rates summary table - shown on mobile for all, on desktop for non-admin only -->
+                <div class="section-card rates-readonly-section" id="rates-summary-mobile" style="margin-top: 20px;">
                     <h3>💰 Tariffe e Stagioni</h3>
                     <div id="mobile-rates-table">
                         <!-- Will be populated by JavaScript -->
@@ -102,8 +102,8 @@
                     </div>
                 </div>
 
-                <!-- Court Rates Settings - hidden on mobile -->
-                <div class="section-card desktop-only" style="margin-top: 20px;">
+                <!-- Court Rates Settings - hidden on mobile, editable only by admin -->
+                <div class="section-card desktop-only admin-only" style="margin-top: 20px; display: none;">
                     <h3>💰 Tariffe e Fasce Orarie</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
                         Definisci le stagioni, gli orari delle fasce e le relative tariffe.

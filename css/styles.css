@@ -3076,10 +3076,27 @@ body {
     display: none;
 }
 
-/* ===== Mobile View Improvements ===== */
 /* Hide view selector on mobile for everyone */
 @media (max-width: 768px) {
     .view-selector {
         display: none !important;
     }
+}
+
+/* ===== Rates Section Visibility ===== */
+/* Read-only rates section: hidden on desktop (admin sees editable), visible on mobile */
+.rates-readonly-section {
+    display: none !important;
+}
+
+/* On mobile, rates-readonly-section is always visible */
+@media (max-width: 900px) {
+    .rates-readonly-section {
+        display: block !important;
+    }
+}
+
+/* For non-admin on desktop, show the read-only rates section */
+.non-admin-mode .rates-readonly-section {
+    display: block !important;
 }
