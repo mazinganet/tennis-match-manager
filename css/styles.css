@@ -2232,12 +2232,26 @@ body {
     overflow: hidden;
 }
 
-/* Left-align player names in horizontal table */
+/* Left-align player names in horizontal table with right truncation */
 .planning-horizontal-table .activity-players,
 .planning-horizontal-table .activity-single-player {
     justify-content: flex-start !important;
     text-align: left !important;
     padding-left: 3px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Player elements inside cells - truncate on the right */
+.planning-horizontal-table .cell-player,
+.planning-horizontal-table .cell-player-single,
+.planning-horizontal-table .cell-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    max-width: 100%;
 }
 
 /* Planning container - no horizontal scroll */
