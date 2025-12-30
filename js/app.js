@@ -3893,24 +3893,56 @@ const App = {
                         cellStyle = `background: ${color}; color: ${color === '#ffffff' ? '#000' : '#fff'};`;
                         cellContent = res.players[0].toUpperCase();
                     } else {
-                        // Show players with their payments
-                        const playersLines = filledPlayers.map((playerName, i) => {
-                            const originalIdx = res.players.indexOf(playerName);
-                            const payment = res.payments?.[originalIdx] || 0;
-                            const paid = res.paid?.[originalIdx] || 0;
-                            courtTotal += paid;
-                            return playerName;
-                        });
-                        cellContent = playersLines.join('<br>');
+                        // Build players content based on count
+                        if (filledPlayers.length === 2) {
+                            // 2 players: stack vertically
+                            cellContent = filledPlayers.join('<br>');
+                        } else if (filledPlayers.length > 2) {
+                            // 3-4 players: 2x2 grid layout
+                            cellContent = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; font-size: 0.85em;">
+                                <span>${filledPlayers[0] || ''}</span>
+                                <span>${filledPlayers[1] || ''}</span>
+                                <span>${filledPlayers[2] || ''}</span>
+                                <span>${filledPlayers[3] || ''}</span>
+                            </div>`;
+                        } else {
+                            // 1 player
+                            cellContent = filledPlayers[0] || '';
+                        }
 
-                        // Build quota column (paid column left empty for manual entry)
+                        // Build quota column - one value per player, stacked vertically
                         const quotaVals = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
                             return res.payments?.[originalIdx] || 0;
                         });
 
-                        quotaCol = quotaVals.join('<br>');
-                        // paidCol left empty for manual entry
+                        // Build paid column - one value per player, stacked vertically
+                        const paidVals = filledPlayers.map((playerName, i) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            const paid = res.paid?.[originalIdx] || 0;
+                            courtTotal += paid;
+                            return paid;
+                        });
+
+                        if (filledPlayers.length <= 2) {
+                            // Stack vertically for 1-2 players
+                            quotaCol = quotaVals.join('<br>');
+                            paidCol = paidVals.join('<br>');
+                        } else {
+                            // 2x2 grid for 3-4 players
+                            quotaCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; font-size: 0.85em;">
+                                <span>${quotaVals[0] || ''}</span>
+                                <span>${quotaVals[1] || ''}</span>
+                                <span>${quotaVals[2] || ''}</span>
+                                <span>${quotaVals[3] || ''}</span>
+                            </div>`;
+                            paidCol = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; font-size: 0.85em;">
+                                <span>${paidVals[0] || ''}</span>
+                                <span>${paidVals[1] || ''}</span>
+                                <span>${paidVals[2] || ''}</span>
+                                <span>${paidVals[3] || ''}</span>
+                            </div>`;
+                        }
                     }
                 } else if (res) {
                     const color = activityColors[res.type] || '#f97316';
@@ -3937,8 +3969,8 @@ const App = {
                             <tr style="height: ${format === 'A3' ? '24px' : '20px'};">
                                 <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 40px;">Ora</th>
                                 <th style="border: 1px solid #000; padding: 2px; background: #ddd;">${court.name}</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 22px;">Q</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 22px;">P</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">Q</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">P</th>
                             </tr>
                         </thead>
                         <tbody>
