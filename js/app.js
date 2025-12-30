@@ -3879,7 +3879,8 @@ const App = {
 
                 let cellContent = '';
                 let cellStyle = 'background: #fff;';
-                let quotaHtml = '';
+                let quotaCol = '';
+                let paidCol = '';
 
                 if (res?.players && res.players.some(p => p && p.trim())) {
                     const filledPlayers = res.players.filter(p => p && p.trim());
@@ -3902,20 +3903,18 @@ const App = {
                         });
                         cellContent = playersLines.join(' / ');
 
-                        // Build quota display
-                        const quotas = filledPlayers.map((playerName, i) => {
+                        // Build quota and paid columns
+                        const quotaVals = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
-                            const payment = res.payments?.[originalIdx] || 0;
-                            const paid = res.paid?.[originalIdx] || 0;
-                            if (payment > 0 || paid > 0) {
-                                return `${payment}<br>${paid}`;
-                            }
-                            return '';
-                        }).filter(q => q);
+                            return res.payments?.[originalIdx] || 0;
+                        });
+                        const paidVals = filledPlayers.map((playerName, i) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            return res.paid?.[originalIdx] || 0;
+                        });
 
-                        if (quotas.length > 0) {
-                            quotaHtml = quotas.join('<br>');
-                        }
+                        quotaCol = quotaVals.join('<br>');
+                        paidCol = paidVals.join('<br>');
                     }
                 } else if (res) {
                     const color = activityColors[res.type] || '#f97316';
@@ -3927,7 +3926,8 @@ const App = {
                     <tr>
                         <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-weight: bold;">${time}</td>
                         <td style="border: 1px solid #000; padding: 4px 8px; ${cellStyle} text-align: left;">${cellContent}</td>
-                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-size: 0.8em;">${quotaHtml}</td>
+                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-size: 0.8em;">${quotaCol}</td>
+                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-size: 0.8em;">${paidCol}</td>
                     </tr>
                 `;
             });
@@ -3941,7 +3941,8 @@ const App = {
                             <tr>
                                 <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 50px;">Ora</th>
                                 <th style="border: 1px solid #000; padding: 4px; background: #ddd;">${court.name}</th>
-                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 40px;"></th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 30px;">Q</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 30px;">P</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -3949,7 +3950,7 @@ const App = {
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3" style="border: 1px solid #000; padding: 4px; font-size: 0.85em;">incasso all'uscita ${court.name.toLowerCase()}</td>
+                                <td colspan="4" style="border: 1px solid #000; padding: 4px; font-size: 0.85em;">incasso all'uscita ${court.name.toLowerCase()}</td>
                             </tr>
                         </tfoot>
                     </table>
