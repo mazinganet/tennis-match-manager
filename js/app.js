@@ -3903,18 +3903,14 @@ const App = {
                         });
                         cellContent = playersLines.join('<br>');
 
-                        // Build quota and paid columns
+                        // Build quota column (paid column left empty for manual entry)
                         const quotaVals = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
                             return res.payments?.[originalIdx] || 0;
                         });
-                        const paidVals = filledPlayers.map((playerName, i) => {
-                            const originalIdx = res.players.indexOf(playerName);
-                            return res.paid?.[originalIdx] || 0;
-                        });
 
                         quotaCol = quotaVals.join('<br>');
-                        paidCol = paidVals.join('<br>');
+                        // paidCol left empty for manual entry
                     }
                 } else if (res) {
                     const color = activityColors[res.type] || '#f97316';
