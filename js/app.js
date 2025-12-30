@@ -973,25 +973,25 @@ const App = {
 
                 rowsHtml += `
                     <tr style="height: 22px;">
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle;">${time}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #86efac; color: #000;">${time}</td>
                         <td style="border: 1px solid #000; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer;"
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
                             onclick="App.handlePlanningAction(event)">${cellContent}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; color: #000;">${quotaCol}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; color: #000;">${paidCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff;">${quotaCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff;">${paidCol}</td>
                     </tr>
                 `;
             });
 
             html += `
-                <div style="flex: 1; min-width: 180px;">
-                    <table style="border-collapse: collapse; width: 100%; font-size: 9px;">
+                <div style="flex: 1; min-width: 250px;">
+                    <table style="border-collapse: collapse; width: 100%; font-size: 10px;">
                         <thead>
-                            <tr style="height: 20px;">
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 40px;">Ora</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd;">${court.name}</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">Q</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">P</th>
+                            <tr style="height: 24px;">
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 45px;">Ora</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff;">${court.name}</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 45px;">Q</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #166534; color: #fff; width: 45px;">P</th>
                             </tr>
                         </thead>
                         <tbody>
