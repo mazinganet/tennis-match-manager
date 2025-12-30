@@ -974,7 +974,7 @@ const App = {
                 rowsHtml += `
                     <tr style="height: 32px; font-family: 'Roboto Condensed', Arial Narrow, sans-serif;">
                         <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #374151; color: #fff; width: 45px;">${time}</td>
-                        <td style="border: 1px solid #000; padding: 2px 6px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer;"
+                        <td class="vertical-activity-cell" style="border: 1px solid #000; padding: 2px 6px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer;"
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
                             onclick="App.handlePlanningAction(event)">${cellContent}</td>
                         <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff; width: 40px;">${quotaCol}</td>
