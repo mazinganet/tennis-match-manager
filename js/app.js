@@ -1518,20 +1518,6 @@ const App = {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="auto-match-section" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <label style="font-size: 0.75rem; margin: 0;">Tipo:</label>
-                            <select id="match-type-auto" class="filter-select" style="font-size: 0.7rem; padding: 3px 6px;">
-                                <option value="singles">Singolo (2)</option>
-                                <option value="doubles">Doppio (4)</option>
-                            </select>
-                            <button class="btn btn-accent btn-sm" onclick="App.autoMatchPlayers('${dateStr}', '${time}')" style="font-size: 0.7rem; padding: 4px 8px;">
-                                🔄 Auto Match
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
             <input type="hidden" id="selected-type" value="${existingRes?.type || 'match'}">
