@@ -338,12 +338,16 @@
                         <div id="current-date-display">25/12/2024</div>
                     </div>
                     <button class="btn-nav" onclick="App.changeDay(1)">Domani ▶</button>
-                    <div class="date-picker-container" style="margin-left: auto;">
+                    <div class="date-picker-container"
+                        style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
                         <label for="planning-date-picker"
                             style="color: var(--text-secondary); font-size: 0.85rem; margin-right: 8px;">📅 Vai
                             a:</label>
                         <input type="date" id="planning-date-picker" class="date-picker-input"
                             onchange="App.goToDate(this.value)">
+                        <button class="btn btn-secondary" onclick="App.printDailyPlanning()" title="Stampa giornata">
+                            🖨️ Stampa
+                        </button>
                     </div>
                 </div>
                 <input type="hidden" id="planning-date">

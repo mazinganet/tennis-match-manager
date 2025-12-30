@@ -3805,6 +3805,278 @@ const App = {
         this.currentPlanningDate.setDate(this.currentPlanningDate.getDate() + delta);
         this.renderPlanning();
         this.renderMobilePlanning();
+    },
+
+    // Print daily planning
+    printDailyPlanning() {
+        // Show format selection modal
+        const body = `
+            <div style="text-align: center; padding: 20px;">
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">Seleziona il formato di stampa:</p>
+                <div style="display: flex; justify-content: center; gap: 20px;">
+                    <button class="btn btn-primary" onclick="App.executePrint('A4')" style="padding: 15px 30px; font-size: 1.1rem;">
+                        📄 A4
+                    </button>
+                    <button class="btn btn-primary" onclick="App.executePrint('A3')" style="padding: 15px 30px; font-size: 1.1rem;">
+                        📄 A3
+                    </button>
+                </div>
+            </div>
+        `;
+        this.showModal('🖨️ Stampa Planning Giornaliero', body, '');
+    },
+
+    executePrint(format) {
+        this.closeModal();
+
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dayNames = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+        const dayName = dayNames[this.currentPlanningDate.getDay()].toUpperCase();
+        const formattedDate = this.currentPlanningDate.toLocaleDateString('it-IT');
+
+        const courts = Courts.getAvailable(this.currentSeason);
+        const planningTemplates = Storage.load('planning_templates', {});
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+
+        // Activity colors mapping
+        const activityColors = {
+            'ago': '#f97316',
+            'scuola': '#f97316',
+            'promo': '#22c55e',
+            'torneo': '#3b82f6',
+            'manutenzione': '#6b7280',
+            'match': '#ffffff',
+            'players': '#ffffff',
+            'nasty': '#22c55e'
+        };
+
+        // Build courts HTML
+        let courtsHtml = '';
+        let courtTotals = [];
+
+        courts.forEach((court, courtIndex) => {
+            const dayTemplate = planningTemplates[dateStr] || {};
+            const times = dayTemplate[court.id] || [...defaultTimes];
+            const reservations = court.reservations || [];
+            let courtTotal = 0;
+
+            let rowsHtml = '';
+            times.forEach((time, index) => {
+                const standardizedTime = time.replace('.', ':');
+                const nextTime = times[index + 1] || Matching.addTime(standardizedTime, 60);
+                const standardizedNextTime = nextTime.replace('.', ':');
+
+                // Find reservation for this slot
+                let res = reservations.find(r => {
+                    return r.date === dateStr && (standardizedTime < r.to && standardizedNextTime > r.from);
+                });
+                if (!res) {
+                    res = reservations.find(r => {
+                        const dayNameIt = Matching.getDayNameFromDate(dateStr);
+                        return !r.date && r.day === dayNameIt && (standardizedTime < r.to && standardizedNextTime > r.from);
+                    });
+                }
+
+                let cellContent = '';
+                let cellStyle = 'background: #fff;';
+                let quotaHtml = '';
+
+                if (res?.players && res.players.some(p => p && p.trim())) {
+                    const filledPlayers = res.players.filter(p => p && p.trim());
+                    const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione', 'nasty'];
+                    const firstPlayerLower = (res.players[0] || '').toLowerCase();
+                    const isActivity = activityLabels.includes(firstPlayerLower);
+
+                    if (isActivity) {
+                        const color = activityColors[firstPlayerLower] || '#f97316';
+                        cellStyle = `background: ${color}; color: ${color === '#ffffff' ? '#000' : '#fff'};`;
+                        cellContent = res.players[0].toUpperCase();
+                    } else {
+                        // Show players with their payments
+                        const playersLines = filledPlayers.map((playerName, i) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            const payment = res.payments?.[originalIdx] || 0;
+                            const paid = res.paid?.[originalIdx] || 0;
+                            courtTotal += paid;
+                            return playerName;
+                        });
+                        cellContent = playersLines.join(' / ');
+
+                        // Build quota display
+                        const quotas = filledPlayers.map((playerName, i) => {
+                            const originalIdx = res.players.indexOf(playerName);
+                            const payment = res.payments?.[originalIdx] || 0;
+                            const paid = res.paid?.[originalIdx] || 0;
+                            if (payment > 0 || paid > 0) {
+                                return `${payment}<br>${paid}`;
+                            }
+                            return '';
+                        }).filter(q => q);
+
+                        if (quotas.length > 0) {
+                            quotaHtml = quotas.join('<br>');
+                        }
+                    }
+                } else if (res) {
+                    const color = activityColors[res.type] || '#f97316';
+                    cellStyle = `background: ${color}; color: #fff;`;
+                    cellContent = res.label || res.type?.toUpperCase() || 'Prenotato';
+                }
+
+                rowsHtml += `
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-weight: bold;">${time}</td>
+                        <td style="border: 1px solid #000; padding: 4px 8px; ${cellStyle} text-align: left;">${cellContent}</td>
+                        <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; font-size: 0.8em;">${quotaHtml}</td>
+                    </tr>
+                `;
+            });
+
+            courtTotals.push({ name: court.name, total: courtTotal });
+
+            courtsHtml += `
+                <div style="flex: 1; min-width: 200px;">
+                    <table style="border-collapse: collapse; width: 100%; font-size: ${format === 'A3' ? '11px' : '9px'};">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 50px;">Ora</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #ddd;">${court.name}</th>
+                                <th style="border: 1px solid #000; padding: 4px; background: #ddd; width: 40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" style="border: 1px solid #000; padding: 4px; font-size: 0.85em;">incasso all'uscita ${court.name.toLowerCase()}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+        });
+
+        // Calculate grand total
+        const grandTotal = courtTotals.reduce((sum, ct) => sum + ct.total, 0);
+
+        // Build the complete print HTML
+        const printHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Planning ${dayName} ${formattedDate}</title>
+                <style>
+                    @page {
+                        size: ${format} landscape;
+                        margin: 10mm;
+                    }
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 10px;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 10px;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 10px;
+                    }
+                    .header h1 {
+                        margin: 0;
+                        font-size: ${format === 'A3' ? '28px' : '22px'};
+                    }
+                    .header .date {
+                        font-size: ${format === 'A3' ? '24px' : '18px'};
+                        font-weight: bold;
+                    }
+                    .legend {
+                        font-size: 0.8em;
+                        margin-bottom: 10px;
+                        color: #666;
+                    }
+                    .courts-container {
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: nowrap;
+                    }
+                    .footer-section {
+                        margin-top: 15px;
+                        border-top: 1px solid #000;
+                        padding-top: 10px;
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px;
+                        font-size: ${format === 'A3' ? '11px' : '9px'};
+                    }
+                    .footer-section div {
+                        border: 1px solid #000;
+                        padding: 8px;
+                    }
+                    .total-row {
+                        margin-top: 10px;
+                        text-align: right;
+                        font-size: ${format === 'A3' ? '14px' : '12px'};
+                        font-weight: bold;
+                    }
+                    .total-highlight {
+                        background: yellow;
+                        padding: 5px 15px;
+                        display: inline-block;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${dayName}</h1>
+                    <div class="date">${formattedDate}</div>
+                </div>
+                
+                <div class="legend">
+                    <strong>PROMO</strong> (evidenziare la cella orario in giallo) | 
+                    <strong>GESTORE INCASSARE</strong> (evidenziare il prezzo da incassare)
+                </div>
+                
+                <div class="courts-container">
+                    ${courtsHtml}
+                </div>
+                
+                <div class="footer-section">
+                    <div>
+                        <strong>SOSPESI MAESTRI</strong><br><br>
+                    </div>
+                    <div>
+                        <strong>SPESE DETRATTE INCASSI</strong><br><br>
+                    </div>
+                </div>
+                
+                <div class="footer-section" style="grid-template-columns: 1fr;">
+                    <div>
+                        <strong>INCASSI PALLINE</strong>
+                    </div>
+                </div>
+                
+                <div class="total-row">
+                    TOTALE GIORNATA INCASSATO: <span class="total-highlight">${grandTotal > 0 ? grandTotal + '€' : ''}</span>
+                </div>
+            </body>
+            </html>
+        `;
+
+        // Open print window
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
+
+        // Wait for content to load then print
+        printWindow.onload = function () {
+            printWindow.print();
+        };
     }
 };
 
