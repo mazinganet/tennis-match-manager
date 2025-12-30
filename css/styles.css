@@ -2232,6 +2232,14 @@ body {
     overflow: hidden;
 }
 
+/* Left-align player names in horizontal table */
+.planning-horizontal-table .activity-players,
+.planning-horizontal-table .activity-single-player {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding-left: 3px !important;
+}
+
 /* Planning container - no horizontal scroll */
 .planning-flex-container {
     display: block;

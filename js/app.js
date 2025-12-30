@@ -744,10 +744,40 @@ const App = {
                 const existing = document.getElementById('magnify-popup');
                 if (existing) existing.remove();
 
+                // Build popup content with payment info if available
+                let popupContent = content;
+
+                // Check data attributes for payment info
+                const courtId = cell.dataset.court;
+                const time = cell.dataset.time;
+                const dateStr = App.currentPlanningDate.toISOString().split('T')[0];
+                const court = Courts.getById(courtId);
+
+                if (court?.reservations) {
+                    const dayName = Matching.getDayNameFromDate(dateStr);
+                    const res = court.reservations.find(r => {
+                        if (r.date === dateStr) {
+                            return time >= r.from && time < r.to;
+                        }
+                        return !r.date && r.day === dayName && time >= r.from && time < r.to;
+                    });
+
+                    if (res?.players && res.players.some(p => p && p.trim())) {
+                        const lines = res.players.map((player, i) => {
+                            if (!player || !player.trim()) return '';
+                            const quota = res.payments?.[i] || 0;
+                            const paid = res.paid?.[i] || 0;
+                            return `${player} (Quota: ${quota}€ / Pagato: ${paid}€)`;
+                        }).filter(l => l);
+
+                        popupContent = lines.join('<br>');
+                    }
+                }
+
                 // Create popup
                 const popup = document.createElement('div');
                 popup.id = 'magnify-popup';
-                popup.innerHTML = content;
+                popup.innerHTML = popupContent;
                 popup.style.cssText = `
                     position: fixed;
                     background: #1a1a2e;
@@ -756,12 +786,12 @@ const App = {
                     border-radius: 12px;
                     font-size: 1.3rem;
                     font-weight: 500;
-                    text-align: center;
+                    text-align: left;
                     z-index: 99999;
                     box-shadow: 0 10px 40px rgba(0,0,0,0.6);
                     border: 3px solid #2d8a4e;
                     min-width: 200px;
-                    max-width: 350px;
+                    max-width: 400px;
                     pointer-events: none;
                 `;
                 document.body.appendChild(popup);
