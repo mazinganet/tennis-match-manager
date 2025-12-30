@@ -922,29 +922,39 @@ const App = {
                         activityClass = 'activity-' + firstPlayerLower;
                         activityContent = res.players[0];
                     } else if (hasOnlyFirst) {
-                        // Single player with quote
+                        // Single player with quote and paid amount
                         activityClass = 'activity-single-player';
                         let quote = '';
+                        let paidInfo = '';
                         if (res.payments && res.payments[0]) {
                             quote = ` (${res.payments[0]}€)`;
                         } else {
                             const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
                             if (rate > 0) quote = ` (${rate}€)`;
                         }
-                        activityContent = res.players[0] + quote;
+                        // Add paid amount if available
+                        if (res.paid && res.paid[0]) {
+                            paidInfo = ` [${res.paid[0]}€]`;
+                        }
+                        activityContent = res.players[0] + quote + paidInfo;
                     } else {
-                        // Multiple players with quotes
+                        // Multiple players with quotes and paid amounts
                         activityClass = 'activity-players';
                         const playersWithQuotes = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
                             let quote = '';
+                            let paidInfo = '';
                             if (res.payments && res.payments[originalIdx]) {
                                 quote = ` (${res.payments[originalIdx]}€)`;
                             } else {
                                 const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
                                 if (rate > 0) quote = ` (${rate}€)`;
                             }
-                            return playerName + quote;
+                            // Add paid amount if available
+                            if (res.paid && res.paid[originalIdx]) {
+                                paidInfo = ` [${res.paid[originalIdx]}€]`;
+                            }
+                            return playerName + quote + paidInfo;
                         });
                         activityContent = playersWithQuotes.join('<br>');
                     }
@@ -1074,8 +1084,9 @@ const App = {
                                 cellContent = res.players[0];
                             } else if (hasOnlyFirst) {
                                 cellClass = 'activity-single-player';
-                                // Show quote for single player if available
+                                // Show quote and paid amount for single player if available
                                 let quote = '';
+                                let paidInfo = '';
                                 if (res.payments && res.payments[0]) {
                                     quote = ' (' + res.payments[0] + '€)';
                                 } else {
@@ -1083,13 +1094,18 @@ const App = {
                                     const rate = this.getPlayerRate(res.players[0], dateStr, standardizedTime);
                                     if (rate > 0) quote = ' (' + rate + '€)';
                                 }
-                                cellContent = res.players[0] + quote;
+                                // Add paid amount if available
+                                if (res.paid && res.paid[0]) {
+                                    paidInfo = ' [' + res.paid[0] + '€]';
+                                }
+                                cellContent = res.players[0] + quote + paidInfo;
                             } else {
                                 cellClass = 'activity-players';
-                                // Show each player with their quote
+                                // Show each player with their quote and paid amount
                                 const playersWithQuotes = filledPlayers.map((playerName, idx) => {
                                     const originalIdx = res.players.indexOf(playerName);
                                     let quote = '';
+                                    let paidInfo = '';
                                     if (res.payments && res.payments[originalIdx]) {
                                         quote = ' (' + res.payments[originalIdx] + '€)';
                                     } else {
@@ -1097,7 +1113,11 @@ const App = {
                                         const rate = this.getPlayerRate(playerName, dateStr, standardizedTime);
                                         if (rate > 0) quote = ' (' + rate + '€)';
                                     }
-                                    return playerName + quote;
+                                    // Add paid amount if available
+                                    if (res.paid && res.paid[originalIdx]) {
+                                        paidInfo = ' [' + res.paid[originalIdx] + '€]';
+                                    }
+                                    return playerName + quote + paidInfo;
                                 });
                                 cellContent = playersWithQuotes.join('<br>');
                             }
