@@ -650,9 +650,10 @@
                                     cellContent = '<div style="display:flex;flex-direction:column;font-size:0.7rem;"><span>' + filledPlayers[0] + '</span><span>' + filledPlayers[1] + '</span></div>';
                                 } else {
                                     cellClass = 'activity-players';
-                                    cellContent = '<div style="display:grid;grid-template-columns:1fr 1fr;font-size:0.55rem;">';
+                                    cellContent = '<div style="display:grid;grid-template-columns:1fr 1fr;font-size:0.55rem;gap:1px;">';
                                     for (var p = 0; p < 4; p++) {
-                                        cellContent += '<span>' + (res.players[p] || '') + '</span>';
+                                        var surname = (res.players[p] || '').split(' ')[0];
+                                        cellContent += '<span>' + surname + '</span>';
                                     }
                                     cellContent += '</div>';
                                 }
