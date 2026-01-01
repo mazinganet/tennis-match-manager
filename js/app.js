@@ -534,13 +534,17 @@ const App = {
         const stats = History.getStats() || { total: 0 };
         const scheduled = Matching.getScheduled() || [];
 
-        document.getElementById('total-players').textContent = players.length;
-        document.getElementById('total-courts').textContent = courts.length;
-        document.getElementById('total-matches').textContent = stats.total || 0;
-        document.getElementById('scheduled-matches').textContent = scheduled.length;
+        const totalPlayersEl = document.getElementById('total-players');
+        const totalCourtsEl = document.getElementById('total-courts');
+        const totalMatchesEl = document.getElementById('total-matches');
+        const scheduledMatchesEl = document.getElementById('scheduled-matches');
+        const waImporterEl = document.getElementById('whatsapp-importer');
 
-        // Sezione WhatsApp Import
-        document.getElementById('whatsapp-importer').style.display = 'block';
+        if (totalPlayersEl) totalPlayersEl.textContent = players.length;
+        if (totalCourtsEl) totalCourtsEl.textContent = courts.length;
+        if (totalMatchesEl) totalMatchesEl.textContent = stats.total || 0;
+        if (scheduledMatchesEl) scheduledMatchesEl.textContent = scheduled.length;
+        if (waImporterEl) waImporterEl.style.display = 'block';
     },
 
     parseWhatsApp() {
