@@ -53,13 +53,26 @@ const App = {
         this.togglePlanningView(this.planningViewMode);
 
         // Initialize cleanup settings UI and run auto-cleanup for any user
-        Storage.loadCleanupSettings().then(() => {
-            // Run silent auto-cleanup on any user startup after settings are loaded
-            const deleted = Storage.runAutoCleanup(true);
-            if (deleted > 0) {
-                console.log(`🗑️ [AUTO-CLEANUP] Cancellate ${deleted} prenotazioni vecchie all'avvio`);
+        // Wait a bit for Firebase to be fully ready
+        setTimeout(() => {
+            Storage.loadCleanupSettings().then(() => {
+                // Run silent auto-cleanup on any user startup after settings are loaded
+                const deleted = Storage.runAutoCleanup(true);
+                if (deleted > 0) {
+                    console.log(`🗑️ [AUTO-CLEANUP] Cancellate ${deleted} prenotazioni vecchie all'avvio`);
+                }
+            });
+        }, 1500);
+
+        // Also try to update the dropdown after 3 seconds as backup
+        setTimeout(() => {
+            const settings = Storage.load(Storage.KEYS.SETTINGS, {});
+            const select = document.getElementById('auto-cleanup-months');
+            if (select && settings.autoCleanupMonths !== undefined) {
+                select.value = settings.autoCleanupMonths.toString();
+                console.log(`📋 [CLEANUP] Dropdown aggiornato (backup): ${settings.autoCleanupMonths} mesi`);
             }
-        });
+        }, 3000);
     },
 
     loadSettings() {
