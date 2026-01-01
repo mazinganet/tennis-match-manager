@@ -1916,7 +1916,11 @@ const App = {
             // Check reservations
             if (court.reservations) {
                 court.reservations.forEach(r => {
-                    if (r.day === dayName && r.players) {
+                    // Prenotazioni con data specifica devono corrispondere esattamente
+                    // Prenotazioni ricorrenti (senza data) corrispondono per giorno della settimana
+                    const isMatchingDate = r.date ? (r.date === dateStr) : (r.day === dayName);
+
+                    if (isMatchingDate && r.players) {
                         r.players.forEach(playerName => {
                             if (playerName) bookedPlayersToday.add(playerName.toLowerCase());
                         });
@@ -1926,7 +1930,10 @@ const App = {
             // Check matches
             if (court.matches) {
                 court.matches.forEach(m => {
-                    if (m.day === dayName && m.players) {
+                    // Anche per i match, controlliamo la data se disponibile
+                    const isMatchingDate = m.date ? (m.date === dateStr) : (m.day === dayName);
+
+                    if (isMatchingDate && m.players) {
                         m.players.forEach(playerId => {
                             const player = Players.getById(playerId);
                             if (player) bookedPlayersToday.add(player.name.toLowerCase());
@@ -2054,7 +2061,11 @@ const App = {
         courts.forEach(court => {
             if (court.reservations) {
                 court.reservations.forEach(r => {
-                    if (r.day === dayName && r.players) {
+                    // Verifica: prenotazioni con data specifica devono corrispondere esattamente
+                    // Prenotazioni ricorrenti (senza data) corrispondono per giorno della settimana
+                    const isMatchingDate = r.date ? (r.date === dateStr) : (r.day === dayName);
+
+                    if (isMatchingDate && r.players) {
                         r.players.forEach(pName => {
                             if (pName && pName.toLowerCase() === playerName.toLowerCase()) {
                                 alreadyBookedAt = { court: court.name, from: r.from, to: r.to };
