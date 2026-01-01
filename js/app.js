@@ -3969,18 +3969,19 @@ const App = {
                             cellContent = filledPlayers[0] || '';
                         }
 
-                        // Build quota column - one value per player, stacked vertically
+                        // Build quota column - one value per player, stacked vertically (skip 0 values)
                         const quotaVals = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
-                            return res.payments?.[originalIdx] || 0;
+                            const quota = res.payments?.[originalIdx] || 0;
+                            return quota === 0 ? '' : quota;
                         });
 
-                        // Build paid column - one value per player, stacked vertically
+                        // Build paid column - one value per player, stacked vertically (skip 0 values)
                         const paidVals = filledPlayers.map((playerName, i) => {
                             const originalIdx = res.players.indexOf(playerName);
                             const paid = res.paid?.[originalIdx] || 0;
                             courtTotal += paid;
-                            return paid;
+                            return paid === 0 ? '' : paid;
                         });
 
                         if (filledPlayers.length <= 2) {
