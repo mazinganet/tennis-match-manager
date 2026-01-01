@@ -37,6 +37,15 @@ const App = {
                 console.log('📡 Admin: Tariffe aggiornate da remoto');
                 this.loadCourtRates();
             });
+            // Subscribe to SETTINGS for cleanup dropdown sync
+            Storage.subscribe(Storage.KEYS.SETTINGS, (data) => {
+                console.log('📡 Settings aggiornati da remoto');
+                const select = document.getElementById('auto-cleanup-months');
+                if (select && data && data.autoCleanupMonths !== undefined) {
+                    select.value = data.autoCleanupMonths.toString();
+                    console.log(`📋 [CLEANUP] Dropdown aggiornato: ${data.autoCleanupMonths} mesi`);
+                }
+            });
         }
 
         // Initialize view mode
