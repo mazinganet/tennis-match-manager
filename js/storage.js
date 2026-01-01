@@ -356,6 +356,159 @@ const Storage = {
      */
     isFirebaseConnected() {
         return typeof firebaseReady !== 'undefined' && firebaseReady && database !== null;
+    },
+
+    /**
+     * Salva le impostazioni di pulizia automatica
+     */
+    saveCleanupSettings() {
+        const months = document.getElementById('auto-cleanup-months')?.value || '0';
+        const settings = this.load(this.KEYS.SETTINGS, {});
+        settings.autoCleanupMonths = parseInt(months, 10);
+        this.save(this.KEYS.SETTINGS, settings);
+        alert('✅ Impostazioni di pulizia salvate!');
+        console.log(`💾 [CLEANUP] Auto cleanup impostato a ${months} mesi`);
+    },
+
+    /**
+     * Carica le impostazioni di pulizia e aggiorna l'UI
+     */
+    loadCleanupSettings() {
+        const settings = this.load(this.KEYS.SETTINGS, {});
+        const months = settings.autoCleanupMonths || 0;
+        const select = document.getElementById('auto-cleanup-months');
+        if (select) {
+            select.value = months.toString();
+        }
+        return months;
+    },
+
+    /**
+     * Esegue la pulizia automatica delle prenotazioni vecchie
+     * @param {boolean} silent - se true, non mostra alert
+     * @returns {number} numero di prenotazioni cancellate
+     */
+    runAutoCleanup(silent = false) {
+        const settings = this.load(this.KEYS.SETTINGS, {});
+        const months = settings.autoCleanupMonths || 0;
+
+        if (months === 0) {
+            if (!silent) {
+                alert('ℹ️ La pulizia automatica è disabilitata.\nSeleziona un periodo diverso da "Mai" per attivarla.');
+            }
+            return 0;
+        }
+
+        // Calcola la data limite
+        const cutoffDate = new Date();
+        cutoffDate.setMonth(cutoffDate.getMonth() - months);
+        const cutoffStr = cutoffDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        if (!silent && !confirm(`Questa operazione cancellerà tutte le prenotazioni precedenti a ${cutoffStr}.\n\nContinuare?`)) {
+            return 0;
+        }
+
+        const deletedCount = this._cleanupReservationsBefore(cutoffStr);
+
+        if (!silent) {
+            if (deletedCount > 0) {
+                alert(`✅ Pulizia completata!\n\nCancellate ${deletedCount} prenotazioni precedenti a ${cutoffStr}.`);
+                // Ricarica la pagina per aggiornare la vista
+                location.reload();
+            } else {
+                alert('ℹ️ Nessuna prenotazione da cancellare.');
+            }
+        }
+
+        return deletedCount;
+    },
+
+    /**
+     * Cancella le prenotazioni in un range di date specificato
+     */
+    cleanupByDateRange() {
+        const fromDate = document.getElementById('cleanup-date-from')?.value;
+        const toDate = document.getElementById('cleanup-date-to')?.value;
+
+        if (!fromDate || !toDate) {
+            alert('⚠️ Seleziona entrambe le date!');
+            return;
+        }
+
+        if (fromDate > toDate) {
+            alert('⚠️ La data di inizio deve essere precedente alla data di fine!');
+            return;
+        }
+
+        if (!confirm(`Stai per cancellare tutte le prenotazioni dal ${fromDate} al ${toDate}.\n\n⚠️ Questa operazione è IRREVERSIBILE!\n\nContinuare?`)) {
+            return;
+        }
+
+        const deletedCount = this._cleanupReservationsInRange(fromDate, toDate);
+
+        if (deletedCount > 0) {
+            alert(`✅ Pulizia completata!\n\nCancellate ${deletedCount} prenotazioni dal ${fromDate} al ${toDate}.`);
+            location.reload();
+        } else {
+            alert('ℹ️ Nessuna prenotazione trovata nel range specificato.');
+        }
+    },
+
+    /**
+     * Funzione interna per cancellare prenotazioni prima di una data
+     * @param {string} beforeDate - data in formato YYYY-MM-DD
+     * @returns {number} numero di prenotazioni cancellate
+     */
+    _cleanupReservationsBefore(beforeDate) {
+        let totalDeleted = 0;
+        const courts = this.load(this.KEYS.COURTS, []);
+
+        courts.forEach(court => {
+            if (court.reservations && Array.isArray(court.reservations)) {
+                const originalCount = court.reservations.length;
+                court.reservations = court.reservations.filter(res => {
+                    // Mantieni solo le prenotazioni con data >= beforeDate
+                    return res.date >= beforeDate;
+                });
+                totalDeleted += originalCount - court.reservations.length;
+            }
+        });
+
+        if (totalDeleted > 0) {
+            this.save(this.KEYS.COURTS, courts);
+            console.log(`🗑️ [CLEANUP] Cancellate ${totalDeleted} prenotazioni prima di ${beforeDate}`);
+        }
+
+        return totalDeleted;
+    },
+
+    /**
+     * Funzione interna per cancellare prenotazioni in un range di date
+     * @param {string} fromDate - data inizio in formato YYYY-MM-DD
+     * @param {string} toDate - data fine in formato YYYY-MM-DD
+     * @returns {number} numero di prenotazioni cancellate
+     */
+    _cleanupReservationsInRange(fromDate, toDate) {
+        let totalDeleted = 0;
+        const courts = this.load(this.KEYS.COURTS, []);
+
+        courts.forEach(court => {
+            if (court.reservations && Array.isArray(court.reservations)) {
+                const originalCount = court.reservations.length;
+                court.reservations = court.reservations.filter(res => {
+                    // Mantieni solo le prenotazioni fuori dal range
+                    return res.date < fromDate || res.date > toDate;
+                });
+                totalDeleted += originalCount - court.reservations.length;
+            }
+        });
+
+        if (totalDeleted > 0) {
+            this.save(this.KEYS.COURTS, courts);
+            console.log(`🗑️ [CLEANUP] Cancellate ${totalDeleted} prenotazioni dal ${fromDate} al ${toDate}`);
+        }
+
+        return totalDeleted;
     }
 };
 
