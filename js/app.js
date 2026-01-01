@@ -39,11 +39,13 @@ const App = {
             });
             // Subscribe to SETTINGS for cleanup dropdown sync
             Storage.subscribe(Storage.KEYS.SETTINGS, (data) => {
-                console.log('📡 Settings aggiornati da remoto');
+                console.log('📡 Settings aggiornati da remoto, data:', JSON.stringify(data));
                 const select = document.getElementById('auto-cleanup-months');
-                if (select && data && data.autoCleanupMonths !== undefined) {
-                    select.value = data.autoCleanupMonths.toString();
-                    console.log(`📋 [CLEANUP] Dropdown aggiornato: ${data.autoCleanupMonths} mesi`);
+                console.log('📋 [CLEANUP] Dropdown element found:', !!select);
+                if (select && data) {
+                    const months = data.autoCleanupMonths !== undefined ? data.autoCleanupMonths : 0;
+                    select.value = months.toString();
+                    console.log(`📋 [CLEANUP] Dropdown aggiornato a: ${months} mesi`);
                 }
             });
         }
