@@ -372,13 +372,20 @@ const Storage = {
 
     /**
      * Carica le impostazioni di pulizia e aggiorna l'UI
+     * Carica da Firebase se disponibile per garantire sincronizzazione
      */
-    loadCleanupSettings() {
+    async loadCleanupSettings() {
+        // Prima carica da Firebase se disponibile
+        if (this.isFirebaseConnected()) {
+            await this.loadFromFirebase(this.KEYS.SETTINGS, {});
+        }
+
         const settings = this.load(this.KEYS.SETTINGS, {});
         const months = settings.autoCleanupMonths || 0;
         const select = document.getElementById('auto-cleanup-months');
         if (select) {
             select.value = months.toString();
+            console.log(`📋 [CLEANUP] Impostazione caricata: ${months} mesi`);
         }
         return months;
     },

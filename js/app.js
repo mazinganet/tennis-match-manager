@@ -44,12 +44,13 @@ const App = {
         this.togglePlanningView(this.planningViewMode);
 
         // Initialize cleanup settings UI and run auto-cleanup for any user
-        Storage.loadCleanupSettings();
-        // Run silent auto-cleanup on any user startup
-        const deleted = Storage.runAutoCleanup(true);
-        if (deleted > 0) {
-            console.log(`🗑️ [AUTO-CLEANUP] Cancellate ${deleted} prenotazioni vecchie all'avvio`);
-        }
+        Storage.loadCleanupSettings().then(() => {
+            // Run silent auto-cleanup on any user startup after settings are loaded
+            const deleted = Storage.runAutoCleanup(true);
+            if (deleted > 0) {
+                console.log(`🗑️ [AUTO-CLEANUP] Cancellate ${deleted} prenotazioni vecchie all'avvio`);
+            }
+        });
     },
 
     loadSettings() {
