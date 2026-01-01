@@ -43,14 +43,12 @@ const App = {
         this.planningViewMode = localStorage.getItem('planningViewMode') || 'horizontal';
         this.togglePlanningView(this.planningViewMode);
 
-        // Initialize cleanup settings UI and run auto-cleanup for admin
+        // Initialize cleanup settings UI and run auto-cleanup for any user
         Storage.loadCleanupSettings();
-        if (window.isAdmin) {
-            // Run silent auto-cleanup on admin startup
-            const deleted = Storage.runAutoCleanup(true);
-            if (deleted > 0) {
-                console.log(`🗑️ [AUTO-CLEANUP] Cancellate ${deleted} prenotazioni vecchie all'avvio`);
-            }
+        // Run silent auto-cleanup on any user startup
+        const deleted = Storage.runAutoCleanup(true);
+        if (deleted > 0) {
+            console.log(`🗑️ [AUTO-CLEANUP] Cancellate ${deleted} prenotazioni vecchie all'avvio`);
         }
     },
 
