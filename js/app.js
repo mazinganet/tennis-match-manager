@@ -4012,10 +4012,10 @@ const App = {
 
                 rowsHtml += `
                     <tr style="height: ${format === 'A3' ? '28px' : '22px'};">
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle;">${time}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; line-height: 1.1;">${cellContent}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.1;">${quotaCol}</td>
-                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.1;">${paidCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; -webkit-print-color-adjust: exact; print-color-adjust: exact;">${time}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; ${cellStyle} text-align: left; vertical-align: middle; line-height: 1.1; -webkit-print-color-adjust: exact; print-color-adjust: exact;">${cellContent}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.1; -webkit-print-color-adjust: exact; print-color-adjust: exact;">${quotaCol}</td>
+                        <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; line-height: 1.1; -webkit-print-color-adjust: exact; print-color-adjust: exact;">${paidCol}</td>
                     </tr>
                 `;
             });
@@ -4027,10 +4027,10 @@ const App = {
                     <table style="border-collapse: collapse; width: 100%; font-size: ${format === 'A3' ? '9px' : '7px'};">
                         <thead>
                             <tr style="height: ${format === 'A3' ? '24px' : '20px'};">
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 40px;">Ora</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd;">${court.name}</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">Q</th>
-                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px;">P</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 40px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">Ora</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; -webkit-print-color-adjust: exact; print-color-adjust: exact;">${court.name}</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">Q</th>
+                                <th style="border: 1px solid #000; padding: 2px; background: #ddd; width: 35px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">P</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -4038,7 +4038,7 @@ const App = {
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="4" style="border: 1px solid #000; padding: 4px; font-size: 0.85em;">incasso all'uscita ${court.name.toLowerCase()}</td>
+                                <td colspan="4" style="border: 1px solid #000; padding: 4px; font-size: 0.85em; -webkit-print-color-adjust: exact; print-color-adjust: exact;">incasso all'uscita ${court.name.toLowerCase()}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -4065,6 +4065,10 @@ const App = {
                         font-family: Arial, sans-serif;
                         margin: 0;
                         padding: 10px;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    td, th {
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
                     }
@@ -4117,6 +4121,8 @@ const App = {
                         background: yellow;
                         padding: 5px 15px;
                         display: inline-block;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                 </style>
             </head>
