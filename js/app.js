@@ -50,9 +50,9 @@ const App = {
             });
         }
 
-        // Initialize view mode
-        this.planningViewMode = localStorage.getItem('planningViewMode') || 'horizontal';
-        this.togglePlanningView(this.planningViewMode);
+        // Initialize view mode - always start with horizontal view
+        this.planningViewMode = 'horizontal';
+        this.togglePlanningView('horizontal');
 
         // Initialize cleanup settings UI and run auto-cleanup for any user
         // Wait a bit for Firebase to be fully ready
