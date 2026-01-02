@@ -736,6 +736,11 @@ const App = {
                                         <span class="cell-player">${res.players[3] || ''}</span>
                                     </div>`;
                             }
+                            // Add payment method badge
+                            const pmIcon = { contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethod] || '';
+                            if (pmIcon) {
+                                playersHtml += `<span class="payment-badge" style="position:absolute;top:2px;right:2px;font-size:10px;">${pmIcon}</span>`;
+                            }
                         }
                     } else {
                         statusClass = `activity-${res?.type || 'reserved'}`;
@@ -807,7 +812,13 @@ const App = {
                             return `${player} (Quota: ${quota}€ / Pagato: ${paid}€)`;
                         }).filter(l => l);
 
-                        popupContent = lines.join('<br>');
+                        // Add payment method indicator
+                        const paymentMethodIcons = { contanti: '💵', carta: '💳', paypal: '🅿️' };
+                        const paymentMethodLabels = { contanti: 'Contanti', carta: 'Carta di Credito', paypal: 'PayPal' };
+                        const methodIcon = paymentMethodIcons[res.paymentMethod] || '💵';
+                        const methodLabel = paymentMethodLabels[res.paymentMethod] || 'Contanti';
+
+                        popupContent = lines.join('<br>') + `<br><span style="color:#22c55e;margin-top:5px;display:inline-block;">${methodIcon} ${methodLabel}</span>`;
                     }
                 }
 
@@ -1157,7 +1168,9 @@ const App = {
                                 // Always show paid amount (even if 0)
                                 const paidAmount = (res.paid && res.paid[0] !== undefined) ? res.paid[0] : 0;
                                 paidInfo = ' [' + paidAmount + '€]';
-                                cellContent = res.players[0] + quote + paidInfo;
+                                // Payment method indicator
+                                const pmIcon = { contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethod] || '';
+                                cellContent = res.players[0] + quote + paidInfo + (pmIcon ? ' ' + pmIcon : '');
                             } else {
                                 cellClass = 'activity-players';
                                 // Show each player with their quote and paid amount
@@ -1177,7 +1190,9 @@ const App = {
                                     paidInfo = ' [' + paidAmount + '€]';
                                     return playerName + quote + paidInfo;
                                 });
-                                cellContent = playersWithQuotes.join('<br>');
+                                // Payment method indicator for mobile view
+                                const pmIconMobile = { contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethod] || '';
+                                cellContent = playersWithQuotes.join('<br>') + (pmIconMobile ? '<br><span style="font-size:12px;">' + pmIconMobile + '</span>' : '');
                             }
                         } else {
                             cellClass = 'activity-' + (res.type || 'reserved');
@@ -1555,6 +1570,27 @@ const App = {
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Metodo di Pagamento -->
+                        <div class="payment-method-section" style="margin-top: 15px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-primary); font-weight: 500;">💳 Metodo di Pagamento</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
+                                    <input type="radio" name="payment-method" value="contanti" ${(!existingRes?.paymentMethod || existingRes?.paymentMethod === 'contanti') ? 'checked' : ''}>
+                                    <span>💵 Contanti</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
+                                    <input type="radio" name="payment-method" value="carta" ${existingRes?.paymentMethod === 'carta' ? 'checked' : ''}>
+                                    <span>💳 Carta di Credito</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
+                                    <input type="radio" name="payment-method" value="paypal" ${existingRes?.paymentMethod === 'paypal' ? 'checked' : ''}>
+                                    <span>🅿️ PayPal</span>
+                                </label>
+                            </div>
+                            <!-- PayPal button container - shown when PayPal is selected -->
+                            <div id="paypal-button-container" style="margin-top: 10px; display: none;"></div>
+                        </div>
                 </div>
             </div>
             <input type="hidden" id="selected-type" value="${existingRes?.type || 'match'}">
@@ -1567,7 +1603,8 @@ const App = {
                     <button class="btn btn-warning btn-sm" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">📅 Giornata</button>
                     <button class="btn btn-outline btn-sm" onclick="App.clearAllReservations()" style="border-color: #ef4444; color: #ef4444;">🧹 Pulisci Tutto</button>
                 </div>
-                <div class="footer-right-buttons">
+                <div class="footer-right-buttons" style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-success btn-sm" onclick="App.initiatePayment()" style="background: #22c55e; color: white;" title="Paga la prenotazione">💳 Paga Ora</button>
                     <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
                     <button class="btn btn-primary" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
                         ${hasExisting ? '💾 Salva' : '✓ Conferma'}
@@ -1688,7 +1725,8 @@ const App = {
             players: playersArray,
             payments: paymentsArray,
             paid: paidArray,
-            price: price
+            price: price,
+            paymentMethod: document.querySelector('input[name="payment-method"]:checked')?.value || 'contanti'
         };
 
         // First, remove all reservations that overlap with the new time range
@@ -2115,6 +2153,195 @@ const App = {
             }
         }
         document.getElementById('slot-label').value = players.join(' / ');
+    },
+
+    // Initiate payment flow for the current booking
+    initiatePayment() {
+        // Calculate total amount from the payment inputs
+        let totalAmount = 0;
+        const playerPayments = [];
+
+        for (let i = 1; i <= 4; i++) {
+            const playerInput = document.getElementById(`slot-player-${i}`);
+            const paymentInput = document.getElementById(`slot-payment-${i}`);
+
+            if (playerInput && playerInput.value.trim() && paymentInput) {
+                const amount = parseFloat(paymentInput.value) || 0;
+                if (amount > 0) {
+                    totalAmount += amount;
+                    playerPayments.push({
+                        player: playerInput.value.trim(),
+                        amount: amount
+                    });
+                }
+            }
+        }
+
+        if (totalAmount <= 0) {
+            alert('⚠️ Inserisci almeno una quota per procedere al pagamento.');
+            return;
+        }
+
+        // Get selected payment method
+        const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value || 'contanti';
+
+        if (paymentMethod === 'contanti') {
+            alert('💵 Pagamento in contanti: registra il pagamento manualmente nella colonna "Pagato".');
+            return;
+        }
+
+        // Show payment sub-modal
+        this.showPaymentModal(totalAmount, playerPayments, paymentMethod);
+    },
+
+    showPaymentModal(totalAmount, playerPayments, paymentMethod) {
+        const playersListHtml = playerPayments.map(p =>
+            `<div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <span>${p.player}</span>
+                <span>€${p.amount.toFixed(2)}</span>
+            </div>`
+        ).join('');
+
+        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const description = `Prenotazione Tennis - ${dateStr}`;
+
+        const innerBody = `
+            <div style="text-align: center; padding: 15px;">
+                <h4 style="color: var(--text-primary); margin-bottom: 15px;">📋 Riepilogo Pagamento</h4>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    ${playersListHtml}
+                    <div style="display: flex; justify-content: space-between; padding-top: 10px; margin-top: 10px; border-top: 2px solid #22c55e; font-weight: bold; font-size: 1.2rem;">
+                        <span>Totale</span>
+                        <span style="color: #22c55e;">€${totalAmount.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                ${paymentMethod === 'paypal' ? `
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Clicca sul pulsante PayPal per completare il pagamento
+                    </p>
+                    <div id="paypal-buttons-modal" style="min-height: 150px;"></div>
+                ` : `
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Clicca per aprire il pagamento con carta di credito
+                    </p>
+                    <button class="btn btn-primary" onclick="App.openStripePayment(${totalAmount}, '${description}')" 
+                            style="width: 100%; padding: 15px; font-size: 1.1rem; background: linear-gradient(135deg, #635bff, #a855f7);">
+                        💳 Paga €${totalAmount.toFixed(2)} con Carta
+                    </button>
+                `}
+            </div>
+        `;
+
+        // Create sub-modal
+        const subModal = document.createElement('div');
+        subModal.id = 'payment-sub-modal';
+        subModal.className = 'modal-overlay active';
+        subModal.innerHTML = `
+            <div class="modal" style="max-width: 450px;">
+                <div class="modal-header">
+                    <h3>${paymentMethod === 'paypal' ? '🅿️ Pagamento PayPal' : '💳 Pagamento Carta'}</h3>
+                    <button class="modal-close" onclick="App.closePaymentModal()">×</button>
+                </div>
+                <div class="modal-body">${innerBody}</div>
+            </div>
+        `;
+        document.body.appendChild(subModal);
+
+        // Initialize PayPal buttons if PayPal is selected
+        if (paymentMethod === 'paypal' && typeof paypal !== 'undefined') {
+            setTimeout(() => {
+                this.renderPayPalButtons(totalAmount, description);
+            }, 100);
+        }
+    },
+
+    renderPayPalButtons(totalAmount, description) {
+        const container = document.getElementById('paypal-buttons-modal');
+        if (!container) return;
+
+        // Clear any existing buttons
+        container.innerHTML = '';
+
+        try {
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'gold',
+                    shape: 'rect',
+                    label: 'paypal'
+                },
+                createOrder: function (data, actions) {
+                    return actions.order.create({
+                        purchase_units: [{
+                            description: description,
+                            amount: {
+                                currency_code: 'EUR',
+                                value: totalAmount.toFixed(2)
+                            }
+                        }]
+                    });
+                },
+                onApprove: function (data, actions) {
+                    return actions.order.capture().then(function (orderData) {
+                        console.log('PayPal payment captured:', orderData);
+
+                        // Mark payments as paid in the form
+                        for (let i = 1; i <= 4; i++) {
+                            const paymentInput = document.getElementById(`slot-payment-${i}`);
+                            const paidInput = document.getElementById(`slot-paid-${i}`);
+                            if (paymentInput && paidInput && parseFloat(paymentInput.value) > 0) {
+                                paidInput.value = paymentInput.value;
+                            }
+                        }
+
+                        App.closePaymentModal();
+                        alert('✅ Pagamento PayPal completato con successo!\n\nID Transazione: ' + orderData.id);
+                    });
+                },
+                onError: function (err) {
+                    console.error('PayPal error:', err);
+                    alert('❌ Errore durante il pagamento PayPal. Riprova.');
+                },
+                onCancel: function () {
+                    console.log('PayPal payment cancelled');
+                }
+            }).render('#paypal-buttons-modal');
+        } catch (e) {
+            console.error('Error rendering PayPal buttons:', e);
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #f87171;">
+                    <p>⚠️ PayPal non disponibile</p>
+                    <p style="font-size: 0.8rem; margin-top: 10px;">Assicurati di avere una connessione internet attiva.</p>
+                </div>
+            `;
+        }
+    },
+
+    openStripePayment(amount, description) {
+        // For now, we'll use a Stripe Payment Link simulation
+        // In production, you would create a Stripe Checkout session via your backend
+        // or use Stripe Payment Links
+
+        const stripeConfig = Storage.load('stripe_config', null);
+
+        if (stripeConfig && stripeConfig.paymentLink) {
+            // If a Stripe Payment Link is configured, redirect to it
+            const url = `${stripeConfig.paymentLink}?amount=${amount * 100}&description=${encodeURIComponent(description)}`;
+            window.open(url, '_blank');
+        } else {
+            // Show instructions for setting up Stripe
+            alert(`💳 Pagamento con Carta di Credito\n\nPer abilitare i pagamenti con carta:\n\n1. Crea un account Stripe (stripe.com)\n2. Crea un Payment Link nella dashboard\n3. Configura il link nelle impostazioni dell'app\n\nImporto da pagare: €${amount.toFixed(2)}\n\n📝 Per ora, registra manualmente il pagamento come "Pagato" nel form.`);
+        }
+
+        this.closePaymentModal();
+    },
+
+    closePaymentModal() {
+        const modal = document.getElementById('payment-sub-modal');
+        if (modal) {
+            modal.remove();
+        }
     },
 
     showAllPlayersInModal() {
