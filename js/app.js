@@ -2259,12 +2259,12 @@ const App = {
         subModal.id = 'payment-sub-modal';
         subModal.className = 'modal-overlay active';
         subModal.innerHTML = `
-            <div class="modal" style="max-width: 500px;">
+            <div class="modal" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h3>💳 Pagamento Prenotazione</h3>
                     <button class="modal-close" onclick="App.closePaymentModal()">×</button>
                 </div>
-                <div class="modal-body">${innerBody}</div>
+                <div class="modal-body" style="overflow-y: auto; flex: 1;">${innerBody}</div>
             </div>
         `;
         document.body.appendChild(subModal);
@@ -2364,7 +2364,11 @@ const App = {
 
         const paymentMethod = document.querySelector('input[name="modal-payment-method"]:checked')?.value || 'contanti';
 
-        // Update paid fields in the main modal
+        // Calculate total BEFORE closing modal (since we need the payment amounts)
+        let total = 0;
+        const paidPlayers = [];
+
+        // Update paid fields in the main modal - ONLY for checked players
         checkboxes.forEach(cb => {
             const idx = cb.dataset.index;
             const amountInput = document.getElementById(`pay-amount-${idx}`);
@@ -2373,15 +2377,23 @@ const App = {
             if (amountInput && mainPaidInput) {
                 const currentPaid = parseFloat(mainPaidInput.value) || 0;
                 const newPayment = parseFloat(amountInput.value) || 0;
-                mainPaidInput.value = (currentPaid + newPayment).toFixed(2);
+
+                if (newPayment > 0) {
+                    mainPaidInput.value = (currentPaid + newPayment).toFixed(2);
+                    total += newPayment;
+                    paidPlayers.push(idx);
+                }
             }
         });
 
         // Close payment modal
         this.closePaymentModal();
 
-        const total = this.calculateSelectedTotal();
-        alert(`✅ Pagamento di €${total.toFixed(2)} registrato come ${paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : 'PayPal'}.\n\nRicordati di salvare la prenotazione!`);
+        if (total > 0) {
+            alert(`✅ Pagamento di €${total.toFixed(2)} registrato come ${paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : 'PayPal'}.\n\nGiocatori pagati: ${paidPlayers.length}\nRicordati di salvare la prenotazione!`);
+        } else {
+            alert('⚠️ Nessun importo da pagare.');
+        }
     },
 
     renderPayPalButtons(totalAmount, description) {
