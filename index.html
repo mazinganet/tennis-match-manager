@@ -250,6 +250,69 @@
                     </button>
                 </div>
 
+                <!-- PayPal Configuration - admin only -->
+                <div class="section-card admin-only" style="margin-top: 20px; display: none;">
+                    <h3>💳 Configurazione Pagamenti</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Configura le credenziali PayPal per abilitare i pagamenti online.
+                    </p>
+
+                    <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.5rem;">🅿️</span>
+                            <h4 style="margin: 0; color: var(--text-primary);">PayPal</h4>
+                            <span id="paypal-status-badge"
+                                style="padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; background: #f59e0b; color: white;">Sandbox</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Client
+                                ID</label>
+                            <input type="text" id="paypal-client-id" placeholder="Inserisci il tuo PayPal Client ID"
+                                style="width: 100%; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                Lascia "sb" per usare la modalità sandbox (test). Ottieni il tuo Client ID da
+                                <a href="https://developer.paypal.com/dashboard/applications" target="_blank"
+                                    style="color: #60a5fa;">developer.paypal.com</a>
+                            </p>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="paypal-production-mode" onchange="App.togglePayPalMode()">
+                                <span style="color: var(--text-primary);">🔴 Modalità Produzione (pagamenti
+                                    reali)</span>
+                            </label>
+                            <p style="font-size: 0.75rem; color: #ef4444; margin-top: 5px; display: none;"
+                                id="paypal-production-warning">
+                                ⚠️ ATTENZIONE: In modalità produzione i pagamenti saranno reali!
+                            </p>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="App.savePayPalConfig()" style="flex: 1;">
+                                💾 Salva Configurazione
+                            </button>
+                            <button class="btn btn-secondary" onclick="App.testPayPalConnection()" style="flex: 1;">
+                                🧪 Test Connessione
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: rgba(96, 165, 250, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(96, 165, 250, 0.3);">
+                        <h5 style="color: #60a5fa; margin-bottom: 10px;">📖 Come ottenere le credenziali PayPal</h5>
+                        <ol style="color: var(--text-secondary); font-size: 0.85rem; padding-left: 20px; margin: 0;">
+                            <li>Vai su <a href="https://developer.paypal.com/" target="_blank"
+                                    style="color: #60a5fa;">developer.paypal.com</a></li>
+                            <li>Accedi con il tuo account PayPal (o creane uno)</li>
+                            <li>Vai su Apps & Credentials</li>
+                            <li>Crea una nuova app o usa quella predefinita</li>
+                            <li>Copia il <strong>Client ID</strong> (Sandbox per test, Live per produzione)</li>
+                        </ol>
+                    </div>
+                </div>
+
                 <!-- Backup Section - admin only -->
                 <div class="section-card admin-only" style="margin-top: 20px; display: none;">
                     <h3>💾 Backup e Sincronizzazione</h3>

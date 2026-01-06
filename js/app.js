@@ -75,6 +75,9 @@ const App = {
                 console.log(`📋 [CLEANUP] Dropdown aggiornato (backup): ${settings.autoCleanupMonths} mesi`);
             }
         }, 3000);
+
+        // Load PayPal configuration
+        this.loadPayPalConfig();
     },
 
     loadSettings() {
@@ -4399,6 +4402,180 @@ const App = {
         printWindow.onload = function () {
             printWindow.print();
         };
+    },
+
+    // ========================================
+    // PayPal Configuration Functions
+    // ========================================
+
+    // Load PayPal configuration into UI
+    loadPayPalConfig() {
+        const config = Storage.load('paypal_config', {
+            clientId: 'sb',
+            productionMode: false
+        });
+
+        const clientIdInput = document.getElementById('paypal-client-id');
+        const productionCheckbox = document.getElementById('paypal-production-mode');
+        const statusBadge = document.getElementById('paypal-status-badge');
+        const warningEl = document.getElementById('paypal-production-warning');
+
+        if (clientIdInput) clientIdInput.value = config.clientId || 'sb';
+        if (productionCheckbox) productionCheckbox.checked = config.productionMode || false;
+
+        // Update status badge
+        if (statusBadge) {
+            if (config.productionMode) {
+                statusBadge.textContent = 'Produzione';
+                statusBadge.style.background = '#22c55e';
+            } else {
+                statusBadge.textContent = 'Sandbox';
+                statusBadge.style.background = '#f59e0b';
+            }
+        }
+
+        // Show/hide warning
+        if (warningEl) {
+            warningEl.style.display = config.productionMode ? 'block' : 'none';
+        }
+    },
+
+    // Save PayPal configuration
+    savePayPalConfig() {
+        const clientId = document.getElementById('paypal-client-id')?.value?.trim() || 'sb';
+        const productionMode = document.getElementById('paypal-production-mode')?.checked || false;
+
+        const config = {
+            clientId: clientId,
+            productionMode: productionMode,
+            lastUpdated: new Date().toISOString()
+        };
+
+        Storage.save('paypal_config', config);
+
+        // Update UI
+        this.loadPayPalConfig();
+
+        // Reload PayPal SDK with new configuration
+        this.reloadPayPalSDK(clientId);
+
+        alert(`✅ Configurazione PayPal salvata!\n\nClient ID: ${clientId === 'sb' ? 'Sandbox (Demo)' : clientId.substring(0, 20) + '...'}\nModalità: ${productionMode ? '🔴 Produzione' : '🟡 Sandbox'}`);
+    },
+
+    // Toggle production mode UI
+    togglePayPalMode() {
+        const productionMode = document.getElementById('paypal-production-mode')?.checked || false;
+        const statusBadge = document.getElementById('paypal-status-badge');
+        const warningEl = document.getElementById('paypal-production-warning');
+
+        if (statusBadge) {
+            if (productionMode) {
+                statusBadge.textContent = 'Produzione';
+                statusBadge.style.background = '#22c55e';
+            } else {
+                statusBadge.textContent = 'Sandbox';
+                statusBadge.style.background = '#f59e0b';
+            }
+        }
+
+        if (warningEl) {
+            warningEl.style.display = productionMode ? 'block' : 'none';
+        }
+    },
+
+    // Test PayPal connection
+    testPayPalConnection() {
+        const clientId = document.getElementById('paypal-client-id')?.value?.trim() || 'sb';
+
+        if (typeof paypal === 'undefined') {
+            alert('❌ PayPal SDK non caricato.\n\nAssicurati che la connessione internet sia attiva e ricarica la pagina.');
+            return;
+        }
+
+        // Create a test container
+        let testContainer = document.getElementById('paypal-test-container');
+        if (!testContainer) {
+            testContainer = document.createElement('div');
+            testContainer.id = 'paypal-test-container';
+            testContainer.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e1e2e;padding:30px;border-radius:12px;z-index:10000;box-shadow:0 10px 40px rgba(0,0,0,0.5);min-width:350px;';
+            testContainer.innerHTML = `
+                <h3 style="color:#fff;margin-bottom:15px;">🧪 Test Pagamento PayPal</h3>
+                <p style="color:#9ca3af;margin-bottom:15px;font-size:0.9rem;">Questo è un pagamento di test di €0.01</p>
+                <div id="paypal-test-buttons" style="min-height:150px;"></div>
+                <button onclick="document.getElementById('paypal-test-container').remove()" 
+                        style="margin-top:15px;width:100%;padding:10px;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;">
+                    ✕ Chiudi
+                </button>
+            `;
+            document.body.appendChild(testContainer);
+        }
+
+        // Render test PayPal buttons
+        try {
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'gold',
+                    shape: 'rect',
+                    label: 'paypal'
+                },
+                createOrder: (data, actions) => {
+                    return actions.order.create({
+                        purchase_units: [{
+                            description: 'Test Connessione PayPal - Tennis Manager',
+                            amount: {
+                                currency_code: 'EUR',
+                                value: '0.01'
+                            }
+                        }]
+                    });
+                },
+                onApprove: (data, actions) => {
+                    return actions.order.capture().then((orderData) => {
+                        alert('✅ Test completato con successo!\n\nPayPal è configurato correttamente.\nID Transazione: ' + orderData.id);
+                        document.getElementById('paypal-test-container')?.remove();
+                    });
+                },
+                onError: (err) => {
+                    console.error('PayPal test error:', err);
+                    alert('❌ Errore nella configurazione PayPal.\n\nVerifica il Client ID e riprova.');
+                },
+                onCancel: () => {
+                    console.log('PayPal test cancelled');
+                }
+            }).render('#paypal-test-buttons');
+        } catch (e) {
+            console.error('Error rendering PayPal test buttons:', e);
+            alert('❌ Errore nel caricamento dei pulsanti PayPal.\n\nErrore: ' + e.message);
+            testContainer.remove();
+        }
+    },
+
+    // Reload PayPal SDK with new client ID
+    reloadPayPalSDK(clientId) {
+        // Remove existing PayPal script
+        const existingScript = document.querySelector('script[src*="paypal.com/sdk"]');
+        if (existingScript) {
+            existingScript.remove();
+        }
+
+        // Clear PayPal namespace
+        if (typeof paypal !== 'undefined') {
+            delete window.paypal;
+        }
+
+        // Load new script with updated client ID
+        const script = document.createElement('script');
+        script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=EUR&intent=capture`;
+        script.setAttribute('data-sdk-integration-source', 'button-factory');
+        script.onload = () => {
+            console.log('✅ PayPal SDK ricaricato con Client ID:', clientId === 'sb' ? 'Sandbox' : clientId.substring(0, 15) + '...');
+        };
+        script.onerror = () => {
+            console.error('❌ Errore nel caricamento PayPal SDK');
+            alert('❌ Errore nel caricamento del PayPal SDK.\nVerifica il Client ID e la connessione internet.');
+        };
+        document.head.appendChild(script);
     }
 };
 
