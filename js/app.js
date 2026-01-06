@@ -1574,25 +1574,14 @@ const App = {
                             </div>
                         </div>
                         
-                        <!-- Metodo di Pagamento -->
-                        <div class="payment-method-section" style="margin-top: 15px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.3);">
-                            <label style="display: block; margin-bottom: 8px; color: var(--text-primary); font-weight: 500;">💳 Metodo di Pagamento</label>
+                        <!-- Pulsanti di Eliminazione -->
+                        <div class="delete-buttons-section" style="margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-primary); font-weight: 500;">🗑️ Elimina Prenotazioni</label>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
-                                    <input type="radio" name="payment-method" value="contanti" ${(!existingRes?.paymentMethod || existingRes?.paymentMethod === 'contanti') ? 'checked' : ''}>
-                                    <span>💵 Contanti</span>
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
-                                    <input type="radio" name="payment-method" value="carta" ${existingRes?.paymentMethod === 'carta' ? 'checked' : ''}>
-                                    <span>💳 Carta di Credito</span>
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
-                                    <input type="radio" name="payment-method" value="paypal" ${existingRes?.paymentMethod === 'paypal' ? 'checked' : ''}>
-                                    <span>🅿️ PayPal</span>
-                                </label>
+                                ${hasExisting ? `<button class="btn btn-danger btn-sm" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">🗑️ Elimina Range</button>` : ''}
+                                <button class="btn btn-warning btn-sm" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">📅 Elimina Giornata</button>
+                                <button class="btn btn-outline btn-sm" onclick="App.clearAllReservations()" style="border-color: #ef4444; color: #ef4444;">🧹 Pulisci Tutto</button>
                             </div>
-                            <!-- PayPal button container - shown when PayPal is selected -->
-                            <div id="paypal-button-container" style="margin-top: 10px; display: none;"></div>
                         </div>
                 </div>
             </div>
@@ -1600,19 +1589,12 @@ const App = {
         `;
 
         const footer = `
-            <div class="modal-footer-buttons">
-                <div class="footer-left-buttons">
-                    ${hasExisting ? `<button class="btn btn-danger btn-sm" onclick="App.deleteSlotFromModal('${courtId}', '${dayName}')">🗑️ Elimina Range</button>` : ''}
-                    <button class="btn btn-warning btn-sm" onclick="App.deleteAllDayReservations('${courtId}', '${dayName}')">📅 Giornata</button>
-                    <button class="btn btn-outline btn-sm" onclick="App.clearAllReservations()" style="border-color: #ef4444; color: #ef4444;">🧹 Pulisci Tutto</button>
-                </div>
-                <div class="footer-right-buttons" style="display: flex; gap: 8px; align-items: center;">
-                    <button class="btn btn-success btn-sm" onclick="App.initiatePayment()" style="background: #22c55e; color: white;" title="Paga la prenotazione">💳 Paga Ora</button>
-                    <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
-                    <button class="btn btn-primary" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
-                        ${hasExisting ? '💾 Salva' : '✓ Conferma'}
-                    </button>
-                </div>
+            <div class="modal-footer-buttons" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="App.closeModal()">Annulla</button>
+                <button class="btn btn-success" onclick="App.initiatePayment()" style="background: #22c55e; color: white;" title="Paga la prenotazione">💳 Paga Ora</button>
+                <button class="btn btn-primary" onclick="App.confirmPlanningSlot('${courtId}', '${dayName}', ${existingResIndex})">
+                    ${hasExisting ? '💾 Salva' : '✓ Conferma'}
+                </button>
             </div>
         `;
 
@@ -2161,89 +2143,125 @@ const App = {
     // Initiate payment flow for the current booking
     initiatePayment() {
         // Calculate total amount from the payment inputs
-        let totalAmount = 0;
-        const playerPayments = [];
+        let playerPayments = [];
 
         for (let i = 1; i <= 4; i++) {
             const playerInput = document.getElementById(`slot-player-${i}`);
             const paymentInput = document.getElementById(`slot-payment-${i}`);
+            const paidInput = document.getElementById(`slot-paid-${i}`);
 
             if (playerInput && playerInput.value.trim() && paymentInput) {
-                const amount = parseFloat(paymentInput.value) || 0;
-                if (amount > 0) {
-                    totalAmount += amount;
+                const quota = parseFloat(paymentInput.value) || 0;
+                const paid = parseFloat(paidInput?.value) || 0;
+                const remaining = quota - paid;
+
+                if (playerInput.value.trim()) {
                     playerPayments.push({
+                        index: i,
                         player: playerInput.value.trim(),
-                        amount: amount
+                        quota: quota,
+                        paid: paid,
+                        remaining: remaining > 0 ? remaining : 0
                     });
                 }
             }
         }
 
-        if (totalAmount <= 0) {
-            alert('⚠️ Inserisci almeno una quota per procedere al pagamento.');
+        if (playerPayments.length === 0) {
+            alert('⚠️ Inserisci almeno un giocatore per procedere al pagamento.');
             return;
         }
 
-        // Get selected payment method
-        const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value || 'contanti';
-
-        if (paymentMethod === 'contanti') {
-            alert('💵 Pagamento in contanti: registra il pagamento manualmente nella colonna "Pagato".');
-            return;
-        }
-
-        // Show payment sub-modal
-        this.showPaymentModal(totalAmount, playerPayments, paymentMethod);
+        // Show new payment modal with player selection
+        this.showPaymentModal(playerPayments);
     },
 
-    showPaymentModal(totalAmount, playerPayments, paymentMethod) {
-        const playersListHtml = playerPayments.map(p =>
-            `<div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <span>${p.player}</span>
-                <span>€${p.amount.toFixed(2)}</span>
-            </div>`
-        ).join('');
-
+    showPaymentModal(playerPayments) {
         const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
         const description = `Prenotazione Tennis - ${dateStr}`;
 
-        const innerBody = `
-            <div style="text-align: center; padding: 15px;">
-                <h4 style="color: var(--text-primary); margin-bottom: 15px;">📋 Riepilogo Pagamento</h4>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    ${playersListHtml}
-                    <div style="display: flex; justify-content: space-between; padding-top: 10px; margin-top: 10px; border-top: 2px solid #22c55e; font-weight: bold; font-size: 1.2rem;">
-                        <span>Totale</span>
-                        <span style="color: #22c55e;">€${totalAmount.toFixed(2)}</span>
+        // Build player selection list with checkboxes
+        const playersListHtml = playerPayments.map((p, idx) => `
+            <div class="payment-player-row" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+                <input type="checkbox" id="pay-player-${p.index}" class="pay-player-checkbox" data-index="${p.index}" 
+                       ${p.remaining > 0 ? 'checked' : ''} onchange="App.updatePaymentTotal()">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500; color: var(--text-primary);">${p.player}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                        Quota: €${p.quota.toFixed(2)} | Già pagato: €${p.paid.toFixed(2)}
                     </div>
                 </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span style="color: var(--text-secondary);">€</span>
+                    <input type="number" id="pay-amount-${p.index}" class="payment-input" 
+                           value="${p.remaining.toFixed(2)}" min="0" step="0.5" 
+                           style="width: 70px; text-align: right;" 
+                           onchange="App.updatePaymentTotal()">
+                </div>
+            </div>
+        `).join('');
+
+        const innerBody = `
+            <div style="padding: 15px;">
+                <h4 style="color: var(--text-primary); margin-bottom: 15px; text-align: center;">📋 Seleziona Pagamenti</h4>
                 
-                ${paymentMethod === 'paypal' ? `
-                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
-                        Clicca sul pulsante PayPal per completare il pagamento
-                    </p>
-                    <div id="paypal-buttons-modal" style="min-height: 150px;"></div>
-                ` : `
-                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
-                        Clicca per aprire il pagamento con carta di credito
-                    </p>
-                    <button class="btn btn-primary" onclick="App.openStripePayment(${totalAmount}, '${description}')" 
-                            style="width: 100%; padding: 15px; font-size: 1.1rem; background: linear-gradient(135deg, #635bff, #a855f7);">
-                        💳 Paga €${totalAmount.toFixed(2)} con Carta
+                <!-- Player Selection -->
+                <div class="payment-players-list" style="margin-bottom: 20px;">
+                    ${playersListHtml}
+                </div>
+
+                <!-- Payment Total -->
+                <div style="display: flex; justify-content: space-between; padding: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                    <span style="font-weight: 600; color: var(--text-primary);">Totale da pagare:</span>
+                    <span id="payment-total-amount" style="font-weight: 700; font-size: 1.3rem; color: #22c55e;">€0.00</span>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 10px; color: var(--text-primary); font-weight: 500;">💳 Metodo di Pagamento</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 10px 15px; background: var(--bg-card); border-radius: 8px; border: 2px solid var(--border-color); flex: 1; justify-content: center;" 
+                               onclick="App.selectPaymentMethod('contanti')">
+                            <input type="radio" name="modal-payment-method" value="contanti" checked>
+                            <span>💵 Contanti</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 10px 15px; background: var(--bg-card); border-radius: 8px; border: 2px solid var(--border-color); flex: 1; justify-content: center;"
+                               onclick="App.selectPaymentMethod('carta')">
+                            <input type="radio" name="modal-payment-method" value="carta">
+                            <span>💳 Carta</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 10px 15px; background: var(--bg-card); border-radius: 8px; border: 2px solid var(--border-color); flex: 1; justify-content: center;"
+                               onclick="App.selectPaymentMethod('paypal')">
+                            <input type="radio" name="modal-payment-method" value="paypal">
+                            <span>🅿️ PayPal</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- PayPal/Stripe Container -->
+                <div id="payment-method-container" style="display: none; margin-bottom: 15px;"></div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="App.closePaymentModal()" style="flex: 1;">Annulla</button>
+                    <button class="btn btn-success" id="confirm-payment-btn" onclick="App.confirmPayment()" style="flex: 2; background: #22c55e; color: white;">
+                        ✓ Conferma Pagamento
                     </button>
-                `}
+                </div>
             </div>
         `;
+
+        // Store player payments for later use
+        this.pendingPayments = playerPayments;
 
         // Create sub-modal
         const subModal = document.createElement('div');
         subModal.id = 'payment-sub-modal';
         subModal.className = 'modal-overlay active';
         subModal.innerHTML = `
-            <div class="modal" style="max-width: 450px;">
+            <div class="modal" style="max-width: 500px;">
                 <div class="modal-header">
-                    <h3>${paymentMethod === 'paypal' ? '🅿️ Pagamento PayPal' : '💳 Pagamento Carta'}</h3>
+                    <h3>💳 Pagamento Prenotazione</h3>
                     <button class="modal-close" onclick="App.closePaymentModal()">×</button>
                 </div>
                 <div class="modal-body">${innerBody}</div>
@@ -2251,12 +2269,119 @@ const App = {
         `;
         document.body.appendChild(subModal);
 
-        // Initialize PayPal buttons if PayPal is selected
-        if (paymentMethod === 'paypal' && typeof paypal !== 'undefined') {
-            setTimeout(() => {
-                this.renderPayPalButtons(totalAmount, description);
-            }, 100);
+        // Calculate initial total
+        setTimeout(() => this.updatePaymentTotal(), 50);
+    },
+
+    // Update payment total based on selected players
+    updatePaymentTotal() {
+        let total = 0;
+        const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+
+        checkboxes.forEach(cb => {
+            const idx = cb.dataset.index;
+            const amountInput = document.getElementById(`pay-amount-${idx}`);
+            if (amountInput) {
+                total += parseFloat(amountInput.value) || 0;
+            }
+        });
+
+        const totalEl = document.getElementById('payment-total-amount');
+        if (totalEl) {
+            totalEl.textContent = `€${total.toFixed(2)}`;
         }
+    },
+
+    // Select payment method and update UI
+    selectPaymentMethod(method) {
+        const container = document.getElementById('payment-method-container');
+        const confirmBtn = document.getElementById('confirm-payment-btn');
+
+        if (!container) return;
+
+        // Update radio button
+        const radio = document.querySelector(`input[name="modal-payment-method"][value="${method}"]`);
+        if (radio) radio.checked = true;
+
+        if (method === 'contanti') {
+            container.style.display = 'none';
+            if (confirmBtn) {
+                confirmBtn.textContent = '✓ Registra Pagamento';
+                confirmBtn.onclick = () => this.confirmPayment();
+            }
+        } else if (method === 'paypal') {
+            container.style.display = 'block';
+            container.innerHTML = '<div id="paypal-buttons-modal" style="min-height: 120px;"></div>';
+            if (confirmBtn) {
+                confirmBtn.style.display = 'none';
+            }
+            // Render PayPal buttons
+            setTimeout(() => {
+                const total = this.calculateSelectedTotal();
+                if (total > 0) {
+                    this.renderPayPalButtons(total, `Prenotazione Tennis - ${this.currentPlanningDate.toISOString().split('T')[0]}`);
+                }
+            }, 100);
+        } else if (method === 'carta') {
+            container.style.display = 'block';
+            const total = this.calculateSelectedTotal();
+            container.innerHTML = `
+                <button class="btn btn-primary" onclick="App.openStripePayment(${total}, 'Prenotazione Tennis')" 
+                        style="width: 100%; padding: 15px; font-size: 1.1rem; background: linear-gradient(135deg, #635bff, #a855f7);">
+                    💳 Paga €${total.toFixed(2)} con Carta
+                </button>
+            `;
+            if (confirmBtn) {
+                confirmBtn.style.display = 'none';
+            }
+        }
+    },
+
+    // Calculate total from selected checkboxes
+    calculateSelectedTotal() {
+        let total = 0;
+        const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+
+        checkboxes.forEach(cb => {
+            const idx = cb.dataset.index;
+            const amountInput = document.getElementById(`pay-amount-${idx}`);
+            if (amountInput) {
+                total += parseFloat(amountInput.value) || 0;
+            }
+        });
+
+        return total;
+    },
+
+    // Confirm payment and update paid fields
+    confirmPayment() {
+        const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+
+        if (checkboxes.length === 0) {
+            alert('⚠️ Seleziona almeno un giocatore da pagare.');
+            return;
+        }
+
+        const paymentMethod = document.querySelector('input[name="modal-payment-method"]:checked')?.value || 'contanti';
+
+        // Update paid fields in the main modal
+        checkboxes.forEach(cb => {
+            const idx = cb.dataset.index;
+            const amountInput = document.getElementById(`pay-amount-${idx}`);
+            const mainPaidInput = document.getElementById(`slot-paid-${idx}`);
+
+            if (amountInput && mainPaidInput) {
+                const currentPaid = parseFloat(mainPaidInput.value) || 0;
+                const newPayment = parseFloat(amountInput.value) || 0;
+                mainPaidInput.value = (currentPaid + newPayment).toFixed(2);
+            }
+        });
+
+        // Close payment modal
+        this.closePaymentModal();
+
+        const total = this.calculateSelectedTotal();
+        alert(`✅ Pagamento di €${total.toFixed(2)} registrato come ${paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : 'PayPal'}.\n\nRicordati di salvare la prenotazione!`);
     },
 
     renderPayPalButtons(totalAmount, description) {
