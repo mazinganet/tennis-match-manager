@@ -1508,33 +1508,33 @@ const App = {
                                 <input type="text" id="slot-player-1" class="player-input" placeholder="Giocatore 1" 
                                        value="${existingRes?.players?.[0] || ''}" onfocus="App.setActivePlayerInput(1)">
                                 <input type="number" id="slot-payment-1" class="payment-input" placeholder="Quota" min="0" step="0.5"
-                                       value="${existingRes?.payments?.[0] || ''}" style="width: 50px;" title="Quota calcolata">
+                                       value="${existingRes?.payments?.[0] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-1" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[0] || ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[0] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-2" class="player-input" placeholder="Giocatore 2"
                                        value="${existingRes?.players?.[1] || ''}" onfocus="App.setActivePlayerInput(2)">
                                 <input type="number" id="slot-payment-2" class="payment-input" placeholder="Quota" min="0" step="0.5"
-                                       value="${existingRes?.payments?.[1] || ''}" style="width: 50px;" title="Quota calcolata">
+                                       value="${existingRes?.payments?.[1] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-2" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[1] || ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[1] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-3" class="player-input" placeholder="Giocatore 3"
                                        value="${existingRes?.players?.[2] || ''}" onfocus="App.setActivePlayerInput(3)">
                                 <input type="number" id="slot-payment-3" class="payment-input" placeholder="Quota" min="0" step="0.5"
-                                       value="${existingRes?.payments?.[2] || ''}" style="width: 50px;" title="Quota calcolata">
+                                       value="${existingRes?.payments?.[2] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-3" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[2] || ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[2] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-4" class="player-input" placeholder="Giocatore 4"
                                        value="${existingRes?.players?.[3] || ''}" onfocus="App.setActivePlayerInput(4)">
                                 <input type="number" id="slot-payment-4" class="payment-input" placeholder="Quota" min="0" step="0.5"
-                                       value="${existingRes?.payments?.[3] || ''}" style="width: 50px;" title="Quota calcolata">
+                                       value="${existingRes?.payments?.[3] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-4" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[3] || ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[3] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
                             </div>
                         </div>
                         <input type="hidden" id="slot-label" value="${existingRes?.label || ''}">
@@ -2182,13 +2182,13 @@ const App = {
 
         // Build player selection list with checkboxes
         const playersListHtml = playerPayments.map((p, idx) => `
-            <div class="payment-player-row" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+            <div class="payment-player-row" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${p.remaining > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; border-radius: 8px; margin-bottom: 8px; border: 1px solid ${p.remaining > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'};">
                 <input type="checkbox" id="pay-player-${p.index}" class="pay-player-checkbox" data-index="${p.index}" 
-                       ${p.remaining > 0 ? 'checked' : ''} onchange="App.updatePaymentTotal()">
+                       onchange="App.updatePaymentTotal()">
                 <div style="flex: 1;">
-                    <div style="font-weight: 500; color: var(--text-primary);">${p.player}</div>
+                    <div style="font-weight: 500; color: var(--text-primary);">${p.player} ${p.remaining > 0 ? '⚠️' : '✅'}</div>
                     <div style="font-size: 0.8rem; color: var(--text-muted);">
-                        Quota: €${p.quota.toFixed(2)} | Già pagato: €${p.paid.toFixed(2)}
+                        Quota: €${p.quota.toFixed(2)} | Già pagato: €${p.paid.toFixed(2)} ${p.remaining > 0 ? `| <span style="color:#ef4444;">Da pagare: €${p.remaining.toFixed(2)}</span>` : ''}
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 5px;">
