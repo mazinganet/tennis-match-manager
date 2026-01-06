@@ -2356,6 +2356,7 @@ const App = {
     // Confirm payment and update paid fields
     confirmPayment() {
         const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+        console.log('[PAYMENT DEBUG] Found checked checkboxes:', checkboxes.length);
 
         if (checkboxes.length === 0) {
             alert('⚠️ Seleziona almeno un giocatore da pagare.');
@@ -2363,6 +2364,7 @@ const App = {
         }
 
         const paymentMethod = document.querySelector('input[name="modal-payment-method"]:checked')?.value || 'contanti';
+        console.log('[PAYMENT DEBUG] Payment method:', paymentMethod);
 
         // Calculate total BEFORE closing modal (since we need the payment amounts)
         let total = 0;
@@ -2371,20 +2373,31 @@ const App = {
         // Update paid fields in the main modal - ONLY for checked players
         checkboxes.forEach(cb => {
             const idx = cb.dataset.index;
+            console.log('[PAYMENT DEBUG] Processing checkbox for player index:', idx);
+
             const amountInput = document.getElementById(`pay-amount-${idx}`);
             const mainPaidInput = document.getElementById(`slot-paid-${idx}`);
+
+            console.log('[PAYMENT DEBUG] Amount input found:', !!amountInput, 'value:', amountInput?.value);
+            console.log('[PAYMENT DEBUG] Main paid input found:', !!mainPaidInput, 'current value:', mainPaidInput?.value);
 
             if (amountInput && mainPaidInput) {
                 const currentPaid = parseFloat(mainPaidInput.value) || 0;
                 const newPayment = parseFloat(amountInput.value) || 0;
 
+                console.log('[PAYMENT DEBUG] Current paid:', currentPaid, 'New payment:', newPayment);
+
                 if (newPayment > 0) {
-                    mainPaidInput.value = (currentPaid + newPayment).toFixed(2);
+                    const newTotal = currentPaid + newPayment;
+                    mainPaidInput.value = newTotal.toFixed(2);
                     total += newPayment;
                     paidPlayers.push(idx);
+                    console.log('[PAYMENT DEBUG] Updated slot-paid-', idx, 'to:', newTotal.toFixed(2));
                 }
             }
         });
+
+        console.log('[PAYMENT DEBUG] Total paid:', total, 'Players paid:', paidPlayers);
 
         // Close payment modal
         this.closePaymentModal();
@@ -2426,14 +2439,21 @@ const App = {
                     return actions.order.capture().then(function (orderData) {
                         console.log('PayPal payment captured:', orderData);
 
-                        // Mark payments as paid in the form
-                        for (let i = 1; i <= 4; i++) {
-                            const paymentInput = document.getElementById(`slot-payment-${i}`);
-                            const paidInput = document.getElementById(`slot-paid-${i}`);
-                            if (paymentInput && paidInput && parseFloat(paymentInput.value) > 0) {
-                                paidInput.value = paymentInput.value;
+                        // Mark payments as paid in the form - ONLY for checked players
+                        const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+                        checkboxes.forEach(cb => {
+                            const idx = cb.dataset.index;
+                            const amountInput = document.getElementById(`pay-amount-${idx}`);
+                            const paidInput = document.getElementById(`slot-paid-${idx}`);
+
+                            if (amountInput && paidInput) {
+                                const currentPaid = parseFloat(paidInput.value) || 0;
+                                const newPayment = parseFloat(amountInput.value) || 0;
+                                if (newPayment > 0) {
+                                    paidInput.value = (currentPaid + newPayment).toFixed(2);
+                                }
                             }
-                        }
+                        });
 
                         App.closePaymentModal();
                         alert('✅ Pagamento PayPal completato con successo!\n\nID Transazione: ' + orderData.id);
