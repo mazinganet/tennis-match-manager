@@ -2304,12 +2304,16 @@ const App = {
         if (radio) radio.checked = true;
 
         if (method === 'contanti') {
+            // Per contanti: nasconde il container dei pagamenti online e mostra il bottone conferma
             container.style.display = 'none';
+            container.innerHTML = '';
             if (confirmBtn) {
+                confirmBtn.style.display = 'block';
                 confirmBtn.textContent = '✓ Registra Pagamento';
                 confirmBtn.onclick = () => this.confirmPayment();
             }
         } else if (method === 'paypal') {
+            // Per PayPal: mostra SOLO i bottoni PayPal, nasconde il bottone conferma
             container.style.display = 'block';
             container.innerHTML = '<div id="paypal-buttons-modal" style="min-height: 120px;"></div>';
             if (confirmBtn) {
@@ -2323,6 +2327,7 @@ const App = {
                 }
             }, 100);
         } else if (method === 'carta') {
+            // Per Carta: mostra SOLO il bottone per pagare con carta, nasconde il bottone conferma
             container.style.display = 'block';
             const total = this.calculateSelectedTotal();
             container.innerHTML = `
