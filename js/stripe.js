@@ -120,35 +120,54 @@ const StripePayments = {
             return { success: false, error: 'Init failed' };
         }
 
-        // Create modal HTML
+        // Create modal HTML with unique class to avoid interference with existing modal handlers
         const modalHtml = `
-            <div id="stripe-payment-modal" class="modal-overlay active" style="z-index: 10001;">
-                <div class="modal" style="max-width: 450px;">
-                    <div class="modal-header">
-                        <h3>💳 Pagamento con Carta</h3>
-                        <button class="modal-close" onclick="StripePayments.closeModal()">×</button>
+            <div id="stripe-payment-modal" class="stripe-modal-overlay" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10001;
+            " onclick="if(event.target === this) StripePayments.closeModal()">
+                <div class="stripe-modal-content" style="
+                    background: var(--bg-card, #1e1e2e);
+                    border-radius: 12px;
+                    max-width: 450px;
+                    width: 90%;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+                " onclick="event.stopPropagation()">
+                    <div style="padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; color: #fff;">💳 Pagamento con Carta</h3>
+                        <button onclick="StripePayments.closeModal()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 0; line-height: 1;">×</button>
                     </div>
-                    <div class="modal-body" style="padding: 20px;">
+                    <div style="padding: 20px;">
                         <div style="margin-bottom: 20px; text-align: center;">
                             <div style="font-size: 2rem; font-weight: 700; color: #22c55e;">€${amount.toFixed(2)}</div>
-                            <div style="color: var(--text-muted); font-size: 0.9rem;">${description}</div>
+                            <div style="color: #9ca3af; font-size: 0.9rem;">${description}</div>
                         </div>
                         
                         <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; color: var(--text-primary); font-weight: 500;">
+                            <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: 500;">
                                 Dati Carta
                             </label>
                             <div id="stripe-card-element" style="
                                 padding: 12px;
-                                border: 1px solid var(--border-color);
+                                border: 1px solid #444;
                                 border-radius: 8px;
-                                background: var(--bg-card);
+                                background: #2d2d3d;
                             "></div>
                             <div id="stripe-card-errors" style="color: #ef4444; font-size: 0.85rem; margin-top: 8px;"></div>
                         </div>
                         
                         <div style="background: rgba(96, 165, 250, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(96, 165, 250, 0.3);">
-                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">
+                            <p style="color: #9ca3af; font-size: 0.85rem; margin: 0;">
                                 🧪 <strong>Modalità Test</strong><br>
                                 Usa la carta: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">4242 4242 4242 4242</code><br>
                                 Data: qualsiasi futura | CVV: qualsiasi 3 cifre
@@ -156,10 +175,10 @@ const StripePayments = {
                         </div>
                         
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-secondary" onclick="StripePayments.closeModal()" style="flex: 1;">
+                            <button onclick="StripePayments.closeModal()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2d2d3d; color: #fff; cursor: pointer;">
                                 Annulla
                             </button>
-                            <button id="stripe-submit-btn" class="btn btn-success" onclick="StripePayments.submitPayment()" style="flex: 2; background: linear-gradient(135deg, #635bff, #a855f7);">
+                            <button id="stripe-submit-btn" onclick="StripePayments.submitPayment()" style="flex: 2; padding: 12px; border-radius: 8px; border: none; background: linear-gradient(135deg, #635bff, #a855f7); color: #fff; cursor: pointer; font-weight: 600;">
                                 💳 Paga €${amount.toFixed(2)}
                             </button>
                         </div>
