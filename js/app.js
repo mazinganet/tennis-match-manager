@@ -2334,15 +2334,37 @@ const App = {
             container.style.display = 'block';
             const total = this.calculateSelectedTotal();
             container.innerHTML = `
-                <button class="btn btn-primary" onclick="App.openStripePayment(${total}, 'Prenotazione Tennis')" 
+                <button class="btn btn-primary" onclick="App.handleStripePaymentClick()" 
                         style="width: 100%; padding: 15px; font-size: 1.1rem; background: linear-gradient(135deg, #635bff, #a855f7);">
-                    💳 Paga €${total.toFixed(2)} con Carta
+                    💳 Paga con Carta
                 </button>
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-align: center; margin-top: 8px;">
+                    Seleziona i giocatori sopra prima di procedere
+                </p>
             `;
             if (confirmBtn) {
                 confirmBtn.style.display = 'none';
             }
         }
+    },
+
+    // Handle Stripe payment button click with validation
+    handleStripePaymentClick() {
+        const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+
+        if (checkboxes.length === 0) {
+            alert('⚠️ Seleziona almeno un giocatore da pagare usando le checkbox.');
+            return;
+        }
+
+        const total = this.calculateSelectedTotal();
+
+        if (total <= 0) {
+            alert('⚠️ L\'importo da pagare deve essere maggiore di €0.');
+            return;
+        }
+
+        this.openStripePayment(total, 'Prenotazione Tennis');
     },
 
     // Calculate total from selected checkboxes
@@ -2496,28 +2518,36 @@ const App = {
             return;
         }
 
+        // Store reference to App for callback
+        const self = this;
+
         // Define success callback to update paid fields
         const onSuccess = (result) => {
             console.log('[STRIPE] Payment successful:', result);
 
             // Update paid fields in the main modal for checked players
             const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+            console.log('[STRIPE] Found checked players:', checkboxes.length);
+
             checkboxes.forEach(cb => {
                 const idx = cb.dataset.index;
                 const amountInput = document.getElementById(`pay-amount-${idx}`);
                 const paidInput = document.getElementById(`slot-paid-${idx}`);
+
+                console.log('[STRIPE] Processing player', idx, 'amountInput:', !!amountInput, 'paidInput:', !!paidInput);
 
                 if (amountInput && paidInput) {
                     const currentPaid = parseFloat(paidInput.value) || 0;
                     const newPayment = parseFloat(amountInput.value) || 0;
                     if (newPayment > 0) {
                         paidInput.value = (currentPaid + newPayment).toFixed(2);
+                        console.log('[STRIPE] Updated slot-paid-', idx, 'to:', paidInput.value);
                     }
                 }
             });
 
-            // Close the payment modal
-            this.closePaymentModal();
+            // Close the payment sub-modal (selection modal)
+            self.closePaymentModal();
         };
 
         // Use StripePayments module
