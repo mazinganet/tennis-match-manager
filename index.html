@@ -313,7 +313,82 @@
                     </div>
                 </div>
 
+                <!-- Stripe Configuration - admin only -->
+                <div class="section-card admin-only" style="margin-top: 20px; display: none;">
+                    <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.5rem;">💳</span>
+                            <h4 style="margin: 0; color: var(--text-primary);">Stripe (Carte di Credito)</h4>
+                            <span id="stripe-status-badge"
+                                style="padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; background: #f59e0b; color: white;">Test
+                                Mode</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Publishable
+                                Key</label>
+                            <input type="text" id="stripe-publishable-key" placeholder="pk_test_..."
+                                style="width: 100%; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                Ottieni la tua chiave da
+                                <a href="https://dashboard.stripe.com/apikeys" target="_blank"
+                                    style="color: #60a5fa;">dashboard.stripe.com</a>
+                            </p>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Payment
+                                Link (opzionale)</label>
+                            <input type="text" id="stripe-payment-link" placeholder="https://buy.stripe.com/..."
+                                style="width: 100%; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                Alternativa: crea un Payment Link dalla dashboard Stripe per pagamenti più semplici
+                            </p>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="stripe-production-mode" onchange="App.toggleStripeMode()">
+                                <span style="color: var(--text-primary);">🔴 Modalità Produzione (pagamenti
+                                    reali)</span>
+                            </label>
+                            <p style="font-size: 0.75rem; color: #ef4444; margin-top: 5px; display: none;"
+                                id="stripe-production-warning">
+                                ⚠️ ATTENZIONE: In modalità produzione i pagamenti saranno reali!
+                            </p>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="App.saveStripeConfig()" style="flex: 1;">
+                                💾 Salva Configurazione
+                            </button>
+                            <button class="btn btn-secondary" onclick="App.testStripeConnection()" style="flex: 1;">
+                                🧪 Test Connessione
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: rgba(139, 92, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.3);">
+                        <h5 style="color: #a78bfa; margin-bottom: 10px;">🧪 Carte di Test per Stripe</h5>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem;">
+                            <p style="margin: 0 0 8px 0;"><strong>✅ Pagamento riuscito:</strong> <code
+                                    style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">4242 4242 4242 4242</code>
+                            </p>
+                            <p style="margin: 0 0 8px 0;"><strong>❌ Carta rifiutata:</strong> <code
+                                    style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">4000 0000 0000 0002</code>
+                            </p>
+                            <p style="margin: 0;"><strong>🔐 Richiede 3D Secure:</strong> <code
+                                    style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">4000 0025 0000 3155</code>
+                            </p>
+                            <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Data: qualsiasi
+                                futura | CVV: qualsiasi 3 cifre</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Backup Section - admin only -->
+
                 <div class="section-card admin-only" style="margin-top: 20px; display: none;">
                     <h3>💾 Backup e Sincronizzazione</h3>
 
@@ -706,6 +781,9 @@
     <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR&intent=capture"
         data-sdk-integration-source="button-factory"></script>
 
+    <!-- Stripe SDK -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <!-- Scripts -->
     <script src="js/storage.js?v=7"></script>
     <script src="js/players.js?v=7"></script>
@@ -714,7 +792,8 @@
     <script src="js/matching.js?v=7"></script>
     <script src="js/history.js?v=7"></script>
     <script src="js/seed_players.js?v=7"></script>
-    <script src="js/app.js?v=7"></script>
+    <script src="js/stripe.js?v=1"></script>
+    <script src="js/app.js?v=8"></script>
 
     <!-- Admin access check -->
     <script>

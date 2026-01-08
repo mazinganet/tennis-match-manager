@@ -78,6 +78,9 @@ const App = {
 
         // Load PayPal configuration
         this.loadPayPalConfig();
+
+        // Load Stripe configuration
+        this.loadStripeConfig();
     },
 
     loadSettings() {
@@ -2484,22 +2487,161 @@ const App = {
     },
 
     openStripePayment(amount, description) {
-        // For now, we'll use a Stripe Payment Link simulation
-        // In production, you would create a Stripe Checkout session via your backend
-        // or use Stripe Payment Links
-
+        // Use the StripePayments module for payment handling
         const stripeConfig = Storage.load('stripe_config', null);
 
-        if (stripeConfig && stripeConfig.paymentLink) {
-            // If a Stripe Payment Link is configured, redirect to it
-            const url = `${stripeConfig.paymentLink}?amount=${amount * 100}&description=${encodeURIComponent(description)}`;
-            window.open(url, '_blank');
-        } else {
-            // Show instructions for setting up Stripe
-            alert(`💳 Pagamento con Carta di Credito\n\nPer abilitare i pagamenti con carta:\n\n1. Crea un account Stripe (stripe.com)\n2. Crea un Payment Link nella dashboard\n3. Configura il link nelle impostazioni dell'app\n\nImporto da pagare: €${amount.toFixed(2)}\n\n📝 Per ora, registra manualmente il pagamento come "Pagato" nel form.`);
+        if (!stripeConfig || (!stripeConfig.publishableKey && !stripeConfig.paymentLink)) {
+            // Show configuration prompt
+            this.showStripeConfigPrompt(amount);
+            return;
         }
 
-        this.closePaymentModal();
+        // Define success callback to update paid fields
+        const onSuccess = (result) => {
+            console.log('[STRIPE] Payment successful:', result);
+
+            // Update paid fields in the main modal for checked players
+            const checkboxes = document.querySelectorAll('.pay-player-checkbox:checked');
+            checkboxes.forEach(cb => {
+                const idx = cb.dataset.index;
+                const amountInput = document.getElementById(`pay-amount-${idx}`);
+                const paidInput = document.getElementById(`slot-paid-${idx}`);
+
+                if (amountInput && paidInput) {
+                    const currentPaid = parseFloat(paidInput.value) || 0;
+                    const newPayment = parseFloat(amountInput.value) || 0;
+                    if (newPayment > 0) {
+                        paidInput.value = (currentPaid + newPayment).toFixed(2);
+                    }
+                }
+            });
+
+            // Close the payment modal
+            this.closePaymentModal();
+        };
+
+        // Use StripePayments module
+        StripePayments.openCheckout(amount, description, onSuccess);
+    },
+
+    // Show prompt when Stripe is not configured
+    showStripeConfigPrompt(amount) {
+        alert(`💳 Stripe non configurato\n\nPer abilitare i pagamenti con carta:\n\n1. Vai su Dashboard → Configurazione Stripe\n2. Inserisci la tua Publishable Key da stripe.com\n3. Oppure inserisci un Payment Link\n\nImporto da pagare: €${amount.toFixed(2)}`);
+    },
+
+    // Load Stripe configuration
+    loadStripeConfig() {
+        const config = Storage.load('stripe_config', null);
+
+        if (!config) return;
+
+        // Populate form fields
+        const pkInput = document.getElementById('stripe-publishable-key');
+        const plInput = document.getElementById('stripe-payment-link');
+        const prodMode = document.getElementById('stripe-production-mode');
+        const badge = document.getElementById('stripe-status-badge');
+        const warning = document.getElementById('stripe-production-warning');
+
+        if (pkInput) pkInput.value = config.publishableKey || '';
+        if (plInput) plInput.value = config.paymentLink || '';
+        if (prodMode) {
+            prodMode.checked = config.productionMode || false;
+            if (warning) warning.style.display = config.productionMode ? 'block' : 'none';
+        }
+        if (badge) {
+            badge.textContent = config.productionMode ? 'Live' : 'Test Mode';
+            badge.style.background = config.productionMode ? '#ef4444' : '#f59e0b';
+        }
+
+        // Initialize StripePayments if key is available
+        if (config.publishableKey && typeof StripePayments !== 'undefined') {
+            StripePayments.init(config.publishableKey);
+        }
+
+        console.log('[STRIPE] Configuration loaded:', config ? 'configured' : 'not configured');
+    },
+
+    // Save Stripe configuration
+    saveStripeConfig() {
+        const publishableKey = document.getElementById('stripe-publishable-key')?.value?.trim() || '';
+        const paymentLink = document.getElementById('stripe-payment-link')?.value?.trim() || '';
+        const productionMode = document.getElementById('stripe-production-mode')?.checked || false;
+
+        if (!publishableKey && !paymentLink) {
+            alert('⚠️ Inserisci almeno la Publishable Key o un Payment Link');
+            return;
+        }
+
+        // Validate publishable key format
+        if (publishableKey && !publishableKey.startsWith('pk_')) {
+            alert('⚠️ La Publishable Key deve iniziare con "pk_test_" o "pk_live_"');
+            return;
+        }
+
+        // Warn about production mode
+        if (productionMode && publishableKey.startsWith('pk_test_')) {
+            alert('⚠️ Attenzione: Stai usando una chiave di TEST in modalità produzione.\nI pagamenti non saranno reali.');
+        }
+
+        const config = {
+            publishableKey,
+            paymentLink,
+            productionMode,
+            updatedAt: new Date().toISOString()
+        };
+
+        Storage.save('stripe_config', config);
+
+        // Update UI
+        this.loadStripeConfig();
+
+        alert('✅ Configurazione Stripe salvata!');
+    },
+
+    // Toggle Stripe production mode
+    toggleStripeMode() {
+        const prodMode = document.getElementById('stripe-production-mode');
+        const warning = document.getElementById('stripe-production-warning');
+        const badge = document.getElementById('stripe-status-badge');
+
+        if (warning) {
+            warning.style.display = prodMode?.checked ? 'block' : 'none';
+        }
+        if (badge) {
+            badge.textContent = prodMode?.checked ? 'Live' : 'Test Mode';
+            badge.style.background = prodMode?.checked ? '#ef4444' : '#f59e0b';
+        }
+    },
+
+    // Test Stripe connection
+    async testStripeConnection() {
+        const publishableKey = document.getElementById('stripe-publishable-key')?.value?.trim();
+
+        if (!publishableKey) {
+            alert('⚠️ Inserisci una Publishable Key per testare la connessione');
+            return;
+        }
+
+        if (!publishableKey.startsWith('pk_')) {
+            alert('❌ Chiave non valida. Deve iniziare con "pk_test_" o "pk_live_"');
+            return;
+        }
+
+        // Try to initialize Stripe
+        try {
+            if (typeof Stripe === 'undefined') {
+                alert('❌ Stripe.js non caricato. Verifica la connessione internet.');
+                return;
+            }
+
+            const stripe = Stripe(publishableKey);
+            const elements = stripe.elements();
+
+            alert('✅ Connessione Stripe riuscita!\n\nLa chiave è valida e Stripe è pronto per ricevere pagamenti.');
+        } catch (error) {
+            console.error('[STRIPE] Test failed:', error);
+            alert(`❌ Errore di connessione Stripe:\n${error.message}`);
+        }
     },
 
     closePaymentModal() {
