@@ -608,13 +608,13 @@
     <header class="public-header">
         <h1>🎾 Tennis <span>Planning</span></h1>
 
-        <div class="date-nav">
-            <button onclick="changeDay(-1)">◀ Ieri</button>
+        <div class="date-nav" id="date-navigation">
+            <button onclick="changeDay(-1)" id="btn-prev-day">◀ Ieri</button>
             <div class="current-date">
                 <div class="day-name" id="day-name">Lunedì</div>
                 <div id="current-date">23/12/2024</div>
             </div>
-            <button onclick="changeDay(1)">Domani ▶</button>
+            <button onclick="changeDay(1)" id="btn-next-day">Domani ▶</button>
         </div>
 
         <div class="season-selector">
@@ -673,6 +673,7 @@
         let currentPaymentData = null; // Store current payment context
 
         // Check URL for date parameter
+        let isQRCodeAccess = false;
         function checkDateParameter() {
             const urlParams = new URLSearchParams(window.location.search);
             const dateParam = urlParams.get('date');
@@ -680,6 +681,14 @@
                 const parsedDate = new Date(dateParam);
                 if (!isNaN(parsedDate.getTime())) {
                     currentDate = parsedDate;
+                    isQRCodeAccess = true;
+                    // Hide date navigation buttons when accessed via QR code
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const prevBtn = document.getElementById('btn-prev-day');
+                        const nextBtn = document.getElementById('btn-next-day');
+                        if (prevBtn) prevBtn.style.display = 'none';
+                        if (nextBtn) nextBtn.style.display = 'none';
+                    });
                 }
             }
         }
@@ -815,8 +824,7 @@
                     </div>
 
                     <div class="payment-method-buttons">
-                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('contanti')">💵 Contanti</button>
-                        <button class="payment-method-btn" onclick="selectPaymentMethod('qrcode')">📱 QR Code</button>
+                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('qrcode')">📱 QR Code</button>
                         <button class="payment-method-btn" onclick="selectPaymentMethod('paypal')">🅿️ PayPal</button>
                     </div>
 
@@ -841,6 +849,11 @@
             document.body.appendChild(modal);
 
             updatePaymentTotal();
+            // Initialize with QR Code payment method selected
+            setTimeout(() => {
+                const qrBtn = document.querySelector('.payment-method-btn.selected');
+                if (qrBtn) selectPaymentMethod('qrcode');
+            }, 100);
         }
 
         function closePaymentModal() {
@@ -867,7 +880,7 @@
             }
         }
 
-        let selectedPaymentMethod = 'contanti';
+        let selectedPaymentMethod = 'qrcode';
 
         function generatePaymentQRCode() {
             const container = document.getElementById('payment-qr-code');
@@ -914,9 +927,6 @@
                 qrContainer.style.display = 'block';
                 confirmBtnText.textContent = '✅ Conferma Pagamento Mobile';
                 generatePaymentQRCode();
-            } else {
-                // Contanti
-                confirmBtnText.textContent = '✅ Conferma Pagamento Contanti';
             }
         }
 
