@@ -534,6 +534,16 @@ const App = {
         }
     },
 
+    // Helper function to get payment method icon
+    getPaymentMethodIcon(method) {
+        switch (method) {
+            case 'carta': return '💳';
+            case 'paypal': return '🅿️';
+            case 'contanti': return '💵';
+            default: return '';
+        }
+    },
+
     updateDashboard() {
         const players = Players.getAll() || [];
         const courts = Courts.getAvailable(this.currentSeason) || [];
@@ -742,11 +752,6 @@ const App = {
                                         <span class="cell-player">${res.players[3] || ''}</span>
                                     </div>`;
                             }
-                            // Add payment method badge
-                            const pmIcon = { contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethod] || '';
-                            if (pmIcon) {
-                                playersHtml += `<span class="payment-badge" style="position:absolute;top:2px;right:2px;font-size:10px;">${pmIcon}</span>`;
-                            }
                         }
                     } else {
                         statusClass = `activity-${res?.type || 'reserved'}`;
@@ -811,20 +816,18 @@ const App = {
                     });
 
                     if (res?.players && res.players.some(p => p && p.trim())) {
+                        const paymentMethodIcons = { contanti: '💵', carta: '💳', paypal: '🅿️' };
+
                         const lines = res.players.map((player, i) => {
                             if (!player || !player.trim()) return '';
                             const quota = res.payments?.[i] || 0;
                             const paid = res.paid?.[i] || 0;
-                            return `${player} (Quota: ${quota}€ / Pagato: ${paid}€)`;
+                            const method = res.paymentMethods?.[i] || '';
+                            const methodIcon = paymentMethodIcons[method] || '';
+                            return `${player} (Quota: ${quota}€ / Pagato: ${paid}€${methodIcon ? ' ' + methodIcon : ''})`;
                         }).filter(l => l);
 
-                        // Add payment method indicator
-                        const paymentMethodIcons = { contanti: '💵', carta: '💳', paypal: '🅿️' };
-                        const paymentMethodLabels = { contanti: 'Contanti', carta: 'Carta di Credito', paypal: 'PayPal' };
-                        const methodIcon = paymentMethodIcons[res.paymentMethod] || '💵';
-                        const methodLabel = paymentMethodLabels[res.paymentMethod] || 'Contanti';
-
-                        popupContent = lines.join('<br>') + `<br><span style="color:#22c55e;margin-top:5px;display:inline-block;">${methodIcon} ${methodLabel}</span>`;
+                        popupContent = lines.join('<br>');
                     }
                 }
 
@@ -1514,6 +1517,8 @@ const App = {
                                        value="${existingRes?.payments?.[0] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-1" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[0] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                <span id="slot-paymethod-icon-1" class="payment-method-icon" title="${existingRes?.paymentMethods?.[0] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[0])}</span>
+                                <input type="hidden" id="slot-paymethod-1" value="${existingRes?.paymentMethods?.[0] || ''}">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-2" class="player-input" placeholder="Giocatore 2"
@@ -1522,6 +1527,8 @@ const App = {
                                        value="${existingRes?.payments?.[1] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-2" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[1] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                <span id="slot-paymethod-icon-2" class="payment-method-icon" title="${existingRes?.paymentMethods?.[1] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[1])}</span>
+                                <input type="hidden" id="slot-paymethod-2" value="${existingRes?.paymentMethods?.[1] || ''}">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-3" class="player-input" placeholder="Giocatore 3"
@@ -1530,6 +1537,8 @@ const App = {
                                        value="${existingRes?.payments?.[2] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-3" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[2] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                <span id="slot-paymethod-icon-3" class="payment-method-icon" title="${existingRes?.paymentMethods?.[2] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[2])}</span>
+                                <input type="hidden" id="slot-paymethod-3" value="${existingRes?.paymentMethods?.[2] || ''}">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-4" class="player-input" placeholder="Giocatore 4"
@@ -1538,6 +1547,8 @@ const App = {
                                        value="${existingRes?.payments?.[3] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-4" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[3] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                <span id="slot-paymethod-icon-4" class="payment-method-icon" title="${existingRes?.paymentMethods?.[3] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[3])}</span>
+                                <input type="hidden" id="slot-paymethod-4" value="${existingRes?.paymentMethods?.[3] || ''}">
                             </div>
                         </div>
                         <input type="hidden" id="slot-label" value="${existingRes?.label || ''}">
@@ -1703,6 +1714,15 @@ const App = {
         }
         court.reservations = court.reservations || [];
 
+        // Collect 4 payment methods (per-player)
+        const paymentMethodsArray = [];
+        for (let i = 1; i <= 4; i++) {
+            const input = document.getElementById(`slot-paymethod-${i}`);
+            if (input) {
+                paymentMethodsArray.push(input.value || '');
+            }
+        }
+
         const reservationData = {
             day: day,
             date: this.currentPlanningDate.toISOString().split('T')[0],
@@ -1713,8 +1733,8 @@ const App = {
             players: playersArray,
             payments: paymentsArray,
             paid: paidArray,
-            price: price,
-            paymentMethod: document.querySelector('input[name="payment-method"]:checked')?.value || 'contanti'
+            paymentMethods: paymentMethodsArray,
+            price: price
         };
 
         // First, remove all reservations that overlap with the new time range
@@ -2413,6 +2433,8 @@ const App = {
 
             const amountInput = document.getElementById(`pay-amount-${idx}`);
             const mainPaidInput = document.getElementById(`slot-paid-${idx}`);
+            const payMethodInput = document.getElementById(`slot-paymethod-${idx}`);
+            const payMethodIcon = document.getElementById(`slot-paymethod-icon-${idx}`);
 
             console.log('[PAYMENT DEBUG] Amount input found:', !!amountInput, 'value:', amountInput?.value);
             console.log('[PAYMENT DEBUG] Main paid input found:', !!mainPaidInput, 'current value:', mainPaidInput?.value);
@@ -2429,6 +2451,12 @@ const App = {
                     total += newPayment;
                     paidPlayers.push(idx);
                     console.log('[PAYMENT DEBUG] Updated slot-paid-', idx, 'to:', newTotal.toFixed(2));
+                    // Set payment method for this player (contanti for cash)
+                    if (payMethodInput) payMethodInput.value = paymentMethod;
+                    if (payMethodIcon) {
+                        payMethodIcon.textContent = paymentMethod === 'contanti' ? '💵' : paymentMethod === 'carta' ? '💳' : '🅿️';
+                        payMethodIcon.title = paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : 'PayPal';
+                    }
                 }
             }
         });
@@ -2481,12 +2509,20 @@ const App = {
                             const idx = cb.dataset.index;
                             const amountInput = document.getElementById(`pay-amount-${idx}`);
                             const paidInput = document.getElementById(`slot-paid-${idx}`);
+                            const payMethodInput = document.getElementById(`slot-paymethod-${idx}`);
+                            const payMethodIcon = document.getElementById(`slot-paymethod-icon-${idx}`);
 
                             if (amountInput && paidInput) {
                                 const currentPaid = parseFloat(paidInput.value) || 0;
                                 const newPayment = parseFloat(amountInput.value) || 0;
                                 if (newPayment > 0) {
                                     paidInput.value = (currentPaid + newPayment).toFixed(2);
+                                    // Set payment method for this player
+                                    if (payMethodInput) payMethodInput.value = 'paypal';
+                                    if (payMethodIcon) {
+                                        payMethodIcon.textContent = '🅿️';
+                                        payMethodIcon.title = 'PayPal';
+                                    }
                                 }
                             }
                         });
@@ -2549,6 +2585,8 @@ const App = {
                 const idx = cb.dataset.index;
                 const amountInput = document.getElementById(`pay-amount-${idx}`);
                 const paidInput = document.getElementById(`slot-paid-${idx}`);
+                const payMethodInput = document.getElementById(`slot-paymethod-${idx}`);
+                const payMethodIcon = document.getElementById(`slot-paymethod-icon-${idx}`);
 
                 console.log('[STRIPE] Processing player', idx, 'amountInput:', !!amountInput, 'paidInput:', !!paidInput);
 
@@ -2558,6 +2596,12 @@ const App = {
                     if (newPayment > 0) {
                         paidInput.value = (currentPaid + newPayment).toFixed(2);
                         console.log('[STRIPE] Updated slot-paid-', idx, 'to:', paidInput.value);
+                        // Set payment method for this player
+                        if (payMethodInput) payMethodInput.value = 'carta';
+                        if (payMethodIcon) {
+                            payMethodIcon.textContent = '💳';
+                            payMethodIcon.title = 'Carta';
+                        }
                     }
                 }
             });
