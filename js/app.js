@@ -2184,14 +2184,20 @@ const App = {
         const description = `Prenotazione Tennis - ${dateStr}`;
 
         // Build player selection list with checkboxes
-        const playersListHtml = playerPayments.map((p, idx) => `
-            <div class="payment-player-row" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${p.remaining > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; border-radius: 8px; margin-bottom: 8px; border: 1px solid ${p.remaining > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'};">
+        // Disable checkbox and input for players who have already paid in full (remaining = 0)
+        const playersListHtml = playerPayments.map((p, idx) => {
+            const isFullyPaid = p.remaining <= 0;
+            const disabledAttr = isFullyPaid ? 'disabled' : '';
+            const opacityStyle = isFullyPaid ? 'opacity: 0.6;' : '';
+
+            return `
+            <div class="payment-player-row" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: ${p.remaining > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; border-radius: 8px; margin-bottom: 6px; border: 1px solid ${p.remaining > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}; ${opacityStyle}">
                 <input type="checkbox" id="pay-player-${p.index}" class="pay-player-checkbox" data-index="${p.index}" 
-                       onchange="App.updatePaymentTotal()">
+                       onchange="App.updatePaymentTotal()" ${disabledAttr}>
                 <div style="flex: 1;">
                     <div style="font-weight: 500; color: var(--text-primary);">${p.player} ${p.remaining > 0 ? '⚠️' : '✅'}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">
-                        Quota: €${p.quota.toFixed(2)} | Già pagato: €${p.paid.toFixed(2)} ${p.remaining > 0 ? `| <span style="color:#ef4444;">Da pagare: €${p.remaining.toFixed(2)}</span>` : ''}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        Quota: €${p.quota.toFixed(2)} | Pagato: €${p.paid.toFixed(2)} ${p.remaining > 0 ? `| <span style="color:#ef4444;">Da pagare: €${p.remaining.toFixed(2)}</span>` : '<span style="color:#22c55e;">Saldato</span>'}
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 5px;">
@@ -2199,24 +2205,24 @@ const App = {
                     <input type="number" id="pay-amount-${p.index}" class="payment-input" 
                            value="${p.remaining.toFixed(2)}" min="0" step="0.5" 
                            style="width: 70px; text-align: right;" 
-                           onchange="App.updatePaymentTotal()">
+                           onchange="App.updatePaymentTotal()" ${disabledAttr}>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
         const innerBody = `
-            <div style="padding: 15px;">
-                <h4 style="color: var(--text-primary); margin-bottom: 15px; text-align: center;">📋 Seleziona Pagamenti</h4>
+            <div style="padding: 12px;">
+                <h4 style="color: var(--text-primary); margin-bottom: 12px; text-align: center; font-size: 1rem;">📋 Seleziona Pagamenti</h4>
                 
                 <!-- Player Selection -->
-                <div class="payment-players-list" style="margin-bottom: 20px;">
+                <div class="payment-players-list" style="margin-bottom: 12px; max-height: 200px; overflow-y: auto;">
                     ${playersListHtml}
                 </div>
 
-                <!-- Payment Total -->
-                <div style="display: flex; justify-content: space-between; padding: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(34, 197, 94, 0.3);">
-                    <span style="font-weight: 600; color: var(--text-primary);">Totale da pagare:</span>
-                    <span id="payment-total-amount" style="font-weight: 700; font-size: 1.3rem; color: #22c55e;">€0.00</span>
+                <!-- Payment Total - More compact -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                    <span style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">Totale da pagare:</span>
+                    <span id="payment-total-amount" style="font-weight: 700; font-size: 1.1rem; color: #22c55e;">€0.00</span>
                 </div>
 
                 <!-- Payment Method Selection -->
