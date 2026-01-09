@@ -281,15 +281,20 @@ const StripePayments = {
                 timestamp: new Date().toISOString()
             };
 
+            // IMPORTANT: Save callback and amount BEFORE closing modal
+            // because closeModal() resets these values to null
+            const successCallback = this.pendingOnSuccess;
+            const paidAmount = this.pendingAmount;
+
             // Close modal
             this.closeModal();
 
             // Show success message
-            alert(`✅ Pagamento di €${this.pendingAmount.toFixed(2)} completato!\n\nID Transazione: ${result.id}\n\n⚠️ Nota: Questa è una transazione di TEST. In produzione, il pagamento sarebbe elaborato realmente.`);
+            alert(`✅ Pagamento di €${paidAmount.toFixed(2)} completato!\n\nID Transazione: ${result.id}\n\n⚠️ Nota: Questa è una transazione di TEST. In produzione, il pagamento sarebbe elaborato realmente.`);
 
             // Call success callback
-            if (this.pendingOnSuccess) {
-                this.pendingOnSuccess(result);
+            if (successCallback) {
+                successCallback(result);
             }
 
         } catch (err) {
