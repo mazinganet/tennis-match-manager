@@ -236,6 +236,45 @@ const App = {
         this.renderMobileRatesSummary();
     },
 
+    // QR Code Configuration
+    saveQRConfig() {
+        const label = document.getElementById('qr-label')?.value.trim();
+        const data = document.getElementById('qr-data')?.value.trim();
+
+        if (!label || !data) {
+            alert('⚠️ Inserisci sia l\'etichetta che i dati del QR Code.');
+            return;
+        }
+
+        const config = { label, data };
+        Storage.save(Storage.KEYS.QR_CONFIG, config);
+        alert('✅ Configurazione QR Code salvata!');
+    },
+
+    testQRGeneration() {
+        const data = document.getElementById('qr-data')?.value.trim();
+        const container = document.getElementById('qr-config-preview-container');
+        const previewArea = document.getElementById('qr-config-preview');
+
+        if (!data) {
+            alert('⚠️ Inserisci dei dati per generare l\'anteprima.');
+            return;
+        }
+
+        if (container) {
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: data,
+                width: 128,
+                height: 128,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            previewArea.style.display = 'block';
+        }
+    },
+
     // Render read-only rates summary for mobile view
     renderMobileRatesSummary() {
         const container = document.getElementById('mobile-rates-table');
@@ -2264,6 +2303,11 @@ const App = {
                             <input type="radio" name="modal-payment-method" value="paypal">
                             <span>🅿️ PayPal</span>
                         </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 10px 15px; background: var(--bg-card); border-radius: 8px; border: 2px solid var(--border-color); flex: 1; justify-content: center;"
+                               onclick="App.selectPaymentMethod('qrcode')">
+                            <input type="radio" name="modal-payment-method" value="qrcode">
+                            <span>📱 QR Code</span>
+                        </label>
                     </div>
                 </div>
 
@@ -2371,7 +2415,66 @@ const App = {
             if (confirmBtn) {
                 confirmBtn.style.display = 'none';
             }
+        } else if (method === 'qrcode') {
+            // QR Code Payment
+            container.style.display = 'block';
+            container.innerHTML = '';
+            if (confirmBtn) {
+                confirmBtn.style.display = 'block';
+                confirmBtn.textContent = '✓ Conferma Pagamento Mobile';
+                confirmBtn.onclick = () => this.confirmPayment();
+            }
+            this.generatePaymentQRCode();
         }
+    },
+
+    generatePaymentQRCode() {
+        const container = document.getElementById('payment-method-container');
+        if (!container) return;
+
+        const config = Storage.load('qr_config', { label: 'Pagamento Mobile', data: '' });
+        const total = this.calculateSelectedTotal();
+
+        if (total <= 0) {
+            container.innerHTML = '<p class="text-center text-muted">Seleziona i giocatori per generare il QR Code.</p>';
+            return;
+        }
+
+        if (!config.data) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 15px; background: rgba(234, 179, 8, 0.1); border-radius: 8px; border: 1px solid rgba(234, 179, 8, 0.3);">
+                    <p style="color: #eab308; margin-bottom: 5px;">⚠️ QR Code non configurato</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Configura URL e Dati nella dashboard.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Create QR container
+        container.innerHTML = `
+            <div style="text-align: center; padding: 15px; background: #fff; border-radius: 8px; margin-bottom: 10px;">
+                <p style="color: #333; margin-bottom: 10px; font-weight: bold;">${config.label}</p>
+                <div id="payment-qr" style="display: inline-block;"></div>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">
+                    Importo: <strong style="color: #000;">€${total.toFixed(2)}</strong>
+                </p>
+                <p style="color: #888; font-size: 0.8rem;">
+                    Scansiona per pagare
+                </p>
+            </div>
+        `;
+
+        // Generate QR
+        // If the URL supports dynamic amount (like satispay business link with amount param), we could append it.
+        // For now, simpler to just use the static URL.
+        new QRCode(document.getElementById('payment-qr'), {
+            text: config.data,
+            width: 160,
+            height: 160,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
     },
 
     // Handle Stripe payment button click with validation
@@ -2454,8 +2557,8 @@ const App = {
                     // Set payment method for this player (contanti for cash)
                     if (payMethodInput) payMethodInput.value = paymentMethod;
                     if (payMethodIcon) {
-                        payMethodIcon.textContent = paymentMethod === 'contanti' ? '💵' : paymentMethod === 'carta' ? '💳' : '🅿️';
-                        payMethodIcon.title = paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : 'PayPal';
+                        payMethodIcon.textContent = paymentMethod === 'contanti' ? '💵' : paymentMethod === 'carta' ? '💳' : paymentMethod === 'qrcode' ? '📱' : '🅿️';
+                        payMethodIcon.title = paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : paymentMethod === 'qrcode' ? 'Mobile/QR' : 'PayPal';
                     }
                 }
             }
@@ -2467,7 +2570,8 @@ const App = {
         this.closePaymentModal();
 
         if (total > 0) {
-            alert(`✅ Pagamento di €${total.toFixed(2)} registrato come ${paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : 'PayPal'}.\n\nGiocatori pagati: ${paidPlayers.length}\nRicordati di salvare la prenotazione!`);
+            const methodLabel = paymentMethod === 'contanti' ? 'Contanti' : paymentMethod === 'carta' ? 'Carta' : paymentMethod === 'qrcode' ? 'Mobile/QR' : 'PayPal';
+            alert(`✅ Pagamento di €${total.toFixed(2)} registrato come ${methodLabel}.\n\nGiocatori pagati: ${paidPlayers.length}\nRicordati di salvare la prenotazione!`);
         } else {
             alert('⚠️ Nessun importo da pagare.');
         }
@@ -4979,7 +5083,17 @@ const App = {
             alert('❌ Errore nel caricamento del PayPal SDK.\nVerifica il Client ID e la connessione internet.');
         };
         document.head.appendChild(script);
-    }
+    },
+    getPaymentMethodIcon(method) {
+        if (!method) return '';
+        switch (method) {
+            case 'contanti': return '💵';
+            case 'carta': return '💳';
+            case 'paypal': return '🅿️';
+            case 'qrcode': return '📱';
+            default: return '❓';
+        }
+    },
 };
 
 // Initialize app with Firebase support

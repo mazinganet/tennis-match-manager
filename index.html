@@ -387,94 +387,145 @@
                     </div>
                 </div>
 
-                <!-- Backup Section - admin only -->
-
+                <!-- QR Code / Mobile Payment Configuration - admin only -->
                 <div class="section-card admin-only" style="margin-top: 20px; display: none;">
-                    <h3>💾 Backup e Sincronizzazione</h3>
+                    <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.5rem;">📱</span>
+                            <h4 style="margin: 0; color: var(--text-primary);">QR Code / Pagamenti Mobile</h4>
+                            <span id="qrcode-status-badge"
+                                style="padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; background: #10b981; color: white;">Attivo</span>
+                        </div>
 
-                    <!-- Firebase Status -->
-                    <div id="firebase-status"
-                        style="margin-bottom: 15px; padding: 10px; border-radius: 8px; background: var(--bg-card);">
-                        <span id="firebase-status-icon">⏳</span>
-                        <span id="firebase-status-text">Verifica connessione Firebase...</span>
-                    </div>
+                        <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                            Configura un QR Code statico (es. link Satispay Business, PayPal.me o altro) da mostrare per
+                            i pagamenti.
+                        </p>
 
-                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
-                        Salva i tuoi dati su file per evitare di perderli. Puoi ripristinarli in qualsiasi momento.
-                    </p>
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                        <button class="btn btn-primary" onclick="Storage.downloadBackup()">
-                            📥 Scarica Backup
-                        </button>
-                        <label class="btn btn-secondary" style="cursor: pointer;">
-                            📤 Carica Backup
-                            <input type="file" accept=".json" style="display: none;"
-                                onchange="if(this.files[0]) { Storage.loadFromBackup(this.files[0]).then(() => { alert('Backup caricato! La pagina verrà ricaricata.'); location.reload(); }).catch(e => alert('Errore: ' + e.message)); }">
-                        </label>
-                        <button class="btn btn-primary" id="migrate-firebase-btn" onclick="Storage.migrateToFirebase()"
-                            style="background: #f59e0b;">
-                            🔄 Migra a Firebase
-                        </button>
-                    </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Etichetta
+                                (es. Satispay)</label>
+                            <input type="text" id="qr-label" placeholder="Satispay"
+                                style="width: 100%; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                        </div>
 
-                    <!-- Pulizia Prenotazioni Passate -->
-                    <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-                        <h4 style="margin-bottom: 15px; color: var(--text-primary);">🗑️ Pulizia Prenotazioni Passate
-                        </h4>
-
-                        <!-- Auto cleanup setting -->
-                        <div
-                            style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                                <label style="color: var(--text-secondary); font-size: 0.9rem;">
-                                    🔄 Cancella automaticamente prenotazioni più vecchie di:
-                                </label>
-                                <select id="auto-cleanup-months"
-                                    style="padding: 8px 12px; border-radius: 6px; background-color: #1e1e2e; color: #ffffff; border: 1px solid #444;">
-                                    <option value="0">Mai (conserva tutto)</option>
-                                    <option value="1">1 mese</option>
-                                    <option value="2">2 mesi</option>
-                                    <option value="3">3 mesi</option>
-                                    <option value="4">4 mesi</option>
-                                    <option value="6">6 mesi</option>
-                                    <option value="12">1 anno</option>
-                                </select>
-                                <button class="btn btn-secondary" onclick="Storage.saveCleanupSettings()"
-                                    style="padding: 8px 15px;">
-                                    💾 Salva
-                                </button>
-                                <button class="btn btn-primary" onclick="Storage.runAutoCleanup()"
-                                    style="padding: 8px 15px; background: #ef4444;">
-                                    🗑️ Esegui Ora
-                                </button>
-                            </div>
-                            <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
-                                La pulizia automatica verrà eseguita all'apertura dell'app da parte di qualsiasi utente.
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">URL o Dati
+                                del QR Code</label>
+                            <input type="text" id="qr-data" placeholder="https://..."
+                                style="width: 100%; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                Inserisci il link che il cliente deve aprire scansionando il QR.
                             </p>
                         </div>
 
-                        <!-- Manual date range cleanup -->
-                        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                                <label style="color: var(--text-secondary); font-size: 0.9rem;">
-                                    📅 Cancella prenotazioni dal:
-                                </label>
-                                <input type="date" id="cleanup-date-from"
-                                    style="padding: 8px 12px; border-radius: 6px; background-color: #1e1e2e; color: #ffffff; border: 1px solid #444;">
-                                <span style="color: var(--text-secondary);">al:</span>
-                                <input type="date" id="cleanup-date-to"
-                                    style="padding: 8px 12px; border-radius: 6px; background-color: #1e1e2e; color: #ffffff; border: 1px solid #444;">
-                                <button class="btn btn-primary" onclick="Storage.cleanupByDateRange()"
-                                    style="padding: 8px 15px; background: #ef4444;">
-                                    🗑️ Cancella Range
-                                </button>
-                            </div>
-                            <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
-                                ⚠️ Questa operazione è irreversibile. Verrà chiesta conferma prima di procedere.
-                            </p>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="App.saveQRConfig()" style="flex: 1;">
+                                💾 Salva Configurazione
+                            </button>
+                            <button class="btn btn-secondary" onclick="App.testQRGeneration()" style="flex: 1;">
+                                🧪 Test Generazione
+                            </button>
+                        </div>
+
+                        <!-- Preview Area -->
+                        <div id="qr-config-preview"
+                            style="margin-top: 15px; display: none; text-align: center; background: #fff; padding: 15px; border-radius: 8px;">
+                            <p style="color: #333; margin-bottom: 10px; font-weight: bold;">Anteprima:</p>
+                            <div id="qr-config-preview-container" style="display: inline-block;"></div>
                         </div>
                     </div>
-                </div>
+
+                    <!-- Backup Section - admin only -->
+
+                    <div class="section-card admin-only" style="margin-top: 20px; display: none;">
+                        <h3>💾 Backup e Sincronizzazione</h3>
+
+                        <!-- Firebase Status -->
+                        <div id="firebase-status"
+                            style="margin-bottom: 15px; padding: 10px; border-radius: 8px; background: var(--bg-card);">
+                            <span id="firebase-status-icon">⏳</span>
+                            <span id="firebase-status-text">Verifica connessione Firebase...</span>
+                        </div>
+
+                        <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                            Salva i tuoi dati su file per evitare di perderli. Puoi ripristinarli in qualsiasi momento.
+                        </p>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                            <button class="btn btn-primary" onclick="Storage.downloadBackup()">
+                                📥 Scarica Backup
+                            </button>
+                            <label class="btn btn-secondary" style="cursor: pointer;">
+                                📤 Carica Backup
+                                <input type="file" accept=".json" style="display: none;"
+                                    onchange="if(this.files[0]) { Storage.loadFromBackup(this.files[0]).then(() => { alert('Backup caricato! La pagina verrà ricaricata.'); location.reload(); }).catch(e => alert('Errore: ' + e.message)); }">
+                            </label>
+                            <button class="btn btn-primary" id="migrate-firebase-btn"
+                                onclick="Storage.migrateToFirebase()" style="background: #f59e0b;">
+                                🔄 Migra a Firebase
+                            </button>
+                        </div>
+
+                        <!-- Pulizia Prenotazioni Passate -->
+                        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                            <h4 style="margin-bottom: 15px; color: var(--text-primary);">🗑️ Pulizia Prenotazioni
+                                Passate
+                            </h4>
+
+                            <!-- Auto cleanup setting -->
+                            <div
+                                style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                    <label style="color: var(--text-secondary); font-size: 0.9rem;">
+                                        🔄 Cancella automaticamente prenotazioni più vecchie di:
+                                    </label>
+                                    <select id="auto-cleanup-months"
+                                        style="padding: 8px 12px; border-radius: 6px; background-color: #1e1e2e; color: #ffffff; border: 1px solid #444;">
+                                        <option value="0">Mai (conserva tutto)</option>
+                                        <option value="1">1 mese</option>
+                                        <option value="2">2 mesi</option>
+                                        <option value="3">3 mesi</option>
+                                        <option value="4">4 mesi</option>
+                                        <option value="6">6 mesi</option>
+                                        <option value="12">1 anno</option>
+                                    </select>
+                                    <button class="btn btn-secondary" onclick="Storage.saveCleanupSettings()"
+                                        style="padding: 8px 15px;">
+                                        💾 Salva
+                                    </button>
+                                    <button class="btn btn-primary" onclick="Storage.runAutoCleanup()"
+                                        style="padding: 8px 15px; background: #ef4444;">
+                                        🗑️ Esegui Ora
+                                    </button>
+                                </div>
+                                <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                                    La pulizia automatica verrà eseguita all'apertura dell'app da parte di qualsiasi
+                                    utente.
+                                </p>
+                            </div>
+
+                            <!-- Manual date range cleanup -->
+                            <div style="background: var(--bg-card); padding: 15px; border-radius: 8px;">
+                                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                    <label style="color: var(--text-secondary); font-size: 0.9rem;">
+                                        📅 Cancella prenotazioni dal:
+                                    </label>
+                                    <input type="date" id="cleanup-date-from"
+                                        style="padding: 8px 12px; border-radius: 6px; background-color: #1e1e2e; color: #ffffff; border: 1px solid #444;">
+                                    <span style="color: var(--text-secondary);">al:</span>
+                                    <input type="date" id="cleanup-date-to"
+                                        style="padding: 8px 12px; border-radius: 6px; background-color: #1e1e2e; color: #ffffff; border: 1px solid #444;">
+                                    <button class="btn btn-primary" onclick="Storage.cleanupByDateRange()"
+                                        style="padding: 8px 15px; background: #ef4444;">
+                                        🗑️ Cancella Range
+                                    </button>
+                                </div>
+                                <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                                    ⚠️ Questa operazione è irreversibile. Verrà chiesta conferma prima di procedere.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
             </section>
 
             <!-- Players Tab -->
@@ -783,6 +834,9 @@
 
     <!-- Stripe SDK -->
     <script src="https://js.stripe.com/v3/"></script>
+
+    <!-- QRCode library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <!-- Scripts -->
     <script src="js/storage.js?v=7"></script>

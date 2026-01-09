@@ -10,7 +10,8 @@ const Storage = {
         SETTINGS: 'tennis_settings',
         PLANNING_TEMPLATES: 'planning_templates',
         RECURRING_PLANNING: 'recurring_planning',
-        COURT_RATES: 'tennis_court_rates'
+        COURT_RATES: 'tennis_court_rates',
+        QR_CONFIG: 'qr_config'
     },
 
     // Cache locale per evitare letture ripetute

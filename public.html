@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tennis Planning - Vista Pubblica</title>
     <link rel="stylesheet" href="css/styles.css">
+    <!-- QRCode.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         /* Stili fullscreen per vista pubblica */
         html,
@@ -344,6 +346,126 @@
             background: #5a6578;
         }
 
+        /* QR Code Container */
+        .qr-code-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .qr-code-container:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .qr-code-container .qr-label {
+            color: #fff;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .qr-code-container #qr-code {
+            background: #fff;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        /* Payment Cell - Clickable */
+        .clickable-cell {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .clickable-cell:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Payment Modal Styles */
+        .payment-modal-content {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 20px;
+            width: 95%;
+            max-width: 400px;
+            border: 2px solid #2d8a4e;
+        }
+
+        .payment-player-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background: rgba(45, 138, 78, 0.1);
+            border: 1px solid rgba(45, 138, 78, 0.3);
+        }
+
+        .payment-player-info {
+            flex: 1;
+        }
+
+        .payment-player-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .payment-player-details {
+            color: #a0aec0;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .payment-amount-input {
+            width: 80px;
+            padding: 8px;
+            text-align: right;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #16213e;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .payment-method-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .payment-method-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: #16213e;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .payment-method-btn:hover {
+            border-color: #2d8a4e;
+            background: rgba(45, 138, 78, 0.2);
+        }
+
+        .payment-method-btn.selected {
+            border-color: #2d8a4e;
+            background: rgba(45, 138, 78, 0.3);
+        }
+
+        #paypal-buttons-public {
+            min-height: 100px;
+            margin-top: 15px;
+        }
+
         .time-select {
             padding: 12px 20px;
             font-size: 1.2rem;
@@ -506,6 +628,12 @@
                 <span class="refresh-indicator"></span>
             </span>
         </div>
+
+        <!-- QR Code for Mobile Access -->
+        <div class="qr-code-container" onclick="showQRModal()" title="Scansiona per pagare dal mobile">
+            <div id="qr-code"></div>
+            <div class="qr-label">📱 Scansiona<br>per pagare</div>
+        </div>
     </header>
 
     <div class="public-container">
@@ -533,12 +661,29 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="js/firebase-config.js"></script>
 
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR&intent=capture"></script>
+
     <script src="js/storage.js"></script>
     <script src="js/courts.js"></script>
     <script src="js/players.js"></script>
     <script src="js/matching.js"></script>
     <script>
         let currentDate = new Date();
+        let currentPaymentData = null; // Store current payment context
+
+        // Check URL for date parameter
+        function checkDateParameter() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dateParam = urlParams.get('date');
+            if (dateParam) {
+                const parsedDate = new Date(dateParam);
+                if (!isNaN(parsedDate.getTime())) {
+                    currentDate = parsedDate;
+                }
+            }
+        }
+        checkDateParameter();
 
         function formatDate(date) {
             const day = String(date.getDate()).padStart(2, '0');
@@ -551,8 +696,332 @@
             return days[date.getDay()];
         }
 
+        // Generate QR Code for current date
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qr-code');
+            if (!qrContainer || typeof QRCode === 'undefined') return;
+
+            // Clear previous QR
+            qrContainer.innerHTML = '';
+
+            // Build URL with current date
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const baseUrl = window.location.origin + window.location.pathname;
+            const qrUrl = baseUrl + '?date=' + dateStr;
+
+            // Generate QR code
+            new QRCode(qrContainer, {
+                text: qrUrl,
+                width: 64,
+                height: 64,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        // Show larger QR code in modal
+        function showQRModal() {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const baseUrl = window.location.origin + window.location.pathname;
+            const qrUrl = baseUrl + '?date=' + dateStr;
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'qr-modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="text-align: center;">
+                    <h3 class="modal-title">📱 Scansiona per Pagare</h3>
+                    <div id="qr-large" style="display: inline-block; background: #fff; padding: 15px; border-radius: 8px; margin: 15px 0;"></div>
+                    <p style="color: #a0aec0; font-size: 0.9rem; margin: 10px 0;">
+                        Scansiona questo QR code dal tuo telefono per accedere alla giornata del <strong style="color: #fff;">${formatDate(currentDate)}</strong> e pagare la tua prenotazione.
+                    </p>
+                    <button class="modal-btn modal-btn-secondary" onclick="closeQRModal()">Chiudi</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Generate larger QR
+            new QRCode(document.getElementById('qr-large'), {
+                text: qrUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function closeQRModal() {
+            const modal = document.getElementById('qr-modal');
+            if (modal) modal.remove();
+        }
+
+        // Show payment modal for a booking
+        function showPaymentModal(courtId, time, reservation) {
+            if (!reservation || !reservation.players) return;
+
+            const filledPlayers = reservation.players.filter(p => p && p.trim());
+            if (filledPlayers.length === 0) return;
+
+            currentPaymentData = {
+                courtId: courtId,
+                time: time,
+                date: currentDate.toISOString().split('T')[0],
+                reservation: reservation
+            };
+
+            // Calculate quotas for each player
+            const playersHtml = filledPlayers.map((player, idx) => {
+                const quota = reservation.quotas ? (reservation.quotas[idx] || 0) : 0;
+                const paid = reservation.paid ? (reservation.paid[idx] || 0) : 0;
+                const remaining = Math.max(0, quota - paid);
+
+                return `
+                    <div class="payment-player-row">
+                        <input type="checkbox" id="pay-check-${idx}" data-index="${idx}" 
+                               ${remaining > 0 ? 'checked' : 'disabled'} onchange="updatePaymentTotal()">
+                        <div class="payment-player-info">
+                            <div class="payment-player-name">${player}</div>
+                            <div class="payment-player-details">
+                                Quota: €${quota.toFixed(2)} | Pagato: €${paid.toFixed(2)}
+                                ${remaining > 0 ? ` | <span style="color:#ef4444;">Da pagare: €${remaining.toFixed(2)}</span>` : '<span style="color:#22c55e;">✅ Saldato</span>'}
+                            </div>
+                        </div>
+                        <input type="number" id="pay-amount-${idx}" class="payment-amount-input" 
+                               value="${remaining.toFixed(2)}" min="0" step="0.5" 
+                               onchange="updatePaymentTotal()" ${remaining <= 0 ? 'disabled' : ''}>
+                    </div>
+                `;
+            }).join('');
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'payment-modal';
+            modal.innerHTML = `
+                <div class="payment-modal-content">
+                    <h3 class="modal-title">💳 Paga Prenotazione</h3>
+                    <p style="text-align: center; color: #a0aec0; margin-bottom: 15px;">
+                        ${formatDate(currentDate)} - Ore ${time}
+                    </p>
+                    
+                    <div class="payment-players-list">
+                        ${playersHtml}
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; margin: 15px 0; border: 1px solid rgba(34, 197, 94, 0.3);">
+                        <span style="color: #fff; font-weight: 600;">Totale:</span>
+                        <span id="payment-total" style="color: #22c55e; font-weight: 700; font-size: 1.2rem;">€0.00</span>
+                    </div>
+
+                    <div class="payment-method-buttons">
+                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('contanti')">💵 Contanti</button>
+                        <button class="payment-method-btn" onclick="selectPaymentMethod('qrcode')">📱 QR Code</button>
+                        <button class="payment-method-btn" onclick="selectPaymentMethod('paypal')">🅿️ PayPal</button>
+                    </div>
+
+                    <div id="payment-qr-container" style="display: none; text-align: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 8px;">
+                        <div id="payment-qr-code" style="display: inline-block;"></div>
+                        <p style="color: #666; font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;">Scansiona per pagare</p>
+                    </div>
+
+                    <div id="paypal-buttons-public" style="display: none;"></div>
+
+                    <div id="cash-confirm-btn" style="margin-top: 15px;">
+                        <button class="modal-btn modal-btn-primary" style="width: 100%;" onclick="confirmMobilePayment()">
+                            ✅ Conferma Pagamento
+                        </button>
+                    </div>
+
+                    <button class="modal-btn modal-btn-secondary" style="width: 100%; margin-top: 10px;" onclick="closePaymentModal()">
+                        Annulla
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            updatePaymentTotal();
+        }
+
+        function closePaymentModal() {
+            const modal = document.getElementById('payment-modal');
+            if (modal) modal.remove();
+            currentPaymentData = null;
+        }
+
+        function updatePaymentTotal() {
+            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
+            let total = 0;
+
+            checkboxes.forEach(cb => {
+                const idx = cb.dataset.index;
+                const amountInput = document.getElementById(`pay-amount-${idx}`);
+                if (amountInput && !amountInput.disabled) {
+                    total += parseFloat(amountInput.value) || 0;
+                }
+            });
+
+            const totalSpan = document.getElementById('payment-total');
+            if (totalSpan) {
+                totalSpan.textContent = '€' + total.toFixed(2);
+            }
+        }
+
+        let selectedPaymentMethod = 'contanti';
+
+        function generatePaymentQRCode() {
+            const container = document.getElementById('payment-qr-code');
+            const totalSpan = document.getElementById('payment-total');
+            const config = Storage.load('qr_config', { label: 'Pagamento Mobile', data: '' });
+
+            if (!container || !config.data) return;
+
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: config.data,
+                width: 150,
+                height: 150,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+
+            // Update button styles
+            document.querySelectorAll('.payment-method-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // Show/hide appropriate buttons
+            const paypalContainer = document.getElementById('paypal-buttons-public');
+            const qrContainer = document.getElementById('payment-qr-container');
+            const cashBtn = document.getElementById('cash-confirm-btn');
+            const confirmBtnText = cashBtn.querySelector('button');
+
+            paypalContainer.style.display = 'none';
+            qrContainer.style.display = 'none';
+            cashBtn.style.display = 'block';
+
+            if (method === 'paypal') {
+                paypalContainer.style.display = 'block';
+                cashBtn.style.display = 'none';
+                renderPayPalButtons();
+            } else if (method === 'qrcode') {
+                qrContainer.style.display = 'block';
+                confirmBtnText.textContent = '✅ Conferma Pagamento Mobile';
+                generatePaymentQRCode();
+            } else {
+                // Contanti
+                confirmBtnText.textContent = '✅ Conferma Pagamento Contanti';
+            }
+        }
+
+        function renderPayPalButtons() {
+            const container = document.getElementById('paypal-buttons-public');
+            if (!container || typeof paypal === 'undefined') return;
+
+            container.innerHTML = '';
+
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'blue',
+                    shape: 'rect',
+                    label: 'pay'
+                },
+                createOrder: function (data, actions) {
+                    const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
+                    if (total <= 0) {
+                        alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                        return;
+                    }
+
+                    return actions.order.create({
+                        purchase_units: [{
+                            description: 'Prenotazione Tennis - ' + currentPaymentData.date,
+                            amount: {
+                                currency_code: 'EUR',
+                                value: total.toFixed(2)
+                            }
+                        }]
+                    });
+                },
+                onApprove: function (data, actions) {
+                    return actions.order.capture().then(function (details) {
+                        console.log('Payment completed:', details);
+                        updatePaymentInFirebase('paypal');
+                        closePaymentModal();
+                        alert('✅ Pagamento PayPal completato con successo!\n\nTransazione: ' + details.id);
+                    });
+                },
+                onError: function (err) {
+                    console.error('PayPal Error:', err);
+                    alert('❌ Errore nel pagamento PayPal. Riprova.');
+                }
+            }).render('#paypal-buttons-public');
+        }
+
+        function confirmMobilePayment() {
+            updatePaymentInFirebase(selectedPaymentMethod);
+            closePaymentModal();
+            const label = selectedPaymentMethod === 'qrcode' ? 'Mobile/QR' : 'Contanti';
+            alert(`✅ Pagamento ${label} registrato.\n\nRicordati di confermare alla cassa se necessario.`);
+        }
+
+        async function updatePaymentInFirebase(method) {
+            if (!currentPaymentData) return;
+
+            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
+            if (checkboxes.length === 0) return;
+
+            // Get current courts data
+            const courts = Storage.load('courts', []);
+            const courtIdx = courts.findIndex(c => c.id === currentPaymentData.courtId);
+            if (courtIdx === -1) return;
+
+            const court = courts[courtIdx];
+            if (!court.reservations) return;
+
+            // Find the reservation
+            const resIdx = court.reservations.findIndex(r =>
+                r.date === currentPaymentData.date &&
+                r.from && r.from.includes(currentPaymentData.time.replace('.', ':'))
+            );
+            if (resIdx === -1) return;
+
+            const reservation = court.reservations[resIdx];
+            if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
+            if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
+
+            // Update paid amounts
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.dataset.index);
+                const amountInput = document.getElementById(`pay-amount-${idx}`);
+                if (amountInput && !amountInput.disabled) {
+                    const amount = parseFloat(amountInput.value) || 0;
+                    if (amount > 0) {
+                        reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
+                        reservation.paymentMethods[idx] = method;
+                    }
+                }
+            });
+
+            // Save to Firebase
+            courts[courtIdx] = court;
+            await Storage.save('courts', courts);
+            console.log('Payment saved to Firebase');
+
+            // Refresh view
+            renderPlanning();
+        }
+
         function changeDay(delta) {
             currentDate.setDate(currentDate.getDate() + delta);
+            generateQRCode();
             renderPlanning();
         }
 
@@ -677,6 +1146,9 @@
 
                 document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
+                // Generate QR code
+                generateQRCode();
+
                 // Also render mobile version
                 populateMobileCourtSelector();
                 renderMobilePlanning();
@@ -794,9 +1266,19 @@
                         }
                     }
 
+                    // Store reservation data for click handlers
+                    var clickHandler = '';
+                    if (res && res.players && res.players.some(function (p) { return p && p.trim(); })) {
+                        // Store reservation in global object for later retrieval
+                        if (!window.reservationsCache) window.reservationsCache = {};
+                        var cacheKey = court.id + '_' + time;
+                        window.reservationsCache[cacheKey] = res;
+                        clickHandler = ' onclick="showPaymentModal(\'' + court.id + '\', \'' + time + '\', window.reservationsCache[\'' + cacheKey + '\'])" style="cursor:pointer;"';
+                    }
+
                     tableHtml += '<tr>';
                     tableHtml += '<td class="time-column">' + time + '</td>';
-                    tableHtml += '<td class="activity-cell ' + cellClass + '">' + cellContent + '</td>';
+                    tableHtml += '<td class="activity-cell clickable-cell ' + cellClass + '"' + clickHandler + '>' + cellContent + '</td>';
                     tableHtml += '</tr>';
                 }
 
@@ -818,6 +1300,7 @@
                 console.log('🔄 Public view: caricamento dati da Firebase...');
                 await Storage.loadFromFirebase(Storage.KEYS.COURTS);
                 await Storage.loadFromFirebase(Storage.KEYS.PLANNING_TEMPLATES);
+                await Storage.loadFromFirebase(Storage.KEYS.QR_CONFIG);
 
                 // Subscribe to real-time updates
                 Storage.subscribe(Storage.KEYS.COURTS, () => {
@@ -827,6 +1310,9 @@
                 Storage.subscribe(Storage.KEYS.PLANNING_TEMPLATES, () => {
                     console.log('📡 Aggiornamento templates ricevuto');
                     renderPlanning();
+                });
+                Storage.subscribe(Storage.KEYS.QR_CONFIG, () => {
+                    console.log('📡 Aggiornamento configurazione QR ricevuto');
                 });
 
                 console.log('✅ Public view: sottoscritto a aggiornamenti real-time');
