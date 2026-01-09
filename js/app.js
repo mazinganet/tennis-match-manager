@@ -2492,7 +2492,17 @@ const App = {
                         });
 
                         App.closePaymentModal();
-                        alert('✅ Pagamento PayPal completato con successo!\n\nID Transazione: ' + orderData.id);
+
+                        // AUTO-SAVE: Automatically save the booking after successful online payment
+                        // This ensures payments are persisted even if user doesn't manually save
+                        if (App.activePlanningSlot) {
+                            const { courtId, dateStr } = App.activePlanningSlot;
+                            const dayName = Matching.getDayNameFromDate(dateStr);
+                            App.confirmPlanningSlot(courtId, dayName);
+                            alert('✅ Pagamento PayPal completato e prenotazione salvata!\n\nID Transazione: ' + orderData.id);
+                        } else {
+                            alert('✅ Pagamento PayPal completato con successo!\n\nID Transazione: ' + orderData.id + '\n\n⚠️ Ricordati di salvare la prenotazione!');
+                        }
                     });
                 },
                 onError: function (err) {
@@ -2554,6 +2564,15 @@ const App = {
 
             // Close the payment sub-modal (selection modal)
             self.closePaymentModal();
+
+            // AUTO-SAVE: Automatically save the booking after successful online payment
+            // This ensures payments are persisted even if user doesn't manually save
+            if (self.activePlanningSlot) {
+                const { courtId, dateStr } = self.activePlanningSlot;
+                const dayName = Matching.getDayNameFromDate(dateStr);
+                self.confirmPlanningSlot(courtId, dayName);
+                // Note: Stripe's alert is shown in stripe.js before this callback is called
+            }
         };
 
         // Use StripePayments module
