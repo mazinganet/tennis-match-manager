@@ -700,6 +700,14 @@
             return day + '/' + month;
         }
 
+        // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion issues)
+        function formatDateISO(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         function getDayName(date) {
             const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
             return days[date.getDay()];
@@ -713,8 +721,8 @@
             // Clear previous QR
             qrContainer.innerHTML = '';
 
-            // Build URL with current date
-            const dateStr = currentDate.toISOString().split('T')[0];
+            // Build URL with current date (use local timezone format)
+            const dateStr = formatDateISO(currentDate);
             const baseUrl = window.location.origin + window.location.pathname;
             const qrUrl = baseUrl + '?date=' + dateStr;
 
@@ -731,7 +739,7 @@
 
         // Show larger QR code in modal
         function showQRModal() {
-            const dateStr = currentDate.toISOString().split('T')[0];
+            const dateStr = formatDateISO(currentDate);
             const baseUrl = window.location.origin + window.location.pathname;
             const qrUrl = baseUrl + '?date=' + dateStr;
 
