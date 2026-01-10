@@ -878,11 +878,7 @@
             document.body.appendChild(modal);
 
             updatePaymentTotal();
-            // Initialize with QR Code payment method selected
-            setTimeout(() => {
-                const qrBtn = document.querySelector('.payment-method-btn.selected');
-                if (qrBtn) selectPaymentMethod('qrcode');
-            }, 100);
+            // Initialize with Carta payment method selected (default state is already correct)
         }
 
         function closePaymentModal() {
