@@ -818,7 +818,7 @@
                 return `
                     <div class="payment-player-row">
                         <input type="checkbox" id="pay-check-${originalIdx}" data-index="${originalIdx}" 
-                               ${remaining > 0 ? 'checked' : 'disabled'} onchange="updatePaymentTotal()">
+                               ${remaining <= 0 ? 'disabled' : ''} onchange="updatePaymentTotal()">
                         <div class="payment-player-info">
                             <div class="payment-player-name">${player}</div>
                             <div class="payment-player-details">
@@ -853,8 +853,8 @@
                     </div>
 
                     <div class="payment-method-buttons">
-                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('carta')">💳 Carta</button>
-                        <button class="payment-method-btn" onclick="selectPaymentMethod('paypal')">🅿️ PayPal</button>
+                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('carta', event)">💳 Carta</button>
+                        <button class="payment-method-btn" onclick="selectPaymentMethod('paypal', event)">🅿️ PayPal</button>
                     </div>
 
                     <div id="payment-qr-container" style="display: none; text-align: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 8px;">
@@ -929,14 +929,23 @@
             });
         }
 
-        function selectPaymentMethod(method) {
+        function selectPaymentMethod(method, evt) {
             selectedPaymentMethod = method;
 
             // Update button styles
             document.querySelectorAll('.payment-method-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
-            event.target.classList.add('selected');
+            if (evt && evt.target) {
+                evt.target.classList.add('selected');
+            } else {
+                // Fallback: find button by method
+                document.querySelectorAll('.payment-method-btn').forEach(btn => {
+                    if (btn.textContent.toLowerCase().includes(method === 'carta' ? 'carta' : 'paypal')) {
+                        btn.classList.add('selected');
+                    }
+                });
+            }
 
             // Show/hide appropriate buttons
             const paypalContainer = document.getElementById('paypal-buttons-public');
