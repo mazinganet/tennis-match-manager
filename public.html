@@ -227,6 +227,18 @@
             color: #fff;
         }
 
+        .activity-paid {
+            background-color: #28a745 !important;
+            /* Green */
+            color: #fff !important;
+        }
+
+        .activity-paid-partial {
+            background-color: #ffc107 !important;
+            /* Orange/Yellow */
+            color: #000 !important;
+        }
+
         /* Mobile Court Selector */
         .mobile-court-selector {
             display: none;
@@ -1156,6 +1168,7 @@
                 await Storage.save('courts', courts);
                 console.log('[PAYMENT] Payment saved to Firebase successfully');
                 alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
+                location.reload();
             } catch (error) {
                 console.error('[PAYMENT] Error saving to Firebase:', error);
                 alert('❌ Errore nel salvataggio del pagamento sul server.\nControlla la connessione o contatta l\'amministratore.\n\nDettaglio errore: ' + (error.message || error));
@@ -1257,13 +1270,38 @@
                         if (res) {
                             var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
 
+                            // Check payment status
+                            var isPaid = false;
+                            var isPartial = false;
+                            if (res.paid && Array.isArray(res.paid)) {
+                                var totalPaid = res.paid.reduce(function (a, b) { return a + b; }, 0);
+                                var totalDue = 0;
+                                if (res.payments && Array.isArray(res.payments)) {
+                                    totalDue = res.payments.reduce(function (a, b) { return a + b; }, 0);
+                                }
+
+                                if (totalDue > 0) {
+                                    if (totalPaid >= totalDue - 0.5) isPaid = true; // Tolerance
+                                    else if (totalPaid > 0) isPartial = true;
+                                } else if (totalPaid > 0) {
+                                    // If no quota set but something paid
+                                    isPartial = true;
+                                }
+                            }
+
                             if (res.players && res.players.some(function (p) { return p; })) {
                                 var filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
                                 var hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
                                 var firstPlayerLower = (res.players[0] || '').toLowerCase();
                                 var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
 
-                                if (hasOnlyFirst && isActivity) {
+                                if (isPaid) {
+                                    cellClass = 'activity-paid';
+                                    cellContent = '<span class="cell-label">✅ ' + (res.players[0] || 'Pagato') + '</span>';
+                                } else if (isPartial) {
+                                    cellClass = 'activity-paid-partial';
+                                    cellContent = '<span class="cell-label">⚠️ ' + (res.players[0] || 'Parziale') + '</span>';
+                                } else if (hasOnlyFirst && isActivity) {
                                     cellClass = 'activity-' + firstPlayerLower;
                                     cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
                                 } else if (hasOnlyFirst) {
