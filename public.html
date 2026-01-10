@@ -695,6 +695,19 @@
         let currentDate = new Date();
         let currentPaymentData = null; // Store current payment context
 
+        // Initialize Stripe configuration if not set
+        (function initStripeConfig() {
+            const existingConfig = Storage.load('stripe_config', null);
+            if (!existingConfig || !existingConfig.publishableKey) {
+                // Set default Stripe publishable key
+                Storage.save('stripe_config', {
+                    publishableKey: 'pk_test_51SmFjl7UH3JYNRvKfaopxfLoRINhhp3pDbkcGkJ2UdiEA37nRZRSx5hh9d01U9Rr8aNHpLYgLHeaNdApbsdZkUoN00S48ITVak',
+                    paymentLink: ''
+                });
+                console.log('[STRIPE] Default configuration saved');
+            }
+        })();
+
         // Check URL for date parameter
         let isQRCodeAccess = false;
         function checkDateParameter() {
