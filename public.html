@@ -1084,6 +1084,16 @@
                 method: method
             });
 
+            // Force fresh data load from Firebase to avoid overwrites
+            if (Storage.isFirebaseConnected()) {
+                try {
+                    console.log('[PAYMENT] Fetching latest data from Firebase...');
+                    await Storage.loadFromFirebase(Storage.KEYS.COURTS);
+                } catch (e) {
+                    console.error('[PAYMENT] Error fetching data:', e);
+                }
+            }
+
             // Get current courts data
             const courts = Storage.load('courts', []);
             const courtIdx = courts.findIndex(c => c.id === currentPaymentData.courtId);
