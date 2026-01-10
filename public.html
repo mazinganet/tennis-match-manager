@@ -1152,8 +1152,17 @@
 
             // Save to Firebase
             courts[courtIdx] = court;
-            await Storage.save('courts', courts);
-            console.log('[PAYMENT] Payment saved to Firebase successfully');
+            try {
+                await Storage.save('courts', courts);
+                console.log('[PAYMENT] Payment saved to Firebase successfully');
+                alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
+            } catch (error) {
+                console.error('[PAYMENT] Error saving to Firebase:', error);
+                alert('❌ Errore nel salvataggio del pagamento sul server.\nControlla la connessione o contatta l\'amministratore.\n\nDettaglio errore: ' + (error.message || error));
+                // Revert local change if needed? ideally yes, but complex.
+                // For now, let's just warn.
+                return;
+            }
 
             // Refresh view
             renderPlanning();

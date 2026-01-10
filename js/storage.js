@@ -30,7 +30,7 @@ const Storage = {
         // Durante l'inizializzazione, blocca salvataggi per evitare di sovrascrivere Firebase
         if (!this.isInitialized && key === this.KEYS.PLAYERS) {
             console.warn(`⚠️ [STORAGE] Blocking save for ${key} during initialization`);
-            return false;
+            return Promise.resolve(false);
         }
 
         console.log(`💾 [STORAGE] Saving ${key}, items:`, Array.isArray(data) ? data.length : 'object');
@@ -46,16 +46,22 @@ const Storage = {
             console.error('Errore salvataggio localStorage:', e);
         }
 
-        // Salva su Firebase se disponibile (in background)
+        // Salva su Firebase se disponibile
         if (typeof firebaseReady !== 'undefined' && firebaseReady && database) {
             console.log(`🔥 [FIREBASE] Syncing ${key} to Firebase...`);
-            database.ref('tennis-manager/' + key).set(data)
-                .then(() => console.log(`✅ [FIREBASE] Sincronizzato: ${key}`))
-                .catch(e => console.error('❌ [FIREBASE] Errore sync:', e));
+            return database.ref('tennis-manager/' + key).set(data)
+                .then(() => {
+                    console.log(`✅ [FIREBASE] Sincronizzato: ${key}`);
+                    return true;
+                })
+                .catch(e => {
+                    console.error('❌ [FIREBASE] Errore sync:', e);
+                    throw e; // Propagate error
+                });
         } else {
-            console.warn(`⚠️ [FIREBASE] Not connected, firebaseReady=${typeof firebaseReady !== 'undefined' ? firebaseReady : 'undefined'}, database=${database ? 'exists' : 'null'}`);
+            console.warn(`⚠️ [FIREBASE] Not connected, saving only locally.`);
+            return Promise.resolve(true);
         }
-        return true;
     },
 
     /**
