@@ -968,10 +968,24 @@
                     return;
                 }
 
+                // Check if Stripe is configured
+                if (typeof StripePayments === 'undefined') {
+                    alert('❌ Errore: Stripe non è caricato.');
+                    return;
+                }
+
+                if (!StripePayments.isConfigured()) {
+                    alert('❌ Stripe non è configurato. Contatta l\'amministratore.');
+                    return;
+                }
+
                 // Open Stripe payment modal
                 const description = `Prenotazione Tennis - ${formatDateISO(currentDate)}`;
+                console.log('[PAYMENT] Opening Stripe checkout for:', total, description);
+
                 StripePayments.openCheckout(total, description, function (result) {
                     // Payment successful - update Firebase and close modal
+                    console.log('[PAYMENT] Stripe payment successful:', result);
                     updatePaymentInFirebase('carta');
                     closePaymentModal();
                     renderPlanning();
