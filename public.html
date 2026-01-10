@@ -851,7 +851,7 @@
                     </div>
 
                     <div class="payment-method-buttons">
-                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('qrcode')">📱 QR Code</button>
+                        <button class="payment-method-btn selected" onclick="selectPaymentMethod('carta')">💳 Carta</button>
                         <button class="payment-method-btn" onclick="selectPaymentMethod('paypal')">🅿️ PayPal</button>
                     </div>
 
@@ -907,7 +907,7 @@
             }
         }
 
-        let selectedPaymentMethod = 'qrcode';
+        let selectedPaymentMethod = 'carta';
 
         function generatePaymentQRCode() {
             const container = document.getElementById('payment-qr-code');
@@ -945,16 +945,14 @@
             paypalContainer.style.display = 'none';
             qrContainer.style.display = 'none';
             cashBtn.style.display = 'block';
+            confirmBtnText.textContent = '✅ Conferma Pagamento';
 
             if (method === 'paypal') {
                 paypalContainer.style.display = 'block';
                 cashBtn.style.display = 'none';
                 renderPayPalButtons();
-            } else if (method === 'qrcode') {
-                qrContainer.style.display = 'block';
-                confirmBtnText.textContent = '✅ Conferma Pagamento Mobile';
-                generatePaymentQRCode();
             }
+            // For 'carta', just show the confirm button (default state)
         }
 
         function renderPayPalButtons() {
@@ -1003,9 +1001,16 @@
         }
 
         function confirmMobilePayment() {
+            // Check if at least one player is selected
+            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
+            if (checkboxes.length === 0) {
+                alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                return;
+            }
+
             updatePaymentInFirebase(selectedPaymentMethod);
             closePaymentModal();
-            const label = selectedPaymentMethod === 'qrcode' ? 'Mobile/QR' : 'Contanti';
+            const label = selectedPaymentMethod === 'carta' ? 'Carta' : 'Mobile';
             alert(`✅ Pagamento ${label} registrato.\n\nRicordati di confermare alla cassa se necessario.`);
         }
 
