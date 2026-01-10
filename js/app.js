@@ -8,6 +8,14 @@ const App = {
     currentPlanningDate: new Date(), // Start of the week displayed in planning
     activePlayerSlot: 1, // Slot attivo per inserimento giocatore (1-4)
 
+    // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion issues)
+    formatDateISO(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
     init() {
         this.loadSettings();
         this.bindEvents();
@@ -653,7 +661,7 @@ const App = {
         const dateDisplay = document.getElementById('planning-date-display');
         if (!container || !dateInput) return;
 
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         dateInput.value = dateStr;
         const dayName = Matching.getDayNameFromDate(dateStr);
         if (dayLabel) dayLabel.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
@@ -842,7 +850,7 @@ const App = {
                 // Check data attributes for payment info
                 const courtId = cell.dataset.court;
                 const time = cell.dataset.time;
-                const dateStr = App.currentPlanningDate.toISOString().split('T')[0];
+                const dateStr = App.formatDateISO(App.currentPlanningDate);
                 const court = Courts.getById(courtId);
 
                 if (court?.reservations) {
@@ -963,7 +971,7 @@ const App = {
         const container = document.getElementById('planning-vertical-container');
         if (!container) return;
 
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         const dayName = Matching.getDayNameFromDate(dateStr);
         const courts = Courts.getAvailable(this.currentSeason);
         const planningTemplates = Storage.load('planning_templates', {});
@@ -1145,7 +1153,7 @@ const App = {
             console.log('[MOBILE] renderMobilePlanning called, table:', !!mobileTable, 'select:', !!select);
             if (!mobileTable || !select) return;
 
-            const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+            const dateStr = this.formatDateISO(this.currentPlanningDate);
             const dayName = Matching.getDayNameFromDate(dateStr);
             const courts = Courts.getAvailable(this.currentSeason) || [];
             const scheduled = Storage.load(Storage.KEYS.SCHEDULED, []) || [];
@@ -1290,7 +1298,7 @@ const App = {
         const courtId = e.target.dataset.court;
         const index = parseInt(e.target.dataset.index);
         const newTime = e.target.value;
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
 
         const planningTemplates = Storage.load('planning_templates', {});
         if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
@@ -1312,7 +1320,7 @@ const App = {
         const courtId = cell.dataset.court;
         const index = parseInt(cell.dataset.index);
         const currentTime = cell.textContent.trim();
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
 
         // Parse current time
         const timeParts = currentTime.replace('.', ':').split(':');
@@ -1364,7 +1372,7 @@ const App = {
         }
 
         const newTime = `${hourEl.value}.${minEl.value}`;
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
 
         const planningTemplates = Storage.load('planning_templates', {});
         if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
@@ -1393,7 +1401,7 @@ const App = {
         const courtId = cell.dataset.court;
         const time = cell.dataset.time;
         const index = cell.dataset.index;
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
 
         // Apre il modal per qualsiasi cella (inclusi i match generati automaticamente)
         this.showPlanningSlotModal(courtId, dateStr, time, index);
@@ -1764,7 +1772,7 @@ const App = {
 
         const reservationData = {
             day: day,
-            date: this.currentPlanningDate.toISOString().split('T')[0],
+            date: this.formatDateISO(this.currentPlanningDate),
             from: time,
             to: endTime,
             type: type,
@@ -1778,7 +1786,7 @@ const App = {
 
         // First, remove all reservations that overlap with the new time range
         const newReservationsList = [];
-        const currentDateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const currentDateStr = this.formatDateISO(this.currentPlanningDate);
         court.reservations.forEach(r => {
             // Match by date if both have date, otherwise by day name for old reservations
             let isMatchingDay = false;
@@ -1857,7 +1865,7 @@ const App = {
         if (!confirm(`Sei sicuro di voler eliminare l'attività dalle ${deleteFrom} alle ${deleteTo}?`)) return;
 
         const court = Courts.getById(courtId);
-        const currentDateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const currentDateStr = this.formatDateISO(this.currentPlanningDate);
         console.log(`[DELETE] Trying to delete: court=${courtId}, day=${day}, date=${currentDateStr}, from=${deleteFrom}, to=${deleteTo}`);
 
         // Helper function to convert time to minutes for accurate comparison
@@ -1941,7 +1949,7 @@ const App = {
         if (!confirm(`Sei sicuro di voler eliminare TUTTE le prenotazioni di ${day} per questo campo?`)) return;
 
         const court = Courts.getById(courtId);
-        const currentDateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const currentDateStr = this.formatDateISO(this.currentPlanningDate);
         if (court) {
             // Remove all reservations for this specific date
             if (court.reservations) {
@@ -2138,7 +2146,7 @@ const App = {
         }
 
         // Controlla se il giocatore è già prenotato in un'altra cella della giornata
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         const dayName = Matching.getDayNameFromDate(dateStr);
         const courts = Courts.getAll();
 
@@ -2173,7 +2181,7 @@ const App = {
             // Auto-fill payment based on player membership and date
             const paymentInput = document.getElementById(`slot-payment-${this.activePlayerSlot}`);
             if (paymentInput) {
-                const bookingDate = this.currentPlanningDate.toISOString().split('T')[0];
+                const bookingDate = this.formatDateISO(this.currentPlanningDate);
                 const bookingTime = this.activePlanningSlot?.time || '12:00';
                 const rate = this.getPlayerRate(playerName, bookingDate, bookingTime);
                 if (rate > 0) {
@@ -2239,7 +2247,7 @@ const App = {
     },
 
     showPaymentModal(playerPayments) {
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         const description = `Prenotazione Tennis - ${dateStr}`;
 
         // Build player selection list with checkboxes
@@ -2396,7 +2404,7 @@ const App = {
             setTimeout(() => {
                 const total = this.calculateSelectedTotal();
                 if (total > 0) {
-                    this.renderPayPalButtons(total, `Prenotazione Tennis - ${this.currentPlanningDate.toISOString().split('T')[0]}`);
+                    this.renderPayPalButtons(total, `Prenotazione Tennis - ${this.formatDateISO(this.currentPlanningDate)}`);
                 }
             }, 100);
         } else if (method === 'carta') {
@@ -4477,7 +4485,7 @@ const App = {
         const court = courts.find(c => c.id === courtId);
         if (!court) return;
 
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         const planningTemplates = Storage.load('planning_templates', {}) || {};
         const dayTemplate = planningTemplates[dateStr] || {};
         const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
@@ -4525,7 +4533,7 @@ const App = {
             return;
         }
 
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         const planningTemplates = Storage.load('planning_templates', {}) || {};
         if (!planningTemplates[dateStr]) planningTemplates[dateStr] = {};
         planningTemplates[dateStr][courtId] = newTimes;
@@ -4625,7 +4633,7 @@ const App = {
     executePrint(format) {
         this.closeModal();
 
-        const dateStr = this.currentPlanningDate.toISOString().split('T')[0];
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
         const dayNames = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
         const dayName = dayNames[this.currentPlanningDate.getDay()].toUpperCase();
         const formattedDate = this.currentPlanningDate.toLocaleDateString('it-IT');

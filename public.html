@@ -531,6 +531,24 @@
                 justify-content: center;
             }
 
+            /* Hide QR code on mobile */
+            .qr-code-container {
+                display: none !important;
+            }
+
+            /* Hide dropdown selector on mobile, show only club name */
+            .season-selector label,
+            .season-selector select {
+                display: none !important;
+            }
+
+            .season-selector .mobile-club-name {
+                display: block !important;
+                color: #fbbf24;
+                font-size: 1.1rem;
+                font-weight: bold;
+            }
+
             .mobile-court-selector {
                 display: flex !important;
                 width: 100% !important;
@@ -623,6 +641,7 @@
                 <option value="winter">Viserba</option>
                 <option value="summer">Rivabella</option>
             </select>
+            <span class="mobile-club-name" id="mobile-club-name" style="display: none;">Viserba</span>
             <span class="last-update">
                 Aggiornato: <span id="last-update-time">--:--</span>
                 <span class="refresh-indicator"></span>
@@ -784,7 +803,7 @@
             currentPaymentData = {
                 courtId: courtId,
                 time: time,
-                date: currentDate.toISOString().split('T')[0],
+                date: formatDateISO(currentDate),
                 reservation: reservation
             };
 
@@ -1046,11 +1065,17 @@
         function renderPlanning() {
             try {
                 var season = document.getElementById('season-select').value;
-                var dateStr = currentDate.toISOString().split('T')[0];
+                var dateStr = formatDateISO(currentDate);
                 var dayName = Matching.getDayNameFromDate(dateStr);
 
                 document.getElementById('current-date').textContent = formatDate(currentDate);
                 document.getElementById('day-name').textContent = getDayName(currentDate);
+
+                // Update mobile club name display
+                var mobileClubName = document.getElementById('mobile-club-name');
+                if (mobileClubName) {
+                    mobileClubName.textContent = season === 'winter' ? 'Viserba' : 'Rivabella';
+                }
 
                 var courts = Courts.getAvailable(season);
                 var container = document.getElementById('planning-grid');
@@ -1205,7 +1230,7 @@
         function renderMobilePlanning() {
             try {
                 var season = document.getElementById('season-select').value;
-                var dateStr = currentDate.toISOString().split('T')[0];
+                var dateStr = formatDateISO(currentDate);
                 var dayName = Matching.getDayNameFromDate(dateStr);
 
                 var courts = Courts.getAvailable(season);
