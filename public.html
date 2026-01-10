@@ -1004,6 +1004,24 @@
                     return;
                 }
 
+                // CRITICAL FIX: Save selected players and amounts BEFORE opening Stripe modal
+                // This ensures data is available when callback executes (DOM may be inaccessible)
+                const selectedPayments = [];
+                checkboxes.forEach(cb => {
+                    const idx = parseInt(cb.dataset.index);
+                    const amountInput = document.getElementById(`pay-amount-${idx}`);
+                    if (amountInput && !amountInput.disabled) {
+                        const amount = parseFloat(amountInput.value) || 0;
+                        if (amount > 0) {
+                            selectedPayments.push({ index: idx, amount: amount });
+                        }
+                    }
+                });
+
+                // Store in currentPaymentData for use in callback
+                currentPaymentData.selectedPayments = selectedPayments;
+                console.log('[PAYMENT] Saved selected payments before Stripe checkout:', selectedPayments);
+
                 // Open Stripe payment modal
                 const description = `Prenotazione Tennis - ${formatDateISO(currentDate)}`;
                 console.log('[PAYMENT] Opening Stripe checkout for:', total, description);
@@ -1023,6 +1041,26 @@
             if (!container || typeof paypal === 'undefined') return;
 
             container.innerHTML = '';
+
+            // CRITICAL FIX: Save selected players and amounts BEFORE PayPal flow starts
+            // This ensures data is available when callback executes
+            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
+            const selectedPayments = [];
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.dataset.index);
+                const amountInput = document.getElementById(`pay-amount-${idx}`);
+                if (amountInput && !amountInput.disabled) {
+                    const amount = parseFloat(amountInput.value) || 0;
+                    if (amount > 0) {
+                        selectedPayments.push({ index: idx, amount: amount });
+                    }
+                }
+            });
+
+            if (currentPaymentData) {
+                currentPaymentData.selectedPayments = selectedPayments;
+                console.log('[PAYMENT] Saved selected payments for PayPal:', selectedPayments);
+            }
 
             paypal.Buttons({
                 style: {
@@ -1051,6 +1089,7 @@
                 onApprove: function (data, actions) {
                     return actions.order.capture().then(function (details) {
                         console.log('Payment completed:', details);
+                        console.log('[PAYMENT] Using pre-saved selectedPayments:', currentPaymentData.selectedPayments);
                         updatePaymentInFirebase('paypal');
                         closePaymentModal();
                         alert('✅ Pagamento PayPal completato con successo!\n\nTransazione: ' + details.id);
@@ -1083,8 +1122,32 @@
                 return;
             }
 
-            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
-            if (checkboxes.length === 0) {
+            // CRITICAL FIX: Use pre-saved selectedPayments if available (from Stripe/PayPal flow)
+            // Otherwise fall back to reading from DOM (for other payment methods)
+            let selectedPayments = currentPaymentData.selectedPayments;
+
+            if (!selectedPayments || selectedPayments.length === 0) {
+                // Fallback: read from DOM (for PayPal and other methods)
+                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
+                if (checkboxes.length === 0) {
+                    console.error('[PAYMENT] No players selected and no pre-saved payments');
+                    return;
+                }
+
+                selectedPayments = [];
+                checkboxes.forEach(cb => {
+                    const idx = parseInt(cb.dataset.index);
+                    const amountInput = document.getElementById(`pay-amount-${idx}`);
+                    if (amountInput && !amountInput.disabled) {
+                        const amount = parseFloat(amountInput.value) || 0;
+                        if (amount > 0) {
+                            selectedPayments.push({ index: idx, amount: amount });
+                        }
+                    }
+                });
+            }
+
+            if (!selectedPayments || selectedPayments.length === 0) {
                 console.error('[PAYMENT] No players selected');
                 return;
             }
@@ -1093,7 +1156,8 @@
                 courtId: currentPaymentData.courtId,
                 date: currentPaymentData.date,
                 time: currentPaymentData.time,
-                method: method
+                method: method,
+                selectedPayments: selectedPayments
             });
 
             // Force fresh data load from Firebase to avoid overwrites
@@ -1163,27 +1227,20 @@
                     // Add to reservations list
                     court.reservations.push(newRes);
 
-                    // Update the index to point to the new reservation (last one)
-                    // We can't set resIdx as it's const, so we'll handle it by getting the last item
-                    // But we continue execution...
-
                     // Continue with the NEW reservation
                     const reservation = newRes; // Use the new instance
 
                     if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
                     if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
 
-                    // Update paid amounts
-                    checkboxes.forEach(cb => {
-                        const idx = parseInt(cb.dataset.index);
-                        const amountInput = document.getElementById(`pay-amount-${idx}`);
-                        if (amountInput && !amountInput.disabled) {
-                            const amount = parseFloat(amountInput.value) || 0;
-                            if (amount > 0) {
-                                reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
-                                reservation.paymentMethods[idx] = method;
-                                console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
-                            }
+                    // Update paid amounts using pre-saved selectedPayments
+                    selectedPayments.forEach(payment => {
+                        const idx = payment.index;
+                        const amount = payment.amount;
+                        if (amount > 0) {
+                            reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
+                            reservation.paymentMethods[idx] = method;
+                            console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
                         }
                     });
 
@@ -1213,17 +1270,14 @@
             if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
             if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
 
-            // Update paid amounts
-            checkboxes.forEach(cb => {
-                const idx = parseInt(cb.dataset.index);
-                const amountInput = document.getElementById(`pay-amount-${idx}`);
-                if (amountInput && !amountInput.disabled) {
-                    const amount = parseFloat(amountInput.value) || 0;
-                    if (amount > 0) {
-                        reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
-                        reservation.paymentMethods[idx] = method;
-                        console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
-                    }
+            // Update paid amounts using pre-saved selectedPayments
+            selectedPayments.forEach(payment => {
+                const idx = payment.index;
+                const amount = payment.amount;
+                if (amount > 0) {
+                    reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
+                    reservation.paymentMethods[idx] = method;
+                    console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
                 }
             });
 
