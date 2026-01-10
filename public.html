@@ -1066,27 +1066,63 @@
         }
 
         async function updatePaymentInFirebase(method) {
-            if (!currentPaymentData) return;
+            if (!currentPaymentData) {
+                console.error('[PAYMENT] No current payment data');
+                return;
+            }
 
             const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
-            if (checkboxes.length === 0) return;
+            if (checkboxes.length === 0) {
+                console.error('[PAYMENT] No players selected');
+                return;
+            }
+
+            console.log('[PAYMENT] Updating payment in Firebase:', {
+                courtId: currentPaymentData.courtId,
+                date: currentPaymentData.date,
+                time: currentPaymentData.time,
+                method: method
+            });
 
             // Get current courts data
             const courts = Storage.load('courts', []);
             const courtIdx = courts.findIndex(c => c.id === currentPaymentData.courtId);
-            if (courtIdx === -1) return;
+            if (courtIdx === -1) {
+                console.error('[PAYMENT] Court not found:', currentPaymentData.courtId);
+                return;
+            }
 
             const court = courts[courtIdx];
-            if (!court.reservations) return;
+            if (!court.reservations) {
+                console.error('[PAYMENT] No reservations on court');
+                return;
+            }
 
-            // Find the reservation
-            const resIdx = court.reservations.findIndex(r =>
-                r.date === currentPaymentData.date &&
-                r.from && r.from.includes(currentPaymentData.time.replace('.', ':'))
-            );
-            if (resIdx === -1) return;
+            // Find the reservation - normalize time format for comparison
+            const normalizedTime = currentPaymentData.time.replace('.', ':').replace(':', '.');
+            const resIdx = court.reservations.findIndex(r => {
+                if (r.date !== currentPaymentData.date) return false;
+
+                // Compare times in different formats
+                const resFrom = r.from || '';
+                const timeToCompare = currentPaymentData.time;
+
+                // Try different format comparisons
+                return resFrom === timeToCompare ||
+                    resFrom.replace('.', ':') === timeToCompare.replace('.', ':') ||
+                    resFrom.replace(':', '.') === timeToCompare.replace(':', '.') ||
+                    (resFrom <= timeToCompare && r.to > timeToCompare);
+            });
+
+            if (resIdx === -1) {
+                console.error('[PAYMENT] Reservation not found for:', currentPaymentData.date, currentPaymentData.time);
+                console.log('[PAYMENT] Available reservations:', court.reservations.map(r => ({ date: r.date, from: r.from, to: r.to })));
+                return;
+            }
 
             const reservation = court.reservations[resIdx];
+            console.log('[PAYMENT] Found reservation:', reservation);
+
             if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
             if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
 
@@ -1099,6 +1135,7 @@
                     if (amount > 0) {
                         reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
                         reservation.paymentMethods[idx] = method;
+                        console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
                     }
                 }
             });
@@ -1106,7 +1143,7 @@
             // Save to Firebase
             courts[courtIdx] = court;
             await Storage.save('courts', courts);
-            console.log('Payment saved to Firebase');
+            console.log('[PAYMENT] Payment saved to Firebase successfully');
 
             // Refresh view
             renderPlanning();
