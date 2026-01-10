@@ -683,10 +683,14 @@
     <!-- PayPal SDK -->
     <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR&intent=capture"></script>
 
+    <!-- Stripe SDK -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <script src="js/storage.js"></script>
     <script src="js/courts.js"></script>
     <script src="js/players.js"></script>
     <script src="js/matching.js"></script>
+    <script src="js/stripe.js"></script>
     <script>
         let currentDate = new Date();
         let currentPaymentData = null; // Store current payment context
@@ -864,11 +868,7 @@
 
                     <div id="paypal-buttons-public" style="display: none;"></div>
 
-                    <div id="cash-confirm-btn" style="margin-top: 15px;">
-                        <button class="modal-btn modal-btn-primary" style="width: 100%;" onclick="confirmMobilePayment()">
-                            ✅ Conferma Pagamento
-                        </button>
-                    </div>
+                    <!-- cash-confirm-btn removed - payments now processed directly by Carta/PayPal -->
 
                     <button class="modal-btn modal-btn-secondary" style="width: 100%; margin-top: 10px;" onclick="closePaymentModal()">
                         Annulla
@@ -946,20 +946,37 @@
             // Show/hide appropriate buttons
             const paypalContainer = document.getElementById('paypal-buttons-public');
             const qrContainer = document.getElementById('payment-qr-container');
-            const cashBtn = document.getElementById('cash-confirm-btn');
-            const confirmBtnText = cashBtn.querySelector('button');
 
             paypalContainer.style.display = 'none';
             qrContainer.style.display = 'none';
-            cashBtn.style.display = 'block';
-            confirmBtnText.textContent = '✅ Conferma Pagamento';
 
             if (method === 'paypal') {
                 paypalContainer.style.display = 'block';
-                cashBtn.style.display = 'none';
                 renderPayPalButtons();
+            } else if (method === 'carta') {
+                // Check if at least one player is selected
+                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
+                if (checkboxes.length === 0) {
+                    alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                    return;
+                }
+
+                // Get total amount
+                const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
+                if (total <= 0) {
+                    alert('⚠️ L\'importo deve essere maggiore di zero.');
+                    return;
+                }
+
+                // Open Stripe payment modal
+                const description = `Prenotazione Tennis - ${formatDateISO(currentDate)}`;
+                StripePayments.openCheckout(total, description, function (result) {
+                    // Payment successful - update Firebase and close modal
+                    updatePaymentInFirebase('carta');
+                    closePaymentModal();
+                    renderPlanning();
+                });
             }
-            // For 'carta', just show the confirm button (default state)
         }
 
         function renderPayPalButtons() {
