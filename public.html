@@ -1137,8 +1137,73 @@
             });
 
             if (resIdx === -1) {
+                // Try to find a recurring reservation
+                const dayName = Matching.getDayNameFromDate(currentPaymentData.date);
+                const recurringIdx = court.reservations.findIndex(r => {
+                    if (r.date) return false; // Skip dated reservations
+                    if (r.day !== dayName) return false;
+
+                    const resFrom = r.from || '';
+                    const timeToCompare = currentPaymentData.time;
+
+                    return resFrom === timeToCompare ||
+                        resFrom.replace('.', ':') === timeToCompare.replace('.', ':') ||
+                        resFrom.replace(':', '.') === timeToCompare.replace(':', '.') ||
+                        (resFrom <= timeToCompare && r.to > timeToCompare);
+                });
+
+                if (recurringIdx !== -1) {
+                    console.log('[PAYMENT] Found recurring reservation, creating instance for date');
+                    // Clone the recurring reservation to a new specific-date reservation
+                    const recurringRes = court.reservations[recurringIdx];
+                    const newRes = JSON.parse(JSON.stringify(recurringRes));
+                    newRes.date = currentPaymentData.date;
+                    delete newRes.day; // Remove day, use date
+
+                    // Add to reservations list
+                    court.reservations.push(newRes);
+
+                    // Update the index to point to the new reservation (last one)
+                    // We can't set resIdx as it's const, so we'll handle it by getting the last item
+                    // But we continue execution...
+
+                    // Continue with the NEW reservation
+                    const reservation = newRes; // Use the new instance
+
+                    if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
+                    if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
+
+                    // Update paid amounts
+                    checkboxes.forEach(cb => {
+                        const idx = parseInt(cb.dataset.index);
+                        const amountInput = document.getElementById(`pay-amount-${idx}`);
+                        if (amountInput && !amountInput.disabled) {
+                            const amount = parseFloat(amountInput.value) || 0;
+                            if (amount > 0) {
+                                reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
+                                reservation.paymentMethods[idx] = method;
+                                console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
+                            }
+                        }
+                    });
+
+                    // Save to Firebase
+                    courts[courtIdx] = court;
+                    try {
+                        await Storage.save('courts', courts);
+                        console.log('[PAYMENT] New instance with payment saved successfully');
+                        alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
+                        location.reload();
+                    } catch (error) {
+                        console.error('[PAYMENT] Error saving:', error);
+                        alert('❌ Errore nel salvataggio: ' + (error.message || error));
+                    }
+                    return;
+                }
+
                 console.error('[PAYMENT] Reservation not found for:', currentPaymentData.date, currentPaymentData.time);
-                console.log('[PAYMENT] Available reservations:', court.reservations.map(r => ({ date: r.date, from: r.from, to: r.to })));
+                console.log('[PAYMENT] Available reservations:', court.reservations.map(r => ({ date: r.date, day: r.day, from: r.from, to: r.to })));
+                alert('❌ Errore: Prenotazione non trovata. Impossibile registrare il pagamento.');
                 return;
             }
 
