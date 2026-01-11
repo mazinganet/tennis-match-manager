@@ -1430,27 +1430,41 @@
                                 var firstPlayerLower = (res.players[0] || '').toLowerCase();
                                 var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
 
-                                if (isPaid) {
-                                    cellClass = 'activity-paid';
-                                    cellContent = '<span class="cell-label">✅ ' + (res.players[0] || 'Pagato') + '</span>';
-                                } else if (isPartial) {
-                                    cellClass = 'activity-paid-partial';
-                                    cellContent = '<span class="cell-label">⚠️ ' + (res.players[0] || 'Parziale') + '</span>';
-                                } else if (hasOnlyFirst && isActivity) {
+                                // Helper to check if player at index has paid
+                                var playerHasPaid = function (idx) {
+                                    return res.paid && res.paid[idx] && res.paid[idx] > 0;
+                                };
+
+                                // Helper to get player name with green if paid
+                                var getPlayerNameStyled = function (name, idx) {
+                                    if (!name || !name.trim()) return '';
+                                    var surname = name.split(' ')[0];
+                                    if (playerHasPaid(idx)) {
+                                        return '<span style="color:#22c55e;font-weight:600;">' + surname + '</span>';
+                                    }
+                                    return '<span>' + surname + '</span>';
+                                };
+
+                                if (hasOnlyFirst && isActivity) {
                                     cellClass = 'activity-' + firstPlayerLower;
                                     cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
                                 } else if (hasOnlyFirst) {
                                     cellClass = 'activity-single-player';
-                                    cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
+                                    var playerStyle = playerHasPaid(0) ? 'color:#22c55e;font-weight:600;' : '';
+                                    cellContent = '<span class="cell-label" style="' + playerStyle + '">' + res.players[0] + '</span>';
                                 } else if (filledPlayers.length === 2) {
                                     cellClass = 'activity-players';
-                                    cellContent = '<div style="display:flex;flex-direction:column;font-size:0.7rem;"><span>' + filledPlayers[0] + '</span><span>' + filledPlayers[1] + '</span></div>';
+                                    // Find original indices
+                                    var idx1 = res.players.indexOf(filledPlayers[0]);
+                                    var idx2 = res.players.indexOf(filledPlayers[1]);
+                                    cellContent = '<div style="display:flex;flex-direction:column;font-size:0.7rem;">' +
+                                        getPlayerNameStyled(filledPlayers[0], idx1) +
+                                        getPlayerNameStyled(filledPlayers[1], idx2) + '</div>';
                                 } else {
                                     cellClass = 'activity-players';
                                     cellContent = '<div style="display:grid;grid-template-columns:1fr 1fr;font-size:0.55rem;gap:1px;">';
                                     for (var p = 0; p < 4; p++) {
-                                        var surname = (res.players[p] || '').split(' ')[0];
-                                        cellContent += '<span>' + surname + '</span>';
+                                        cellContent += getPlayerNameStyled(res.players[p] || '', p);
                                     }
                                     cellContent += '</div>';
                                 }
@@ -1578,15 +1592,38 @@
                             var firstPlayerLower = (res.players[0] || '').toLowerCase();
                             var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
 
+                            // Helper to check if player at index has paid
+                            var playerHasPaid = function (idx) {
+                                return res.paid && res.paid[idx] && res.paid[idx] > 0;
+                            };
+
+                            // Helper to get full player name with green if paid
+                            var getPlayerNameStyledMobile = function (name, idx) {
+                                if (!name || !name.trim()) return '';
+                                if (playerHasPaid(idx)) {
+                                    return '<span style="color:#22c55e;font-weight:600;">' + name + '</span>';
+                                }
+                                return '<span>' + name + '</span>';
+                            };
+
                             if (hasOnlyFirst && isActivity) {
                                 cellClass = 'activity-' + firstPlayerLower;
                                 cellContent = res.players[0];
                             } else if (hasOnlyFirst) {
                                 cellClass = 'activity-single-player';
-                                cellContent = res.players[0];
+                                cellContent = playerHasPaid(0) ?
+                                    '<span style="color:#22c55e;font-weight:600;">' + res.players[0] + '</span>' :
+                                    res.players[0];
                             } else {
                                 cellClass = 'activity-players';
-                                cellContent = filledPlayers.join('<br>');
+                                // Show each player with their original index for payment check
+                                var playerHtmls = [];
+                                for (var i = 0; i < res.players.length; i++) {
+                                    if (res.players[i] && res.players[i].trim()) {
+                                        playerHtmls.push(getPlayerNameStyledMobile(res.players[i], i));
+                                    }
+                                }
+                                cellContent = playerHtmls.join('<br>');
                             }
                         } else {
                             cellClass = 'activity-' + (res.type || 'reserved');
