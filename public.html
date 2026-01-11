@@ -976,6 +976,20 @@
             qrContainer.style.display = 'none';
 
             if (method === 'paypal') {
+                // Check if at least one player is selected
+                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
+                if (checkboxes.length === 0) {
+                    alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                    return;
+                }
+
+                // Get total amount
+                const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
+                if (total <= 0) {
+                    alert('⚠️ L\'importo deve essere maggiore di zero.');
+                    return;
+                }
+
                 paypalContainer.style.display = 'block';
                 renderPayPalButtons();
             } else if (method === 'carta') {
