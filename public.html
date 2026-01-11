@@ -1173,7 +1173,7 @@
             }
 
             // Get current courts data
-            const courts = Storage.load('courts', []);
+            const courts = Storage.load(Storage.KEYS.COURTS, []);
             const courtIdx = courts.findIndex(c => c.id === currentPaymentData.courtId);
             if (courtIdx === -1) {
                 console.error('[PAYMENT] Court not found:', currentPaymentData.courtId);
@@ -1249,7 +1249,7 @@
                     // Save to Firebase
                     courts[courtIdx] = court;
                     try {
-                        await Storage.save('courts', courts);
+                        await Storage.save(Storage.KEYS.COURTS, courts);
                         console.log('[PAYMENT] New instance with payment saved successfully');
                         alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
                         location.reload();
@@ -1286,7 +1286,7 @@
             // Save to Firebase
             courts[courtIdx] = court;
             try {
-                await Storage.save('courts', courts);
+                await Storage.save(Storage.KEYS.COURTS, courts);
                 console.log('[PAYMENT] Payment saved to Firebase successfully');
                 alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
                 location.reload();
