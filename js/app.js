@@ -886,7 +886,8 @@ const App = {
                             const quota = res.payments?.[i] || 0;
                             const paid = res.paid?.[i] || 0;
                             const method = res.paymentMethods?.[i] || '';
-                            const methodIcon = paymentMethodIcons[method] || '';
+                            // Only show payment icon if paid > 0
+                            const methodIcon = (paid > 0 && method) ? (paymentMethodIcons[method] || '') : '';
                             return `${player} (Quota: ${quota}€ / Pagato: ${paid}€${methodIcon ? ' ' + methodIcon : ''})`;
                         }).filter(l => l);
 
@@ -1240,8 +1241,9 @@ const App = {
                                 // Always show paid amount (even if 0)
                                 const paidAmount = (res.paid && res.paid[0] !== undefined) ? res.paid[0] : 0;
                                 paidInfo = ' [' + paidAmount + '€]';
-                                // Payment method indicator
-                                const pmIcon = { contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethod] || '';
+                                // Payment method indicator (only if paid > 0)
+                                const pmIcon = (paidAmount > 0 && res.paymentMethods?.[0]) ?
+                                    ({ contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethods[0]] || '') : '';
                                 cellContent = res.players[0] + quote + paidInfo + (pmIcon ? ' ' + pmIcon : '');
                             } else {
                                 cellClass = 'activity-players';
@@ -1262,9 +1264,7 @@ const App = {
                                     paidInfo = ' [' + paidAmount + '€]';
                                     return playerName + quote + paidInfo;
                                 });
-                                // Payment method indicator for mobile view
-                                const pmIconMobile = { contanti: '💵', carta: '💳', paypal: '🅿️' }[res.paymentMethod] || '';
-                                cellContent = playersWithQuotes.join('<br>') + (pmIconMobile ? '<br><span style="font-size:12px;">' + pmIconMobile + '</span>' : '');
+                                cellContent = playersWithQuotes.join('<br>');
                             }
                         } else {
                             cellClass = 'activity-' + (res.type || 'reserved');
@@ -1580,8 +1580,8 @@ const App = {
                                        value="${existingRes?.payments?.[0] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-1" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[0] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(1)">
-                                <span id="slot-paymethod-icon-1" class="payment-method-icon" title="${existingRes?.paymentMethods?.[0] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[0])}</span>
-                                <input type="hidden" id="slot-paymethod-1" value="${existingRes?.paymentMethods?.[0] || ''}">
+                                <span id="slot-paymethod-icon-1" class="payment-method-icon" title="${(existingRes?.paid?.[0] > 0) ? (existingRes?.paymentMethods?.[0] || '') : ''}">${(existingRes?.paid?.[0] > 0) ? this.getPaymentMethodIcon(existingRes?.paymentMethods?.[0]) : ''}</span>
+                                <input type="hidden" id="slot-paymethod-1" value="${(existingRes?.paid?.[0] > 0) ? (existingRes?.paymentMethods?.[0] || '') : ''}">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-2" class="player-input" placeholder="Giocatore 2"
@@ -1590,8 +1590,8 @@ const App = {
                                        value="${existingRes?.payments?.[1] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-2" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[1] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(2)">
-                                <span id="slot-paymethod-icon-2" class="payment-method-icon" title="${existingRes?.paymentMethods?.[1] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[1])}</span>
-                                <input type="hidden" id="slot-paymethod-2" value="${existingRes?.paymentMethods?.[1] || ''}">
+                                <span id="slot-paymethod-icon-2" class="payment-method-icon" title="${(existingRes?.paid?.[1] > 0) ? (existingRes?.paymentMethods?.[1] || '') : ''}">${(existingRes?.paid?.[1] > 0) ? this.getPaymentMethodIcon(existingRes?.paymentMethods?.[1]) : ''}</span>
+                                <input type="hidden" id="slot-paymethod-2" value="${(existingRes?.paid?.[1] > 0) ? (existingRes?.paymentMethods?.[1] || '') : ''}">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-3" class="player-input" placeholder="Giocatore 3"
@@ -1600,8 +1600,8 @@ const App = {
                                        value="${existingRes?.payments?.[2] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-3" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[2] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(3)">
-                                <span id="slot-paymethod-icon-3" class="payment-method-icon" title="${existingRes?.paymentMethods?.[2] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[2])}</span>
-                                <input type="hidden" id="slot-paymethod-3" value="${existingRes?.paymentMethods?.[2] || ''}">
+                                <span id="slot-paymethod-icon-3" class="payment-method-icon" title="${(existingRes?.paid?.[2] > 0) ? (existingRes?.paymentMethods?.[2] || '') : ''}">${(existingRes?.paid?.[2] > 0) ? this.getPaymentMethodIcon(existingRes?.paymentMethods?.[2]) : ''}</span>
+                                <input type="hidden" id="slot-paymethod-3" value="${(existingRes?.paid?.[2] > 0) ? (existingRes?.paymentMethods?.[2] || '') : ''}">
                             </div>
                             <div class="player-row">
                                 <input type="text" id="slot-player-4" class="player-input" placeholder="Giocatore 4"
@@ -1610,8 +1610,8 @@ const App = {
                                        value="${existingRes?.payments?.[3] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-4" class="payment-input" placeholder="Pagato" min="0" step="0.5"
                                        value="${existingRes?.paid?.[3] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(4)">
-                                <span id="slot-paymethod-icon-4" class="payment-method-icon" title="${existingRes?.paymentMethods?.[3] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[3])}</span>
-                                <input type="hidden" id="slot-paymethod-4" value="${existingRes?.paymentMethods?.[3] || ''}">
+                                <span id="slot-paymethod-icon-4" class="payment-method-icon" title="${(existingRes?.paid?.[3] > 0) ? (existingRes?.paymentMethods?.[3] || '') : ''}">${(existingRes?.paid?.[3] > 0) ? this.getPaymentMethodIcon(existingRes?.paymentMethods?.[3]) : ''}</span>
+                                <input type="hidden" id="slot-paymethod-4" value="${(existingRes?.paid?.[3] > 0) ? (existingRes?.paymentMethods?.[3] || '') : ''}">
                             </div>
                         </div>
                         <input type="hidden" id="slot-label" value="${existingRes?.label || ''}">
