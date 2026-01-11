@@ -1026,10 +1026,11 @@
                 const description = `Prenotazione Tennis - ${formatDateISO(currentDate)}`;
                 console.log('[PAYMENT] Opening Stripe checkout for:', total, description);
 
-                StripePayments.openCheckout(total, description, function (result) {
+                StripePayments.openCheckout(total, description, async function (result) {
                     // Payment successful - update Firebase and close modal
                     console.log('[PAYMENT] Stripe payment successful:', result);
-                    updatePaymentInFirebase('carta');
+                    // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
+                    await updatePaymentInFirebase('carta');
                     closePaymentModal();
                     renderPlanning();
                 });
@@ -1086,14 +1087,14 @@
                         }]
                     });
                 },
-                onApprove: function (data, actions) {
-                    return actions.order.capture().then(function (details) {
-                        console.log('Payment completed:', details);
-                        console.log('[PAYMENT] Using pre-saved selectedPayments:', currentPaymentData.selectedPayments);
-                        updatePaymentInFirebase('paypal');
-                        closePaymentModal();
-                        alert('✅ Pagamento PayPal completato con successo!\n\nTransazione: ' + details.id);
-                    });
+                onApprove: async function (data, actions) {
+                    const details = await actions.order.capture();
+                    console.log('Payment completed:', details);
+                    console.log('[PAYMENT] Using pre-saved selectedPayments:', currentPaymentData.selectedPayments);
+                    // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
+                    await updatePaymentInFirebase('paypal');
+                    closePaymentModal();
+                    alert('✅ Pagamento PayPal completato con successo!\n\nTransazione: ' + details.id);
                 },
                 onError: function (err) {
                     console.error('PayPal Error:', err);
@@ -1102,7 +1103,7 @@
             }).render('#paypal-buttons-public');
         }
 
-        function confirmMobilePayment() {
+        async function confirmMobilePayment() {
             // Check if at least one player is selected
             const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
             if (checkboxes.length === 0) {
@@ -1110,7 +1111,8 @@
                 return;
             }
 
-            updatePaymentInFirebase(selectedPaymentMethod);
+            // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
+            await updatePaymentInFirebase(selectedPaymentMethod);
             closePaymentModal();
             const label = selectedPaymentMethod === 'carta' ? 'Carta' : 'Mobile';
             alert(`✅ Pagamento ${label} registrato.\n\nRicordati di confermare alla cassa se necessario.`);
