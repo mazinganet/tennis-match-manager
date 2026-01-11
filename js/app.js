@@ -591,6 +591,22 @@ const App = {
         }
     },
 
+    // Helper to clear payment method when paid amount is reset to 0
+    handlePaidChange(slotNum) {
+        const paidInput = document.getElementById(`slot-paid-${slotNum}`);
+        const payMethodInput = document.getElementById(`slot-paymethod-${slotNum}`);
+        const payMethodIcon = document.getElementById(`slot-paymethod-icon-${slotNum}`);
+
+        const paidValue = parseFloat(paidInput?.value) || 0;
+
+        // If paid is 0 or empty, clear the payment method
+        if (paidValue <= 0 && payMethodInput && payMethodIcon) {
+            payMethodInput.value = '';
+            payMethodIcon.textContent = '';
+            payMethodIcon.title = '';
+        }
+    },
+
     updateDashboard() {
         const players = Players.getAll() || [];
         const courts = Courts.getAvailable(this.currentSeason) || [];
@@ -1563,7 +1579,7 @@ const App = {
                                 <input type="number" id="slot-payment-1" class="payment-input" placeholder="Quota" min="0" step="0.5"
                                        value="${existingRes?.payments?.[0] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-1" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[0] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[0] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(1)">
                                 <span id="slot-paymethod-icon-1" class="payment-method-icon" title="${existingRes?.paymentMethods?.[0] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[0])}</span>
                                 <input type="hidden" id="slot-paymethod-1" value="${existingRes?.paymentMethods?.[0] || ''}">
                             </div>
@@ -1573,7 +1589,7 @@ const App = {
                                 <input type="number" id="slot-payment-2" class="payment-input" placeholder="Quota" min="0" step="0.5"
                                        value="${existingRes?.payments?.[1] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-2" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[1] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[1] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(2)">
                                 <span id="slot-paymethod-icon-2" class="payment-method-icon" title="${existingRes?.paymentMethods?.[1] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[1])}</span>
                                 <input type="hidden" id="slot-paymethod-2" value="${existingRes?.paymentMethods?.[1] || ''}">
                             </div>
@@ -1583,7 +1599,7 @@ const App = {
                                 <input type="number" id="slot-payment-3" class="payment-input" placeholder="Quota" min="0" step="0.5"
                                        value="${existingRes?.payments?.[2] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-3" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[2] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[2] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(3)">
                                 <span id="slot-paymethod-icon-3" class="payment-method-icon" title="${existingRes?.paymentMethods?.[2] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[2])}</span>
                                 <input type="hidden" id="slot-paymethod-3" value="${existingRes?.paymentMethods?.[2] || ''}">
                             </div>
@@ -1593,7 +1609,7 @@ const App = {
                                 <input type="number" id="slot-payment-4" class="payment-input" placeholder="Quota" min="0" step="0.5"
                                        value="${existingRes?.payments?.[3] ?? ''}" style="width: 50px;" title="Quota calcolata">
                                 <input type="number" id="slot-paid-4" class="payment-input" placeholder="Pagato" min="0" step="0.5"
-                                       value="${existingRes?.paid?.[3] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato">
+                                       value="${existingRes?.paid?.[3] ?? ''}" style="width: 50px;" title="Importo effettivamente pagato" onchange="App.handlePaidChange(4)">
                                 <span id="slot-paymethod-icon-4" class="payment-method-icon" title="${existingRes?.paymentMethods?.[3] || ''}">${this.getPaymentMethodIcon(existingRes?.paymentMethods?.[3])}</span>
                                 <input type="hidden" id="slot-paymethod-4" value="${existingRes?.paymentMethods?.[3] || ''}">
                             </div>
@@ -1761,12 +1777,15 @@ const App = {
         }
         court.reservations = court.reservations || [];
 
-        // Collect 4 payment methods (per-player)
+        // Collect 4 payment methods (per-player) - clear if paid is 0
         const paymentMethodsArray = [];
         for (let i = 1; i <= 4; i++) {
             const input = document.getElementById(`slot-paymethod-${i}`);
+            const paidInput = document.getElementById(`slot-paid-${i}`);
+            const paidValue = parseFloat(paidInput?.value) || 0;
             if (input) {
-                paymentMethodsArray.push(input.value || '');
+                // If paid is 0, clear the payment method
+                paymentMethodsArray.push(paidValue > 0 ? (input.value || '') : '');
             }
         }
 
