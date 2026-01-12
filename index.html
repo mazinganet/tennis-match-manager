@@ -705,6 +705,30 @@
                     </div>
                 </div>
 
+                <!-- Copy Day Section -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 15px;">📋 Copia Giornata</h4>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 0.9rem;">
+                        Copia tutte le prenotazioni da una data sorgente a una data di destinazione.
+                    </p>
+                    <div class="recurring-config" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">📅 Data Sorgente</label>
+                            <input type="date" id="copy-source-date" class="form-control" style="width: 100%; padding: 8px 10px;">
+                        </div>
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">📅 Data Destinazione</label>
+                            <input type="date" id="copy-dest-date" class="form-control" style="width: 100%; padding: 8px 10px;">
+                        </div>
+                        <div class="form-group" style="min-width: 150px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">&nbsp;</label>
+                            <button class="btn btn-secondary" onclick="App.copyDayReservations()" style="width: 100%; padding: 8px 10px;">
+                                📋 Copia Prenotazioni
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <p style="margin-bottom: 15px; color: var(--text-secondary);">
                         Clicca sulle celle per impostare le attività ricorrenti, poi premi "Genera Prenotazioni".

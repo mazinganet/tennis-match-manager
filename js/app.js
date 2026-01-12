@@ -4492,6 +4492,66 @@ const App = {
         this.renderRecurringPlanning();
     },
 
+    // Copy all reservations from source date to destination date
+    copyDayReservations() {
+        const sourceDate = document.getElementById('copy-source-date').value;
+        const destDate = document.getElementById('copy-dest-date').value;
+
+        if (!sourceDate || !destDate) {
+            alert('Seleziona sia la data sorgente che la data di destinazione.');
+            return;
+        }
+
+        if (sourceDate === destDate) {
+            alert('Le date sorgente e destinazione devono essere diverse.');
+            return;
+        }
+
+        const courts = Courts.getAll() || [];
+        let totalCopied = 0;
+
+        // Get day name for destination date
+        const destDateObj = new Date(destDate);
+        const dayNames = ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
+        const destDayName = dayNames[destDateObj.getDay()];
+
+        courts.forEach(court => {
+            const reservations = court.reservations || [];
+            
+            // Find all reservations for the source date
+            const sourceReservations = reservations.filter(r => r.date === sourceDate);
+            
+            if (sourceReservations.length > 0) {
+                sourceReservations.forEach(srcRes => {
+                    // Check if already exists at destination
+                    const exists = reservations.some(r => 
+                        r.date === destDate && r.from === srcRes.from
+                    );
+                    
+                    if (!exists) {
+                        // Create a copy with the new date
+                        const newRes = {
+                            ...srcRes,
+                            date: destDate,
+                            day: destDayName
+                        };
+                        court.reservations.push(newRes);
+                        totalCopied++;
+                    }
+                });
+                
+                Courts.update(court.id, court);
+            }
+        });
+
+        if (totalCopied > 0) {
+            alert(`✅ Copiate ${totalCopied} prenotazioni dal ${sourceDate} al ${destDate}!`);
+            this.renderPlanning();
+        } else {
+            alert('⚠️ Nessuna prenotazione trovata nella data sorgente, oppure tutte le prenotazioni esistono già nella data destinazione.');
+        }
+    },
+
     // Mobile times editing modal
     showMobileTimesModal() {
         const select = document.getElementById('admin-mobile-court-select');
