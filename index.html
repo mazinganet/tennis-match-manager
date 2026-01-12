@@ -250,6 +250,73 @@
                     </button>
                 </div>
 
+                <!-- Weekly Default Times Configuration - admin only -->
+                <div class="section-card admin-only" style="margin-top: 20px; display: none;">
+                    <h3>⏰ Orari Settimanali Predefiniti</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                        Configura gli orari predefiniti per ogni giorno della settimana. Questi verranno usati
+                        automaticamente nel planning.
+                    </p>
+
+                    <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <!-- Court selector -->
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">📍
+                                Seleziona Campo</label>
+                            <select id="weekly-times-court-select" class="form-control"
+                                style="width: 100%; padding: 10px;" onchange="App.renderWeeklyTimesUI()">
+                                <!-- Options populated dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Day tabs -->
+                        <div class="weekly-day-tabs"
+                            style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;">
+                            <button class="btn btn-outline weekly-day-tab active" data-day="lunedi"
+                                onclick="App.selectWeeklyDay('lunedi')">Lun</button>
+                            <button class="btn btn-outline weekly-day-tab" data-day="martedi"
+                                onclick="App.selectWeeklyDay('martedi')">Mar</button>
+                            <button class="btn btn-outline weekly-day-tab" data-day="mercoledi"
+                                onclick="App.selectWeeklyDay('mercoledi')">Mer</button>
+                            <button class="btn btn-outline weekly-day-tab" data-day="giovedi"
+                                onclick="App.selectWeeklyDay('giovedi')">Gio</button>
+                            <button class="btn btn-outline weekly-day-tab" data-day="venerdi"
+                                onclick="App.selectWeeklyDay('venerdi')">Ven</button>
+                            <button class="btn btn-outline weekly-day-tab" data-day="sabato"
+                                onclick="App.selectWeeklyDay('sabato')">Sab</button>
+                            <button class="btn btn-outline weekly-day-tab" data-day="domenica"
+                                onclick="App.selectWeeklyDay('domenica')">Dom</button>
+                        </div>
+
+                        <!-- Times list -->
+                        <div id="weekly-times-container"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
+                            <!-- Time inputs populated dynamically -->
+                        </div>
+
+                        <!-- Add/Remove buttons -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <button class="btn btn-outline" onclick="App.addWeeklyTimeSlot()" style="flex: 1;">+
+                                Aggiungi Orario</button>
+                            <button class="btn btn-outline" onclick="App.removeWeeklyTimeSlot()" style="flex: 1;">-
+                                Rimuovi Ultimo</button>
+                        </div>
+
+                        <!-- Copy to all days button -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <button class="btn btn-secondary" onclick="App.copyWeeklyTimesToAllDays()" style="flex: 1;">
+                                📋 Copia a tutti i giorni
+                            </button>
+                        </div>
+
+                        <!-- Save button -->
+                        <button class="btn btn-primary" onclick="App.saveWeeklyDefaultTimes()"
+                            style="width: 100%; padding: 12px;">
+                            💾 Salva Orari Settimanali
+                        </button>
+                    </div>
+                </div>
+
                 <!-- PayPal Configuration - admin only -->
                 <div class="section-card admin-only" style="margin-top: 20px; display: none;">
                     <h3>💳 Configurazione Pagamenti</h3>
@@ -711,18 +778,24 @@
                     <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 0.9rem;">
                         Copia tutte le prenotazioni da una data sorgente a una data di destinazione.
                     </p>
-                    <div class="recurring-config" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="recurring-config"
+                        style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
                         <div class="form-group" style="min-width: 150px;">
-                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">📅 Data Sorgente</label>
-                            <input type="date" id="copy-source-date" class="form-control" style="width: 100%; padding: 8px 10px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">📅 Data
+                                Sorgente</label>
+                            <input type="date" id="copy-source-date" class="form-control"
+                                style="width: 100%; padding: 8px 10px;">
                         </div>
                         <div class="form-group" style="min-width: 150px;">
-                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">📅 Data Destinazione</label>
-                            <input type="date" id="copy-dest-date" class="form-control" style="width: 100%; padding: 8px 10px;">
+                            <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">📅 Data
+                                Destinazione</label>
+                            <input type="date" id="copy-dest-date" class="form-control"
+                                style="width: 100%; padding: 8px 10px;">
                         </div>
                         <div class="form-group" style="min-width: 150px;">
                             <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">&nbsp;</label>
-                            <button class="btn btn-secondary" onclick="App.copyDayReservations()" style="width: 100%; padding: 8px 10px;">
+                            <button class="btn btn-secondary" onclick="App.copyDayReservations()"
+                                style="width: 100%; padding: 8px 10px;">
                                 📋 Copia Prenotazioni
                             </button>
                         </div>

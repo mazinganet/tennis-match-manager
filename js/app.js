@@ -89,6 +89,9 @@ const App = {
 
         // Load Stripe configuration
         this.loadStripeConfig();
+
+        // Initialize weekly default times UI
+        this.initWeeklyTimesUI();
     },
 
     loadSettings() {
@@ -281,6 +284,200 @@ const App = {
             });
             previewArea.style.display = 'block';
         }
+    },
+
+    // ============ WEEKLY DEFAULT TIMES ============
+    selectedWeeklyDay: 'lunedi',
+    weeklyDefaultTimes: {},
+
+    // Initialize weekly times UI
+    initWeeklyTimesUI() {
+        // Populate court selector
+        const select = document.getElementById('weekly-times-court-select');
+        if (!select) return;
+
+        const courts = Courts.getAll() || [];
+        select.innerHTML = courts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+        // Load saved weekly times
+        this.weeklyDefaultTimes = Storage.load('weekly_default_times', {}) || {};
+
+        // Render initial UI
+        this.renderWeeklyTimesUI();
+    },
+
+    // Select a day tab
+    selectWeeklyDay(day) {
+        this.selectedWeeklyDay = day;
+
+        // Update tab styling
+        document.querySelectorAll('.weekly-day-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.day === day);
+        });
+
+        this.renderWeeklyTimesUI();
+    },
+
+    // Render the times for the selected court and day
+    renderWeeklyTimesUI() {
+        const container = document.getElementById('weekly-times-container');
+        const select = document.getElementById('weekly-times-court-select');
+        if (!container || !select) return;
+
+        const courtId = select.value;
+        const day = this.selectedWeeklyDay;
+
+        if (!courtId) {
+            container.innerHTML = '<p style="color: var(--text-muted);">Seleziona un campo</p>';
+            return;
+        }
+
+        // Get the times for this court and day, or use defaults
+        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+        const courtTimes = this.weeklyDefaultTimes[courtId] || {};
+        const times = courtTimes[day] || [...defaultTimes];
+
+        container.innerHTML = times.map((time, index) => `
+            <input type="text" 
+                   class="weekly-time-input" 
+                   value="${time}" 
+                   data-index="${index}"
+                   style="padding: 8px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 0.9rem;"
+                   onclick="this.select()">
+        `).join('');
+    },
+
+    // Add a new time slot
+    addWeeklyTimeSlot() {
+        const container = document.getElementById('weekly-times-container');
+        if (!container) return;
+
+        const inputs = container.querySelectorAll('.weekly-time-input');
+        const lastTime = inputs.length > 0 ? inputs[inputs.length - 1].value : '22.30';
+
+        // Try to add +1 hour
+        const [hours, mins] = lastTime.split('.');
+        let newHour = parseInt(hours) + 1;
+        if (newHour > 23) newHour = 23;
+        const newTime = String(newHour).padStart(2, '0') + '.' + (mins || '30');
+
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.className = 'weekly-time-input';
+        newInput.value = newTime;
+        newInput.dataset.index = inputs.length;
+        newInput.style = 'padding: 8px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: #fff; font-size: 0.9rem;';
+        newInput.onclick = function () { this.select(); };
+        container.appendChild(newInput);
+    },
+
+    // Remove the last time slot
+    removeWeeklyTimeSlot() {
+        const inputs = document.querySelectorAll('.weekly-time-input');
+        if (inputs.length > 1) {
+            inputs[inputs.length - 1].remove();
+        }
+    },
+
+    // Save weekly default times
+    saveWeeklyDefaultTimes() {
+        const select = document.getElementById('weekly-times-court-select');
+        const container = document.getElementById('weekly-times-container');
+        if (!select || !container) return;
+
+        const courtId = select.value;
+        const day = this.selectedWeeklyDay;
+
+        // Collect times from inputs
+        const inputs = container.querySelectorAll('.weekly-time-input');
+        const times = [];
+        inputs.forEach(input => {
+            if (input.value.trim()) {
+                times.push(input.value.trim());
+            }
+        });
+
+        if (times.length === 0) {
+            alert('Inserisci almeno un orario');
+            return;
+        }
+
+        // Initialize court object if needed
+        if (!this.weeklyDefaultTimes[courtId]) {
+            this.weeklyDefaultTimes[courtId] = {};
+        }
+
+        // Save times for this day
+        this.weeklyDefaultTimes[courtId][day] = times;
+
+        // Save to storage
+        Storage.save('weekly_default_times', this.weeklyDefaultTimes);
+
+        alert(`✅ Orari di ${day} salvati per il campo selezionato!`);
+    },
+
+    // Copy current day's times to all days of the week
+    copyWeeklyTimesToAllDays() {
+        const select = document.getElementById('weekly-times-court-select');
+        const container = document.getElementById('weekly-times-container');
+        if (!select || !container) return;
+
+        const courtId = select.value;
+
+        // Collect current times
+        const inputs = container.querySelectorAll('.weekly-time-input');
+        const times = [];
+        inputs.forEach(input => {
+            if (input.value.trim()) {
+                times.push(input.value.trim());
+            }
+        });
+
+        if (times.length === 0) {
+            alert('Inserisci almeno un orario prima di copiare');
+            return;
+        }
+
+        const allDays = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica'];
+
+        // Initialize court object if needed
+        if (!this.weeklyDefaultTimes[courtId]) {
+            this.weeklyDefaultTimes[courtId] = {};
+        }
+
+        // Copy to all days
+        allDays.forEach(day => {
+            this.weeklyDefaultTimes[courtId][day] = [...times];
+        });
+
+        // Save to storage
+        Storage.save('weekly_default_times', this.weeklyDefaultTimes);
+
+        alert('✅ Orari copiati a tutti i giorni della settimana!');
+    },
+
+    // Get default times for a specific date (uses weekly defaults as fallback)
+    getDefaultTimesForDate(dateStr, courtId) {
+        const hardcodedDefaults = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+
+        // 1. First check if there are custom times for this specific date
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        if (planningTemplates[dateStr] && planningTemplates[dateStr][courtId]) {
+            return planningTemplates[dateStr][courtId];
+        }
+
+        // 2. Check weekly defaults for this day of week
+        const date = new Date(dateStr);
+        const dayNames = ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
+        const dayName = dayNames[date.getDay()];
+
+        const weeklyTimes = Storage.load('weekly_default_times', {}) || {};
+        if (weeklyTimes[courtId] && weeklyTimes[courtId][dayName]) {
+            return weeklyTimes[courtId][dayName];
+        }
+
+        // 3. Return hardcoded defaults
+        return [...hardcodedDefaults];
     },
 
     // Render read-only rates summary for mobile view
@@ -712,12 +909,6 @@ const App = {
         const courts = Courts.getAvailable(this.currentSeason);
         const scheduled = Storage.load(Storage.KEYS.SCHEDULED, []) || [];
 
-        // Load custom planning times per court/day
-        const planningTemplates = Storage.load('planning_templates', {});
-        const dayTemplate = planningTemplates[dateStr] || {};
-
-        // Generate standard time slots
-        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
 
         // Build horizontal table: courts as rows, each with its own time headers
         let tableHtml = `
@@ -726,7 +917,8 @@ const App = {
         `;
 
         courts.forEach(court => {
-            const times = dayTemplate[court.id] || [...defaultTimes];
+            // Use getDefaultTimesForDate for weekly defaults fallback
+            const times = this.getDefaultTimesForDate(dateStr, court.id);
 
             // Riga orari editabili per questo campo
             tableHtml += `
@@ -991,8 +1183,6 @@ const App = {
         const dateStr = this.formatDateISO(this.currentPlanningDate);
         const dayName = Matching.getDayNameFromDate(dateStr);
         const courts = Courts.getAvailable(this.currentSeason);
-        const planningTemplates = Storage.load('planning_templates', {});
-        const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
 
         // Activity colors mapping (same as print) - with text colors for readability
         const activityColors = {
@@ -1009,8 +1199,8 @@ const App = {
         let html = '<div class="vertical-planning-wrapper" style="display: flex; gap: 8px; flex-wrap: nowrap; width: 100%;">';
 
         courts.forEach(court => {
-            const dayTemplate = planningTemplates[dateStr] || {};
-            const times = dayTemplate[court.id] || [...defaultTimes];
+            // Use getDefaultTimesForDate for weekly defaults fallback
+            const times = this.getDefaultTimesForDate(dateStr, court.id);
             const reservations = court.reservations || [];
 
             let rowsHtml = '';
@@ -1183,10 +1373,8 @@ const App = {
                 return;
             }
 
-            const planningTemplates = Storage.load('planning_templates', {}) || {};
-            const dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
-            const defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-            const times = dayTemplate[court.id] || defaultTimes;
+            // Use getDefaultTimesForDate for weekly defaults fallback
+            const times = this.getDefaultTimesForDate(dateStr, court.id);
 
             const activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
 
