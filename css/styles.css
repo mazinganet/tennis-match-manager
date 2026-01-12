@@ -452,6 +452,28 @@ body {
     background: #dc2626;
 }
 
+/* Outline buttons for tabs */
+.btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    min-width: 45px;
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Weekly day tabs - active state */
+.weekly-day-tab.active {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    font-weight: 600;
+}
+
 .btn-sm {
     padding: var(--space-xs) var(--space-sm);
     font-size: 0.85rem;
