@@ -4507,6 +4507,19 @@ const App = {
             return;
         }
 
+        // === STEP 1: Copy time slots (planning_templates) ===
+        const planningTemplates = Storage.load('planning_templates', {}) || {};
+        const sourceTimeSlots = planningTemplates[sourceDate];
+        let timeSlotsCopied = false;
+
+        if (sourceTimeSlots && Object.keys(sourceTimeSlots).length > 0) {
+            // Copy the time slots configuration to the destination date
+            planningTemplates[destDate] = { ...sourceTimeSlots };
+            Storage.save('planning_templates', planningTemplates);
+            timeSlotsCopied = true;
+        }
+
+        // === STEP 2: Copy reservations ===
         const courts = Courts.getAll() || [];
         let totalCopied = 0;
 
@@ -4517,17 +4530,17 @@ const App = {
 
         courts.forEach(court => {
             const reservations = court.reservations || [];
-            
+
             // Find all reservations for the source date
             const sourceReservations = reservations.filter(r => r.date === sourceDate);
-            
+
             if (sourceReservations.length > 0) {
                 sourceReservations.forEach(srcRes => {
                     // Check if already exists at destination
-                    const exists = reservations.some(r => 
+                    const exists = reservations.some(r =>
                         r.date === destDate && r.from === srcRes.from
                     );
-                    
+
                     if (!exists) {
                         // Create a copy with the new date
                         const newRes = {
@@ -4539,17 +4552,25 @@ const App = {
                         totalCopied++;
                     }
                 });
-                
+
                 Courts.update(court.id, court);
             }
         });
 
-        if (totalCopied > 0) {
-            alert(`✅ Copiate ${totalCopied} prenotazioni dal ${sourceDate} al ${destDate}!`);
-            this.renderPlanning();
+        // Build success message
+        let message = '';
+        if (timeSlotsCopied && totalCopied > 0) {
+            message = `✅ Copiati gli orari della giornata e ${totalCopied} prenotazioni dal ${sourceDate} al ${destDate}!`;
+        } else if (timeSlotsCopied) {
+            message = `✅ Copiati gli orari della giornata dal ${sourceDate} al ${destDate}! (Nessuna prenotazione trovata o già esistenti)`;
+        } else if (totalCopied > 0) {
+            message = `✅ Copiate ${totalCopied} prenotazioni dal ${sourceDate} al ${destDate}! (Nessun orario personalizzato trovato)`;
         } else {
-            alert('⚠️ Nessuna prenotazione trovata nella data sorgente, oppure tutte le prenotazioni esistono già nella data destinazione.');
+            message = '⚠️ Nessun dato trovato nella data sorgente, oppure tutto esiste già nella data destinazione.';
         }
+
+        alert(message);
+        this.renderPlanning();
     },
 
     // Mobile times editing modal
