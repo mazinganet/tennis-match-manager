@@ -11,7 +11,9 @@ const Storage = {
         PLANNING_TEMPLATES: 'planning_templates',
         RECURRING_PLANNING: 'recurring_planning',
         COURT_RATES: 'tennis_court_rates',
-        QR_CONFIG: 'qr_config'
+        QR_CONFIG: 'qr_config',
+        PASSWORDS: 'app_passwords',
+        WEEKLY_TIMES: 'weekly_default_times'
     },
 
     // Cache locale per evitare letture ripetute

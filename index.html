@@ -14,11 +14,11 @@
     <div id="login-overlay" class="login-overlay">
         <div class="login-box">
             <div class="login-icon">🎾</div>
-            <h2>Area Admin</h2>
-            <p>Inserisci la password per accedere</p>
+            <h2 id="login-title">Area Prenotazioni</h2>
+            <p id="login-subtitle">Inserisci la password per accedere</p>
             <input type="password" id="admin-password" placeholder="Password"
-                onkeypress="if(event.key==='Enter') checkAdminPassword()">
-            <button onclick="checkAdminPassword()" class="btn btn-primary">Accedi</button>
+                onkeypress="if(event.key==='Enter') checkPassword()">
+            <button onclick="checkPassword()" class="btn btn-primary">Accedi</button>
             <p id="login-error" style="color: #ef4444; display: none; margin-top: 10px;">Password errata!</p>
             <a href="public.html" class="public-link">📺 Vai alla vista pubblica</a>
         </div>
@@ -503,6 +503,78 @@
                         </div>
                     </div>
 
+                    <!-- Password Management Section - admin only -->
+                    <div class="section-card admin-only" style="margin-top: 20px; display: none;">
+                        <h3>🔐 Gestione Password</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                            Configura le password di accesso per le diverse sezioni dell'applicazione.
+                        </p>
+
+                        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px;">
+                            <!-- Admin Password -->
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">
+                                    🔑 Password Admin
+                                </label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="password" id="password-admin" placeholder="Nuova password admin"
+                                        style="flex: 1; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                                    <button class="btn btn-secondary"
+                                        onclick="App.togglePasswordVisibility('password-admin')"
+                                        style="padding: 10px 15px;">
+                                        👁️
+                                    </button>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                    Per accedere a index.html?admin=1
+                                </p>
+                            </div>
+
+                            <!-- Booking Password -->
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">
+                                    📅 Password Prenotazioni
+                                </label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="password" id="password-booking" placeholder="Password per prenotazioni"
+                                        style="flex: 1; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                                    <button class="btn btn-secondary"
+                                        onclick="App.togglePasswordVisibility('password-booking')"
+                                        style="padding: 10px 15px;">
+                                        👁️
+                                    </button>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                    Per accedere a index.html (senza ?admin)
+                                </p>
+                            </div>
+
+                            <!-- Public Password -->
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">
+                                    📺 Password Vista Pubblica
+                                </label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="password" id="password-public" placeholder="Password per public.html"
+                                        style="flex: 1; padding: 10px; border-radius: 6px; background: #1e1e2e; color: #fff; border: 1px solid #444;">
+                                    <button class="btn btn-secondary"
+                                        onclick="App.togglePasswordVisibility('password-public')"
+                                        style="padding: 10px 15px;">
+                                        👁️
+                                    </button>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                                    Lascia vuoto per accesso libero
+                                </p>
+                            </div>
+
+                            <button class="btn btn-primary" onclick="App.savePasswords()"
+                                style="width: 100%; padding: 12px;">
+                                💾 Salva Password
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Backup Section - admin only -->
 
                     <div class="section-card admin-only" style="margin-top: 20px; display: none;">
@@ -884,24 +956,59 @@
 
     <!-- Admin Authentication Script - MUST be first -->
     <script>
-        // Password admin (modificabile)
-        const ADMIN_PASSWORD = 'tennis';
+        // Determine login mode from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdminMode = urlParams.get('admin') === '1';
 
-        // Verifica se già loggato
-        function checkAdminSession() {
-            if (sessionStorage.getItem('admin_logged_in') === 'true') {
-                showAdminArea();
+        // Update login UI based on mode
+        window.addEventListener('DOMContentLoaded', () => {
+            const title = document.getElementById('login-title');
+            const subtitle = document.getElementById('login-subtitle');
+            if (isAdminMode) {
+                if (title) title.textContent = 'Area Admin';
+                if (subtitle) subtitle.textContent = 'Inserisci la password admin per accedere';
+            } else {
+                if (title) title.textContent = 'Area Prenotazioni';
+                if (subtitle) subtitle.textContent = 'Inserisci la password per accedere';
+            }
+        });
+
+        // Check session on load
+        function checkSession() {
+            const sessionKey = isAdminMode ? 'admin_logged_in' : 'booking_logged_in';
+            if (sessionStorage.getItem(sessionKey) === 'true') {
+                showApp();
             }
         }
 
-        // Verifica password
-        function checkAdminPassword() {
+        // Check password - waits for Storage to be available
+        function checkPassword() {
             const input = document.getElementById('admin-password');
             const error = document.getElementById('login-error');
+            const enteredPassword = input.value;
 
-            if (input.value === ADMIN_PASSWORD) {
-                sessionStorage.setItem('admin_logged_in', 'true');
-                showAdminArea();
+            // Get password from storage (will be available after Firebase loads)
+            let requiredPassword = 'tennis'; // Default
+
+            try {
+                // Try to get from localStorage first (sync)
+                const storedPasswords = localStorage.getItem('app_passwords');
+                if (storedPasswords) {
+                    const passwords = JSON.parse(storedPasswords);
+                    if (isAdminMode) {
+                        requiredPassword = passwords.admin || 'tennis';
+                    } else {
+                        requiredPassword = passwords.booking || passwords.admin || 'tennis';
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load passwords from localStorage:', e);
+            }
+
+            if (enteredPassword === requiredPassword) {
+                const sessionKey = isAdminMode ? 'admin_logged_in' : 'booking_logged_in';
+                sessionStorage.setItem(sessionKey, 'true');
+                showApp();
             } else {
                 error.style.display = 'block';
                 input.value = '';
@@ -909,14 +1016,14 @@
             }
         }
 
-        // Mostra area admin
-        function showAdminArea() {
+        // Show app container
+        function showApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
         }
 
-        // Check sessione all'avvio
-        checkAdminSession();
+        // Check session on page load
+        checkSession();
     </script>
 
     <!-- Firebase SDK -->

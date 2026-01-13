@@ -635,166 +635,182 @@
 </head>
 
 <body>
-    <header class="public-header">
-        <h1>🎾 Tennis <span>Planning</span></h1>
-
-        <div class="date-nav" id="date-navigation">
-            <button onclick="changeDay(-1)" id="btn-prev-day">◀ Ieri</button>
-            <div class="current-date">
-                <div class="day-name" id="day-name">Lunedì</div>
-                <div id="current-date">23/12/2024</div>
-            </div>
-            <button onclick="changeDay(1)" id="btn-next-day">Domani ▶</button>
+    <!-- Login Overlay for Public View -->
+    <div id="public-login-overlay" class="login-overlay" style="display: none;">
+        <div class="login-box">
+            <div class="login-icon">🎾</div>
+            <h2>Vista Pubblica</h2>
+            <p>Inserisci la password per accedere</p>
+            <input type="password" id="public-password" placeholder="Password"
+                onkeypress="if(event.key==='Enter') checkPublicPassword()">
+            <button onclick="checkPublicPassword()" class="btn btn-primary"
+                style="background: #2d8a4e; padding: 12px 30px; border-radius: 8px; border: none; color: white; cursor: pointer; font-size: 1rem;">Accedi</button>
+            <p id="public-login-error" style="color: #ef4444; display: none; margin-top: 10px;">Password errata!</p>
         </div>
-
-        <div class="season-selector">
-            <label>Sede:</label>
-            <select id="season-select" onchange="renderPlanning()">
-                <option value="winter">Viserba</option>
-                <option value="summer">Rivabella</option>
-            </select>
-            <span class="mobile-club-name" id="mobile-club-name" style="display: none;">Viserba</span>
-            <span class="last-update">
-                Aggiornato: <span id="last-update-time">--:--</span>
-                <span class="refresh-indicator"></span>
-            </span>
-        </div>
-
-        <!-- QR Code for Mobile Access -->
-        <div class="qr-code-container" onclick="showQRModal()" title="Scansiona per pagare dal mobile">
-            <div id="qr-code"></div>
-            <div class="qr-label">📱 Scansiona<br>per pagare</div>
-        </div>
-    </header>
-
-    <div class="public-container">
-        <!-- Mobile Court Selector -->
-        <div class="mobile-court-selector">
-            <label>📍 Campo:</label>
-            <select id="mobile-court-select" onchange="renderMobilePlanning()">
-                <!-- Options populated dynamically -->
-            </select>
-        </div>
-
-        <!-- Desktop Horizontal Tables -->
-        <div class="public-planning-grid" id="planning-grid">
-            <!-- Tables will be generated here -->
-        </div>
-
-        <!-- Mobile Vertical Table -->
-        <table class="mobile-vertical-table" id="mobile-planning-table">
-            <!-- Mobile table will be generated here -->
-        </table>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="js/firebase-config.js"></script>
+    <!-- Main Content Container -->
+    <div id="public-content" style="display: none;">
+        <header class="public-header">
+            <h1>🎾 Tennis <span>Planning</span></h1>
 
-    <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR&intent=capture"></script>
+            <div class="date-nav" id="date-navigation">
+                <button onclick="changeDay(-1)" id="btn-prev-day">◀ Ieri</button>
+                <div class="current-date">
+                    <div class="day-name" id="day-name">Lunedì</div>
+                    <div id="current-date">23/12/2024</div>
+                </div>
+                <button onclick="changeDay(1)" id="btn-next-day">Domani ▶</button>
+            </div>
 
-    <!-- Stripe SDK -->
-    <script src="https://js.stripe.com/v3/"></script>
+            <div class="season-selector">
+                <label>Sede:</label>
+                <select id="season-select" onchange="renderPlanning()">
+                    <option value="winter">Viserba</option>
+                    <option value="summer">Rivabella</option>
+                </select>
+                <span class="mobile-club-name" id="mobile-club-name" style="display: none;">Viserba</span>
+                <span class="last-update">
+                    Aggiornato: <span id="last-update-time">--:--</span>
+                    <span class="refresh-indicator"></span>
+                </span>
+            </div>
 
-    <script src="js/storage.js"></script>
-    <script src="js/courts.js"></script>
-    <script src="js/players.js"></script>
-    <script src="js/matching.js"></script>
-    <script src="js/stripe.js"></script>
-    <script>
-        let currentDate = new Date();
-        let currentPaymentData = null; // Store current payment context
+            <!-- QR Code for Mobile Access -->
+            <div class="qr-code-container" onclick="showQRModal()" title="Scansiona per pagare dal mobile">
+                <div id="qr-code"></div>
+                <div class="qr-label">📱 Scansiona<br>per pagare</div>
+            </div>
+        </header>
 
-        // Initialize Stripe configuration if not set
-        (function initStripeConfig() {
-            const existingConfig = Storage.load('stripe_config', null);
-            if (!existingConfig || !existingConfig.publishableKey) {
-                // Set default Stripe publishable key
-                Storage.save('stripe_config', {
-                    publishableKey: 'pk_test_51SmFjl7UH3JYNRvKfaopxfLoRINhhp3pDbkcGkJ2UdiEA37nRZRSx5hh9d01U9Rr8aNHpLYgLHeaNdApbsdZkUoN00S48ITVak',
-                    paymentLink: ''
-                });
-                console.log('[STRIPE] Default configuration saved');
-            }
-        })();
+        <div class="public-container">
+            <!-- Mobile Court Selector -->
+            <div class="mobile-court-selector">
+                <label>📍 Campo:</label>
+                <select id="mobile-court-select" onchange="renderMobilePlanning()">
+                    <!-- Options populated dynamically -->
+                </select>
+            </div>
 
-        // Check URL for date parameter
-        let isQRCodeAccess = false;
-        function checkDateParameter() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dateParam = urlParams.get('date');
-            if (dateParam) {
-                const parsedDate = new Date(dateParam);
-                if (!isNaN(parsedDate.getTime())) {
-                    currentDate = parsedDate;
-                    isQRCodeAccess = true;
-                    // Hide date navigation buttons when accessed via QR code
-                    document.addEventListener('DOMContentLoaded', () => {
-                        const prevBtn = document.getElementById('btn-prev-day');
-                        const nextBtn = document.getElementById('btn-next-day');
-                        if (prevBtn) prevBtn.style.display = 'none';
-                        if (nextBtn) nextBtn.style.display = 'none';
+            <!-- Desktop Horizontal Tables -->
+            <div class="public-planning-grid" id="planning-grid">
+                <!-- Tables will be generated here -->
+            </div>
+
+            <!-- Mobile Vertical Table -->
+            <table class="mobile-vertical-table" id="mobile-planning-table">
+                <!-- Mobile table will be generated here -->
+            </table>
+        </div>
+
+        <!-- Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+        <script src="js/firebase-config.js"></script>
+
+        <!-- PayPal SDK -->
+        <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR&intent=capture"></script>
+
+        <!-- Stripe SDK -->
+        <script src="https://js.stripe.com/v3/"></script>
+
+        <script src="js/storage.js"></script>
+        <script src="js/courts.js"></script>
+        <script src="js/players.js"></script>
+        <script src="js/matching.js"></script>
+        <script src="js/stripe.js"></script>
+        <script>
+            let currentDate = new Date();
+            let currentPaymentData = null; // Store current payment context
+
+            // Initialize Stripe configuration if not set
+            (function initStripeConfig() {
+                const existingConfig = Storage.load('stripe_config', null);
+                if (!existingConfig || !existingConfig.publishableKey) {
+                    // Set default Stripe publishable key
+                    Storage.save('stripe_config', {
+                        publishableKey: 'pk_test_51SmFjl7UH3JYNRvKfaopxfLoRINhhp3pDbkcGkJ2UdiEA37nRZRSx5hh9d01U9Rr8aNHpLYgLHeaNdApbsdZkUoN00S48ITVak',
+                        paymentLink: ''
                     });
+                    console.log('[STRIPE] Default configuration saved');
+                }
+            })();
+
+            // Check URL for date parameter
+            let isQRCodeAccess = false;
+            function checkDateParameter() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const dateParam = urlParams.get('date');
+                if (dateParam) {
+                    const parsedDate = new Date(dateParam);
+                    if (!isNaN(parsedDate.getTime())) {
+                        currentDate = parsedDate;
+                        isQRCodeAccess = true;
+                        // Hide date navigation buttons when accessed via QR code
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const prevBtn = document.getElementById('btn-prev-day');
+                            const nextBtn = document.getElementById('btn-next-day');
+                            if (prevBtn) prevBtn.style.display = 'none';
+                            if (nextBtn) nextBtn.style.display = 'none';
+                        });
+                    }
                 }
             }
-        }
-        checkDateParameter();
+            checkDateParameter();
 
-        function formatDate(date) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            return day + '/' + month;
-        }
+            function formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return day + '/' + month;
+            }
 
-        // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion issues)
-        function formatDateISO(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
+            // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion issues)
+            function formatDateISO(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
 
-        function getDayName(date) {
-            const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
-            return days[date.getDay()];
-        }
+            function getDayName(date) {
+                const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+                return days[date.getDay()];
+            }
 
-        // Generate QR Code for current date
-        function generateQRCode() {
-            const qrContainer = document.getElementById('qr-code');
-            if (!qrContainer || typeof QRCode === 'undefined') return;
+            // Generate QR Code for current date
+            function generateQRCode() {
+                const qrContainer = document.getElementById('qr-code');
+                if (!qrContainer || typeof QRCode === 'undefined') return;
 
-            // Clear previous QR
-            qrContainer.innerHTML = '';
+                // Clear previous QR
+                qrContainer.innerHTML = '';
 
-            // Build URL with current date (use local timezone format)
-            const dateStr = formatDateISO(currentDate);
-            const baseUrl = window.location.origin + window.location.pathname;
-            const qrUrl = baseUrl + '?date=' + dateStr;
+                // Build URL with current date (use local timezone format)
+                const dateStr = formatDateISO(currentDate);
+                const baseUrl = window.location.origin + window.location.pathname;
+                const qrUrl = baseUrl + '?date=' + dateStr;
 
-            // Generate QR code
-            new QRCode(qrContainer, {
-                text: qrUrl,
-                width: 64,
-                height: 64,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
+                // Generate QR code
+                new QRCode(qrContainer, {
+                    text: qrUrl,
+                    width: 64,
+                    height: 64,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
 
-        // Show larger QR code in modal
-        function showQRModal() {
-            const dateStr = formatDateISO(currentDate);
-            const baseUrl = window.location.origin + window.location.pathname;
-            const qrUrl = baseUrl + '?date=' + dateStr;
+            // Show larger QR code in modal
+            function showQRModal() {
+                const dateStr = formatDateISO(currentDate);
+                const baseUrl = window.location.origin + window.location.pathname;
+                const qrUrl = baseUrl + '?date=' + dateStr;
 
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.id = 'qr-modal';
-            modal.innerHTML = `
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.id = 'qr-modal';
+                modal.innerHTML = `
                 <div class="modal-content" style="text-align: center;">
                     <h3 class="modal-title">📱 Scansiona per Pagare</h3>
                     <div id="qr-large" style="display: inline-block; background: #fff; padding: 15px; border-radius: 8px; margin: 15px 0;"></div>
@@ -804,47 +820,47 @@
                     <button class="modal-btn modal-btn-secondary" onclick="closeQRModal()">Chiudi</button>
                 </div>
             `;
-            document.body.appendChild(modal);
+                document.body.appendChild(modal);
 
-            // Generate larger QR
-            new QRCode(document.getElementById('qr-large'), {
-                text: qrUrl,
-                width: 200,
-                height: 200,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
+                // Generate larger QR
+                new QRCode(document.getElementById('qr-large'), {
+                    text: qrUrl,
+                    width: 200,
+                    height: 200,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
 
-        function closeQRModal() {
-            const modal = document.getElementById('qr-modal');
-            if (modal) modal.remove();
-        }
+            function closeQRModal() {
+                const modal = document.getElementById('qr-modal');
+                if (modal) modal.remove();
+            }
 
-        // Show payment modal for a booking
-        function showPaymentModal(courtId, time, reservation) {
-            if (!reservation || !reservation.players) return;
+            // Show payment modal for a booking
+            function showPaymentModal(courtId, time, reservation) {
+                if (!reservation || !reservation.players) return;
 
-            const filledPlayers = reservation.players.filter(p => p && p.trim());
-            if (filledPlayers.length === 0) return;
+                const filledPlayers = reservation.players.filter(p => p && p.trim());
+                if (filledPlayers.length === 0) return;
 
-            currentPaymentData = {
-                courtId: courtId,
-                time: time,
-                date: formatDateISO(currentDate),
-                reservation: reservation
-            };
+                currentPaymentData = {
+                    courtId: courtId,
+                    time: time,
+                    date: formatDateISO(currentDate),
+                    reservation: reservation
+                };
 
-            // Calculate quotas for each player
-            const playersHtml = filledPlayers.map((player, idx) => {
-                // Find the original index in the players array
-                const originalIdx = reservation.players.findIndex((p, i) => p === player && reservation.players.slice(0, i).filter(x => x === player).length === filledPlayers.slice(0, idx).filter(x => x === player).length);
-                const quota = reservation.payments ? (reservation.payments[originalIdx] || 0) : 0;
-                const paid = reservation.paid ? (reservation.paid[originalIdx] || 0) : 0;
-                const remaining = Math.max(0, quota - paid);
+                // Calculate quotas for each player
+                const playersHtml = filledPlayers.map((player, idx) => {
+                    // Find the original index in the players array
+                    const originalIdx = reservation.players.findIndex((p, i) => p === player && reservation.players.slice(0, i).filter(x => x === player).length === filledPlayers.slice(0, idx).filter(x => x === player).length);
+                    const quota = reservation.payments ? (reservation.payments[originalIdx] || 0) : 0;
+                    const paid = reservation.paid ? (reservation.paid[originalIdx] || 0) : 0;
+                    const remaining = Math.max(0, quota - paid);
 
-                return `
+                    return `
                     <div class="payment-player-row">
                         <input type="checkbox" id="pay-check-${originalIdx}" data-index="${originalIdx}" 
                                ${remaining <= 0 ? 'disabled' : ''} onchange="updatePaymentTotal()">
@@ -860,12 +876,12 @@
                                onchange="updatePaymentTotal()" ${remaining <= 0 ? 'disabled' : ''}>
                     </div>
                 `;
-            }).join('');
+                }).join('');
 
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.id = 'payment-modal';
-            modal.innerHTML = `
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.id = 'payment-modal';
+                modal.innerHTML = `
                 <div class="payment-modal-content">
                     <h3 class="modal-title">💳 Paga Prenotazione</h3>
                     <p style="text-align: center; color: #a0aec0; margin-bottom: 15px;">
@@ -900,126 +916,166 @@
                     </button>
                 </div>
             `;
-            document.body.appendChild(modal);
+                document.body.appendChild(modal);
 
-            updatePaymentTotal();
-            // Initialize with Carta payment method selected (default state is already correct)
-        }
-
-        function closePaymentModal() {
-            const modal = document.getElementById('payment-modal');
-            if (modal) modal.remove();
-            currentPaymentData = null;
-        }
-
-        function updatePaymentTotal() {
-            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
-            let total = 0;
-
-            checkboxes.forEach(cb => {
-                const idx = cb.dataset.index;
-                const amountInput = document.getElementById(`pay-amount-${idx}`);
-                if (amountInput && !amountInput.disabled) {
-                    total += parseFloat(amountInput.value) || 0;
-                }
-            });
-
-            const totalSpan = document.getElementById('payment-total');
-            if (totalSpan) {
-                totalSpan.textContent = '€' + total.toFixed(2);
+                updatePaymentTotal();
+                // Initialize with Carta payment method selected (default state is already correct)
             }
-        }
 
-        let selectedPaymentMethod = 'carta';
+            function closePaymentModal() {
+                const modal = document.getElementById('payment-modal');
+                if (modal) modal.remove();
+                currentPaymentData = null;
+            }
 
-        function generatePaymentQRCode() {
-            const container = document.getElementById('payment-qr-code');
-            const totalSpan = document.getElementById('payment-total');
-            const config = Storage.load('qr_config', { label: 'Pagamento Mobile', data: '' });
+            function updatePaymentTotal() {
+                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
+                let total = 0;
 
-            if (!container || !config.data) return;
-
-            container.innerHTML = '';
-            new QRCode(container, {
-                text: config.data,
-                width: 150,
-                height: 150,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-
-        function selectPaymentMethod(method, evt) {
-            selectedPaymentMethod = method;
-
-            // Update button styles
-            document.querySelectorAll('.payment-method-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            if (evt && evt.target) {
-                evt.target.classList.add('selected');
-            } else {
-                // Fallback: find button by method
-                document.querySelectorAll('.payment-method-btn').forEach(btn => {
-                    if (btn.textContent.toLowerCase().includes(method === 'carta' ? 'carta' : 'paypal')) {
-                        btn.classList.add('selected');
+                checkboxes.forEach(cb => {
+                    const idx = cb.dataset.index;
+                    const amountInput = document.getElementById(`pay-amount-${idx}`);
+                    if (amountInput && !amountInput.disabled) {
+                        total += parseFloat(amountInput.value) || 0;
                     }
+                });
+
+                const totalSpan = document.getElementById('payment-total');
+                if (totalSpan) {
+                    totalSpan.textContent = '€' + total.toFixed(2);
+                }
+            }
+
+            let selectedPaymentMethod = 'carta';
+
+            function generatePaymentQRCode() {
+                const container = document.getElementById('payment-qr-code');
+                const totalSpan = document.getElementById('payment-total');
+                const config = Storage.load('qr_config', { label: 'Pagamento Mobile', data: '' });
+
+                if (!container || !config.data) return;
+
+                container.innerHTML = '';
+                new QRCode(container, {
+                    text: config.data,
+                    width: 150,
+                    height: 150,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
                 });
             }
 
-            // Show/hide appropriate buttons
-            const paypalContainer = document.getElementById('paypal-buttons-public');
-            const qrContainer = document.getElementById('payment-qr-container');
+            function selectPaymentMethod(method, evt) {
+                selectedPaymentMethod = method;
 
-            paypalContainer.style.display = 'none';
-            qrContainer.style.display = 'none';
+                // Update button styles
+                document.querySelectorAll('.payment-method-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                if (evt && evt.target) {
+                    evt.target.classList.add('selected');
+                } else {
+                    // Fallback: find button by method
+                    document.querySelectorAll('.payment-method-btn').forEach(btn => {
+                        if (btn.textContent.toLowerCase().includes(method === 'carta' ? 'carta' : 'paypal')) {
+                            btn.classList.add('selected');
+                        }
+                    });
+                }
 
-            if (method === 'paypal') {
-                // Check if at least one player is selected
+                // Show/hide appropriate buttons
+                const paypalContainer = document.getElementById('paypal-buttons-public');
+                const qrContainer = document.getElementById('payment-qr-container');
+
+                paypalContainer.style.display = 'none';
+                qrContainer.style.display = 'none';
+
+                if (method === 'paypal') {
+                    // Check if at least one player is selected
+                    const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
+                    if (checkboxes.length === 0) {
+                        alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                        return;
+                    }
+
+                    // Get total amount
+                    const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
+                    if (total <= 0) {
+                        alert('⚠️ L\'importo deve essere maggiore di zero.');
+                        return;
+                    }
+
+                    paypalContainer.style.display = 'block';
+                    renderPayPalButtons();
+                } else if (method === 'carta') {
+                    // Check if at least one player is selected
+                    const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
+                    if (checkboxes.length === 0) {
+                        alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                        return;
+                    }
+
+                    // Get total amount
+                    const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
+                    if (total <= 0) {
+                        alert('⚠️ L\'importo deve essere maggiore di zero.');
+                        return;
+                    }
+
+                    // Check if Stripe is configured
+                    if (typeof StripePayments === 'undefined') {
+                        alert('❌ Errore: Stripe non è caricato.');
+                        return;
+                    }
+
+                    if (!StripePayments.isConfigured()) {
+                        alert('❌ Stripe non è configurato. Contatta l\'amministratore.');
+                        return;
+                    }
+
+                    // CRITICAL FIX: Save selected players and amounts BEFORE opening Stripe modal
+                    // This ensures data is available when callback executes (DOM may be inaccessible)
+                    const selectedPayments = [];
+                    checkboxes.forEach(cb => {
+                        const idx = parseInt(cb.dataset.index);
+                        const amountInput = document.getElementById(`pay-amount-${idx}`);
+                        if (amountInput && !amountInput.disabled) {
+                            const amount = parseFloat(amountInput.value) || 0;
+                            if (amount > 0) {
+                                selectedPayments.push({ index: idx, amount: amount });
+                            }
+                        }
+                    });
+
+                    // Store in currentPaymentData for use in callback
+                    currentPaymentData.selectedPayments = selectedPayments;
+                    console.log('[PAYMENT] Saved selected payments before Stripe checkout:', selectedPayments);
+
+                    // Open Stripe payment modal
+                    const description = `Prenotazione Tennis - ${formatDateISO(currentDate)}`;
+                    console.log('[PAYMENT] Opening Stripe checkout for:', total, description);
+
+                    StripePayments.openCheckout(total, description, async function (result) {
+                        // Payment successful - update Firebase and close modal
+                        console.log('[PAYMENT] Stripe payment successful:', result);
+                        // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
+                        await updatePaymentInFirebase('carta');
+                        closePaymentModal();
+                        renderPlanning();
+                    });
+                }
+            }
+
+            function renderPayPalButtons() {
+                const container = document.getElementById('paypal-buttons-public');
+                if (!container || typeof paypal === 'undefined') return;
+
+                container.innerHTML = '';
+
+                // CRITICAL FIX: Save selected players and amounts BEFORE PayPal flow starts
+                // This ensures data is available when callback executes
                 const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
-                if (checkboxes.length === 0) {
-                    alert('⚠️ Seleziona almeno un giocatore da pagare.');
-                    return;
-                }
-
-                // Get total amount
-                const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
-                if (total <= 0) {
-                    alert('⚠️ L\'importo deve essere maggiore di zero.');
-                    return;
-                }
-
-                paypalContainer.style.display = 'block';
-                renderPayPalButtons();
-            } else if (method === 'carta') {
-                // Check if at least one player is selected
-                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
-                if (checkboxes.length === 0) {
-                    alert('⚠️ Seleziona almeno un giocatore da pagare.');
-                    return;
-                }
-
-                // Get total amount
-                const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
-                if (total <= 0) {
-                    alert('⚠️ L\'importo deve essere maggiore di zero.');
-                    return;
-                }
-
-                // Check if Stripe is configured
-                if (typeof StripePayments === 'undefined') {
-                    alert('❌ Errore: Stripe non è caricato.');
-                    return;
-                }
-
-                if (!StripePayments.isConfigured()) {
-                    alert('❌ Stripe non è configurato. Contatta l\'amministratore.');
-                    return;
-                }
-
-                // CRITICAL FIX: Save selected players and amounts BEFORE opening Stripe modal
-                // This ensures data is available when callback executes (DOM may be inaccessible)
                 const selectedPayments = [];
                 checkboxes.forEach(cb => {
                     const idx = parseInt(cb.dataset.index);
@@ -1032,346 +1088,489 @@
                     }
                 });
 
-                // Store in currentPaymentData for use in callback
-                currentPaymentData.selectedPayments = selectedPayments;
-                console.log('[PAYMENT] Saved selected payments before Stripe checkout:', selectedPayments);
-
-                // Open Stripe payment modal
-                const description = `Prenotazione Tennis - ${formatDateISO(currentDate)}`;
-                console.log('[PAYMENT] Opening Stripe checkout for:', total, description);
-
-                StripePayments.openCheckout(total, description, async function (result) {
-                    // Payment successful - update Firebase and close modal
-                    console.log('[PAYMENT] Stripe payment successful:', result);
-                    // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
-                    await updatePaymentInFirebase('carta');
-                    closePaymentModal();
-                    renderPlanning();
-                });
-            }
-        }
-
-        function renderPayPalButtons() {
-            const container = document.getElementById('paypal-buttons-public');
-            if (!container || typeof paypal === 'undefined') return;
-
-            container.innerHTML = '';
-
-            // CRITICAL FIX: Save selected players and amounts BEFORE PayPal flow starts
-            // This ensures data is available when callback executes
-            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
-            const selectedPayments = [];
-            checkboxes.forEach(cb => {
-                const idx = parseInt(cb.dataset.index);
-                const amountInput = document.getElementById(`pay-amount-${idx}`);
-                if (amountInput && !amountInput.disabled) {
-                    const amount = parseFloat(amountInput.value) || 0;
-                    if (amount > 0) {
-                        selectedPayments.push({ index: idx, amount: amount });
-                    }
+                if (currentPaymentData) {
+                    currentPaymentData.selectedPayments = selectedPayments;
+                    console.log('[PAYMENT] Saved selected payments for PayPal:', selectedPayments);
                 }
-            });
 
-            if (currentPaymentData) {
-                currentPaymentData.selectedPayments = selectedPayments;
-                console.log('[PAYMENT] Saved selected payments for PayPal:', selectedPayments);
-            }
+                paypal.Buttons({
+                    style: {
+                        layout: 'vertical',
+                        color: 'blue',
+                        shape: 'rect',
+                        label: 'pay'
+                    },
+                    createOrder: function (data, actions) {
+                        const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
+                        if (total <= 0) {
+                            alert('⚠️ Seleziona almeno un giocatore da pagare.');
+                            return;
+                        }
 
-            paypal.Buttons({
-                style: {
-                    layout: 'vertical',
-                    color: 'blue',
-                    shape: 'rect',
-                    label: 'pay'
-                },
-                createOrder: function (data, actions) {
-                    const total = parseFloat(document.getElementById('payment-total').textContent.replace('€', '')) || 0;
-                    if (total <= 0) {
-                        alert('⚠️ Seleziona almeno un giocatore da pagare.');
-                        return;
+                        return actions.order.create({
+                            purchase_units: [{
+                                description: 'Prenotazione Tennis - ' + currentPaymentData.date,
+                                amount: {
+                                    currency_code: 'EUR',
+                                    value: total.toFixed(2)
+                                }
+                            }]
+                        });
+                    },
+                    onApprove: async function (data, actions) {
+                        const details = await actions.order.capture();
+                        console.log('Payment completed:', details);
+                        console.log('[PAYMENT] Using pre-saved selectedPayments:', currentPaymentData.selectedPayments);
+                        // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
+                        await updatePaymentInFirebase('paypal');
+                        closePaymentModal();
+                        alert('✅ Pagamento PayPal completato con successo!\n\nTransazione: ' + details.id);
+                    },
+                    onError: function (err) {
+                        console.error('PayPal Error:', err);
+                        alert('❌ Errore nel pagamento PayPal. Riprova.');
                     }
-
-                    return actions.order.create({
-                        purchase_units: [{
-                            description: 'Prenotazione Tennis - ' + currentPaymentData.date,
-                            amount: {
-                                currency_code: 'EUR',
-                                value: total.toFixed(2)
-                            }
-                        }]
-                    });
-                },
-                onApprove: async function (data, actions) {
-                    const details = await actions.order.capture();
-                    console.log('Payment completed:', details);
-                    console.log('[PAYMENT] Using pre-saved selectedPayments:', currentPaymentData.selectedPayments);
-                    // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
-                    await updatePaymentInFirebase('paypal');
-                    closePaymentModal();
-                    alert('✅ Pagamento PayPal completato con successo!\n\nTransazione: ' + details.id);
-                },
-                onError: function (err) {
-                    console.error('PayPal Error:', err);
-                    alert('❌ Errore nel pagamento PayPal. Riprova.');
-                }
-            }).render('#paypal-buttons-public');
-        }
-
-        async function confirmMobilePayment() {
-            // Check if at least one player is selected
-            const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
-            if (checkboxes.length === 0) {
-                alert('⚠️ Seleziona almeno un giocatore da pagare.');
-                return;
+                }).render('#paypal-buttons-public');
             }
 
-            // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
-            await updatePaymentInFirebase(selectedPaymentMethod);
-            closePaymentModal();
-            const label = selectedPaymentMethod === 'carta' ? 'Carta' : 'Mobile';
-            alert(`✅ Pagamento ${label} registrato.\n\nRicordati di confermare alla cassa se necessario.`);
-        }
-
-        async function updatePaymentInFirebase(method) {
-            if (!currentPaymentData) {
-                console.error('[PAYMENT] No current payment data');
-                return;
-            }
-
-            // CRITICAL FIX: Use pre-saved selectedPayments if available (from Stripe/PayPal flow)
-            // Otherwise fall back to reading from DOM (for other payment methods)
-            let selectedPayments = currentPaymentData.selectedPayments;
-
-            if (!selectedPayments || selectedPayments.length === 0) {
-                // Fallback: read from DOM (for PayPal and other methods)
-                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
+            async function confirmMobilePayment() {
+                // Check if at least one player is selected
+                const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked:not(:disabled)');
                 if (checkboxes.length === 0) {
-                    console.error('[PAYMENT] No players selected and no pre-saved payments');
+                    alert('⚠️ Seleziona almeno un giocatore da pagare.');
                     return;
                 }
 
-                selectedPayments = [];
-                checkboxes.forEach(cb => {
-                    const idx = parseInt(cb.dataset.index);
-                    const amountInput = document.getElementById(`pay-amount-${idx}`);
-                    if (amountInput && !amountInput.disabled) {
-                        const amount = parseFloat(amountInput.value) || 0;
-                        if (amount > 0) {
-                            selectedPayments.push({ index: idx, amount: amount });
-                        }
-                    }
-                });
+                // CRITICAL: Must await before closePaymentModal, otherwise currentPaymentData is null
+                await updatePaymentInFirebase(selectedPaymentMethod);
+                closePaymentModal();
+                const label = selectedPaymentMethod === 'carta' ? 'Carta' : 'Mobile';
+                alert(`✅ Pagamento ${label} registrato.\n\nRicordati di confermare alla cassa se necessario.`);
             }
 
-            if (!selectedPayments || selectedPayments.length === 0) {
-                console.error('[PAYMENT] No players selected');
-                return;
-            }
-
-            console.log('[PAYMENT] Updating payment in Firebase:', {
-                courtId: currentPaymentData.courtId,
-                date: currentPaymentData.date,
-                time: currentPaymentData.time,
-                method: method,
-                selectedPayments: selectedPayments
-            });
-
-            // Force fresh data load from Firebase to avoid overwrites
-            if (Storage.isFirebaseConnected()) {
-                try {
-                    console.log('[PAYMENT] Fetching latest data from Firebase...');
-                    await Storage.loadFromFirebase(Storage.KEYS.COURTS);
-                } catch (e) {
-                    console.error('[PAYMENT] Error fetching data:', e);
+            async function updatePaymentInFirebase(method) {
+                if (!currentPaymentData) {
+                    console.error('[PAYMENT] No current payment data');
+                    return;
                 }
-            }
 
-            // Get current courts data
-            const courts = Storage.load(Storage.KEYS.COURTS, []);
-            const courtIdx = courts.findIndex(c => c.id === currentPaymentData.courtId);
-            if (courtIdx === -1) {
-                console.error('[PAYMENT] Court not found:', currentPaymentData.courtId);
-                return;
-            }
+                // CRITICAL FIX: Use pre-saved selectedPayments if available (from Stripe/PayPal flow)
+                // Otherwise fall back to reading from DOM (for other payment methods)
+                let selectedPayments = currentPaymentData.selectedPayments;
 
-            const court = courts[courtIdx];
-            if (!court.reservations) {
-                console.error('[PAYMENT] No reservations on court');
-                return;
-            }
+                if (!selectedPayments || selectedPayments.length === 0) {
+                    // Fallback: read from DOM (for PayPal and other methods)
+                    const checkboxes = document.querySelectorAll('[id^="pay-check-"]:checked');
+                    if (checkboxes.length === 0) {
+                        console.error('[PAYMENT] No players selected and no pre-saved payments');
+                        return;
+                    }
 
-            // Find the reservation - normalize time format for comparison
-            const normalizedTime = currentPaymentData.time.replace('.', ':').replace(':', '.');
-            const resIdx = court.reservations.findIndex(r => {
-                if (r.date !== currentPaymentData.date) return false;
+                    selectedPayments = [];
+                    checkboxes.forEach(cb => {
+                        const idx = parseInt(cb.dataset.index);
+                        const amountInput = document.getElementById(`pay-amount-${idx}`);
+                        if (amountInput && !amountInput.disabled) {
+                            const amount = parseFloat(amountInput.value) || 0;
+                            if (amount > 0) {
+                                selectedPayments.push({ index: idx, amount: amount });
+                            }
+                        }
+                    });
+                }
 
-                // Compare times in different formats
-                const resFrom = r.from || '';
-                const timeToCompare = currentPaymentData.time;
+                if (!selectedPayments || selectedPayments.length === 0) {
+                    console.error('[PAYMENT] No players selected');
+                    return;
+                }
 
-                // Try different format comparisons
-                return resFrom === timeToCompare ||
-                    resFrom.replace('.', ':') === timeToCompare.replace('.', ':') ||
-                    resFrom.replace(':', '.') === timeToCompare.replace(':', '.') ||
-                    (resFrom <= timeToCompare && r.to > timeToCompare);
-            });
+                console.log('[PAYMENT] Updating payment in Firebase:', {
+                    courtId: currentPaymentData.courtId,
+                    date: currentPaymentData.date,
+                    time: currentPaymentData.time,
+                    method: method,
+                    selectedPayments: selectedPayments
+                });
 
-            if (resIdx === -1) {
-                // Try to find a recurring reservation
-                const dayName = Matching.getDayNameFromDate(currentPaymentData.date);
-                const recurringIdx = court.reservations.findIndex(r => {
-                    if (r.date) return false; // Skip dated reservations
-                    if (r.day !== dayName) return false;
+                // Force fresh data load from Firebase to avoid overwrites
+                if (Storage.isFirebaseConnected()) {
+                    try {
+                        console.log('[PAYMENT] Fetching latest data from Firebase...');
+                        await Storage.loadFromFirebase(Storage.KEYS.COURTS);
+                    } catch (e) {
+                        console.error('[PAYMENT] Error fetching data:', e);
+                    }
+                }
 
+                // Get current courts data
+                const courts = Storage.load(Storage.KEYS.COURTS, []);
+                const courtIdx = courts.findIndex(c => c.id === currentPaymentData.courtId);
+                if (courtIdx === -1) {
+                    console.error('[PAYMENT] Court not found:', currentPaymentData.courtId);
+                    return;
+                }
+
+                const court = courts[courtIdx];
+                if (!court.reservations) {
+                    console.error('[PAYMENT] No reservations on court');
+                    return;
+                }
+
+                // Find the reservation - normalize time format for comparison
+                const normalizedTime = currentPaymentData.time.replace('.', ':').replace(':', '.');
+                const resIdx = court.reservations.findIndex(r => {
+                    if (r.date !== currentPaymentData.date) return false;
+
+                    // Compare times in different formats
                     const resFrom = r.from || '';
                     const timeToCompare = currentPaymentData.time;
 
+                    // Try different format comparisons
                     return resFrom === timeToCompare ||
                         resFrom.replace('.', ':') === timeToCompare.replace('.', ':') ||
                         resFrom.replace(':', '.') === timeToCompare.replace(':', '.') ||
                         (resFrom <= timeToCompare && r.to > timeToCompare);
                 });
 
-                if (recurringIdx !== -1) {
-                    console.log('[PAYMENT] Found recurring reservation, creating instance for date');
-                    // Clone the recurring reservation to a new specific-date reservation
-                    const recurringRes = court.reservations[recurringIdx];
-                    const newRes = JSON.parse(JSON.stringify(recurringRes));
-                    newRes.date = currentPaymentData.date;
-                    delete newRes.day; // Remove day, use date
+                if (resIdx === -1) {
+                    // Try to find a recurring reservation
+                    const dayName = Matching.getDayNameFromDate(currentPaymentData.date);
+                    const recurringIdx = court.reservations.findIndex(r => {
+                        if (r.date) return false; // Skip dated reservations
+                        if (r.day !== dayName) return false;
 
-                    // Add to reservations list
-                    court.reservations.push(newRes);
+                        const resFrom = r.from || '';
+                        const timeToCompare = currentPaymentData.time;
 
-                    // Continue with the NEW reservation
-                    const reservation = newRes; // Use the new instance
-
-                    if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
-                    if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
-
-                    // Update paid amounts using pre-saved selectedPayments
-                    selectedPayments.forEach(payment => {
-                        const idx = payment.index;
-                        const amount = payment.amount;
-                        if (amount > 0) {
-                            reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
-                            reservation.paymentMethods[idx] = method;
-                            console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
-                        }
+                        return resFrom === timeToCompare ||
+                            resFrom.replace('.', ':') === timeToCompare.replace('.', ':') ||
+                            resFrom.replace(':', '.') === timeToCompare.replace(':', '.') ||
+                            (resFrom <= timeToCompare && r.to > timeToCompare);
                     });
 
-                    // Save to Firebase
-                    courts[courtIdx] = court;
-                    try {
-                        await Storage.save(Storage.KEYS.COURTS, courts);
-                        console.log('[PAYMENT] New instance with payment saved successfully');
-                        alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
-                        location.reload();
-                    } catch (error) {
-                        console.error('[PAYMENT] Error saving:', error);
-                        alert('❌ Errore nel salvataggio: ' + (error.message || error));
+                    if (recurringIdx !== -1) {
+                        console.log('[PAYMENT] Found recurring reservation, creating instance for date');
+                        // Clone the recurring reservation to a new specific-date reservation
+                        const recurringRes = court.reservations[recurringIdx];
+                        const newRes = JSON.parse(JSON.stringify(recurringRes));
+                        newRes.date = currentPaymentData.date;
+                        delete newRes.day; // Remove day, use date
+
+                        // Add to reservations list
+                        court.reservations.push(newRes);
+
+                        // Continue with the NEW reservation
+                        const reservation = newRes; // Use the new instance
+
+                        if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
+                        if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
+
+                        // Update paid amounts using pre-saved selectedPayments
+                        selectedPayments.forEach(payment => {
+                            const idx = payment.index;
+                            const amount = payment.amount;
+                            if (amount > 0) {
+                                reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
+                                reservation.paymentMethods[idx] = method;
+                                console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
+                            }
+                        });
+
+                        // Save to Firebase
+                        courts[courtIdx] = court;
+                        try {
+                            await Storage.save(Storage.KEYS.COURTS, courts);
+                            console.log('[PAYMENT] New instance with payment saved successfully');
+                            alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
+                            location.reload();
+                        } catch (error) {
+                            console.error('[PAYMENT] Error saving:', error);
+                            alert('❌ Errore nel salvataggio: ' + (error.message || error));
+                        }
+                        return;
                     }
+
+                    console.error('[PAYMENT] Reservation not found for:', currentPaymentData.date, currentPaymentData.time);
+                    console.log('[PAYMENT] Available reservations:', court.reservations.map(r => ({ date: r.date, day: r.day, from: r.from, to: r.to })));
+                    alert('❌ Errore: Prenotazione non trovata. Impossibile registrare il pagamento.');
                     return;
                 }
 
-                console.error('[PAYMENT] Reservation not found for:', currentPaymentData.date, currentPaymentData.time);
-                console.log('[PAYMENT] Available reservations:', court.reservations.map(r => ({ date: r.date, day: r.day, from: r.from, to: r.to })));
-                alert('❌ Errore: Prenotazione non trovata. Impossibile registrare il pagamento.');
-                return;
-            }
+                const reservation = court.reservations[resIdx];
+                console.log('[PAYMENT] Found reservation:', reservation);
 
-            const reservation = court.reservations[resIdx];
-            console.log('[PAYMENT] Found reservation:', reservation);
+                if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
+                if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
 
-            if (!reservation.paid) reservation.paid = [0, 0, 0, 0];
-            if (!reservation.paymentMethods) reservation.paymentMethods = ['', '', '', ''];
-
-            // Update paid amounts using pre-saved selectedPayments
-            selectedPayments.forEach(payment => {
-                const idx = payment.index;
-                const amount = payment.amount;
-                if (amount > 0) {
-                    reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
-                    reservation.paymentMethods[idx] = method;
-                    console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
-                }
-            });
-
-            // Save to Firebase
-            courts[courtIdx] = court;
-            try {
-                await Storage.save(Storage.KEYS.COURTS, courts);
-                console.log('[PAYMENT] Payment saved to Firebase successfully');
-                alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
-                location.reload();
-            } catch (error) {
-                console.error('[PAYMENT] Error saving to Firebase:', error);
-                alert('❌ Errore nel salvataggio del pagamento sul server.\nControlla la connessione o contatta l\'amministratore.\n\nDettaglio errore: ' + (error.message || error));
-                // Revert local change if needed? ideally yes, but complex.
-                // For now, let's just warn.
-                return;
-            }
-
-            // Refresh view
-            renderPlanning();
-        }
-
-        function changeDay(delta) {
-            currentDate.setDate(currentDate.getDate() + delta);
-            generateQRCode();
-            renderPlanning();
-        }
-
-        function renderPlanning() {
-            try {
-                var season = document.getElementById('season-select').value;
-                var dateStr = formatDateISO(currentDate);
-                var dayName = Matching.getDayNameFromDate(dateStr);
-
-                document.getElementById('current-date').textContent = formatDate(currentDate);
-                document.getElementById('day-name').textContent = getDayName(currentDate);
-
-                // Update mobile club name display
-                var mobileClubName = document.getElementById('mobile-club-name');
-                if (mobileClubName) {
-                    mobileClubName.textContent = season === 'winter' ? 'Viserba' : 'Rivabella';
-                }
-
-                var courts = Courts.getAvailable(season);
-                var container = document.getElementById('planning-grid');
-
-                if (!courts || courts.length === 0) {
-                    if (container) {
-                        container.innerHTML = '<p style="color: #333; text-align: center; padding: 20px;">Nessun campo disponibile per questa stagione.</p>';
+                // Update paid amounts using pre-saved selectedPayments
+                selectedPayments.forEach(payment => {
+                    const idx = payment.index;
+                    const amount = payment.amount;
+                    if (amount > 0) {
+                        reservation.paid[idx] = (reservation.paid[idx] || 0) + amount;
+                        reservation.paymentMethods[idx] = method;
+                        console.log('[PAYMENT] Updated player', idx, 'paid:', reservation.paid[idx], 'method:', method);
                     }
-                    // Still try to render mobile (will handle its own empty state)
+                });
+
+                // Save to Firebase
+                courts[courtIdx] = court;
+                try {
+                    await Storage.save(Storage.KEYS.COURTS, courts);
+                    console.log('[PAYMENT] Payment saved to Firebase successfully');
+                    alert(`✅ Pagamento ${method === 'carta' ? 'Carta' : 'Mobile'} registrato con successo!`);
+                    location.reload();
+                } catch (error) {
+                    console.error('[PAYMENT] Error saving to Firebase:', error);
+                    alert('❌ Errore nel salvataggio del pagamento sul server.\nControlla la connessione o contatta l\'amministratore.\n\nDettaglio errore: ' + (error.message || error));
+                    // Revert local change if needed? ideally yes, but complex.
+                    // For now, let's just warn.
+                    return;
+                }
+
+                // Refresh view
+                renderPlanning();
+            }
+
+            function changeDay(delta) {
+                currentDate.setDate(currentDate.getDate() + delta);
+                generateQRCode();
+                renderPlanning();
+            }
+
+            function renderPlanning() {
+                try {
+                    var season = document.getElementById('season-select').value;
+                    var dateStr = formatDateISO(currentDate);
+                    var dayName = Matching.getDayNameFromDate(dateStr);
+
+                    document.getElementById('current-date').textContent = formatDate(currentDate);
+                    document.getElementById('day-name').textContent = getDayName(currentDate);
+
+                    // Update mobile club name display
+                    var mobileClubName = document.getElementById('mobile-club-name');
+                    if (mobileClubName) {
+                        mobileClubName.textContent = season === 'winter' ? 'Viserba' : 'Rivabella';
+                    }
+
+                    var courts = Courts.getAvailable(season);
+                    var container = document.getElementById('planning-grid');
+
+                    if (!courts || courts.length === 0) {
+                        if (container) {
+                            container.innerHTML = '<p style="color: #333; text-align: center; padding: 20px;">Nessun campo disponibile per questa stagione.</p>';
+                        }
+                        // Still try to render mobile (will handle its own empty state)
+                        populateMobileCourtSelector();
+                        renderMobilePlanning();
+                        return;
+                    }
+
+                    var planningTemplates = Storage.load('planning_templates', {}) || {};
+                    var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+
+                    var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+                    var headerTimes = (courts[0] && dayTemplate[courts[0].id]) ? dayTemplate[courts[0].id] : defaultTimes;
+
+                    var tableHtml = '<table class="public-horizontal-table"><tbody>';
+
+                    for (var c = 0; c < courts.length; c++) {
+                        var court = courts[c];
+                        var times = dayTemplate[court.id] || defaultTimes;
+
+                        // Riga orari per questo campo
+                        tableHtml += '<tr class="court-time-row">';
+                        tableHtml += '<td class="court-name-cell" style="font-size:0.6rem; background:#d0d0d0; color:#000;">⏰ Orari</td>';
+                        for (var ti = 0; ti < times.length; ti++) {
+                            tableHtml += '<td style="background:#e8e8e8; font-size:0.65rem; color:#000; text-align:center; border:1px solid #999;">' + times[ti] + '</td>';
+                        }
+                        tableHtml += '</tr>';
+
+                        // Riga attività
+                        tableHtml += '<tr><td class="court-name-cell">' + court.name + '</td>';
+
+                        for (var t = 0; t < times.length; t++) {
+                            var time = times[t];
+                            var standardizedTime = time.replace('.', ':');
+                            var nextTime = times[t + 1] || Matching.addTime(standardizedTime, 60);
+                            var standardizedNextTime = nextTime.replace('.', ':');
+
+                            var res = null;
+                            if (court.reservations) {
+                                for (var r = 0; r < court.reservations.length; r++) {
+                                    var reservation = court.reservations[r];
+                                    if (reservation.date === dateStr && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
+                                        res = reservation;
+                                        break;
+                                    }
+                                }
+                                if (!res) {
+                                    for (var r = 0; r < court.reservations.length; r++) {
+                                        var reservation = court.reservations[r];
+                                        if (!reservation.date && reservation.day === dayName && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
+                                            res = reservation;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            var cellClass = 'activity-free';
+                            var cellContent = '';
+
+                            if (res) {
+                                var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
+
+                                // Check payment status
+                                var isPaid = false;
+                                var isPartial = false;
+                                if (res.paid && Array.isArray(res.paid)) {
+                                    var totalPaid = res.paid.reduce(function (a, b) { return a + b; }, 0);
+                                    var totalDue = 0;
+                                    if (res.payments && Array.isArray(res.payments)) {
+                                        totalDue = res.payments.reduce(function (a, b) { return a + b; }, 0);
+                                    }
+
+                                    if (totalDue > 0) {
+                                        if (totalPaid >= totalDue - 0.5) isPaid = true; // Tolerance
+                                        else if (totalPaid > 0) isPartial = true;
+                                    } else if (totalPaid > 0) {
+                                        // If no quota set but something paid
+                                        isPartial = true;
+                                    }
+                                }
+
+                                if (res.players && res.players.some(function (p) { return p; })) {
+                                    var filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
+                                    var hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
+                                    var firstPlayerLower = (res.players[0] || '').toLowerCase();
+                                    var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
+
+                                    // Helper to check if player at index has paid
+                                    var playerHasPaid = function (idx) {
+                                        return res.paid && res.paid[idx] && res.paid[idx] > 0;
+                                    };
+
+                                    // Helper to get player name with green if paid
+                                    var getPlayerNameStyled = function (name, idx) {
+                                        if (!name || !name.trim()) return '';
+                                        var surname = name.split(' ')[0];
+                                        if (playerHasPaid(idx)) {
+                                            return '<span style="color:#22c55e;font-weight:600;">' + surname + '</span>';
+                                        }
+                                        return '<span>' + surname + '</span>';
+                                    };
+
+                                    if (hasOnlyFirst && isActivity) {
+                                        cellClass = 'activity-' + firstPlayerLower;
+                                        cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
+                                    } else if (hasOnlyFirst) {
+                                        cellClass = 'activity-single-player';
+                                        var playerStyle = playerHasPaid(0) ? 'color:#22c55e;font-weight:600;' : '';
+                                        cellContent = '<span class="cell-label" style="' + playerStyle + '">' + res.players[0] + '</span>';
+                                    } else if (filledPlayers.length === 2) {
+                                        cellClass = 'activity-players';
+                                        // Find original indices
+                                        var idx1 = res.players.indexOf(filledPlayers[0]);
+                                        var idx2 = res.players.indexOf(filledPlayers[1]);
+                                        cellContent = '<div style="display:flex;flex-direction:column;font-size:0.7rem;">' +
+                                            getPlayerNameStyled(filledPlayers[0], idx1) +
+                                            getPlayerNameStyled(filledPlayers[1], idx2) + '</div>';
+                                    } else {
+                                        cellClass = 'activity-players';
+                                        cellContent = '<div style="display:grid;grid-template-columns:1fr 1fr;font-size:0.55rem;gap:1px;">';
+                                        for (var p = 0; p < 4; p++) {
+                                            cellContent += getPlayerNameStyled(res.players[p] || '', p);
+                                        }
+                                        cellContent += '</div>';
+                                    }
+                                } else {
+                                    cellClass = 'activity-' + (res.type || 'reserved');
+                                    var label = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                                    cellContent = '<span class="cell-label">' + label + '</span>';
+                                }
+                            }
+
+                            tableHtml += '<td class="planning-cell ' + cellClass + '">' + cellContent + '</td>';
+                        }
+
+                        tableHtml += '</tr>';
+                    }
+
+                    tableHtml += '</tbody></table>';
+                    if (container) {
+                        container.innerHTML = tableHtml;
+                    }
+
+                    document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+                    // Generate QR code
+                    generateQRCode();
+
+                    // Also render mobile version
                     populateMobileCourtSelector();
                     renderMobilePlanning();
-                    return;
+                } catch (e) {
+                    console.error('Error rendering planning:', e);
+                    var errorContainer = document.getElementById('planning-grid');
+                    if (errorContainer) {
+                        errorContainer.innerHTML = '<p style="color:red;padding:20px;">Errore: ' + e.message + '</p>';
+                    }
                 }
+            }
 
-                var planningTemplates = Storage.load('planning_templates', {}) || {};
-                var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+            // Populate mobile court selector dropdown
+            function populateMobileCourtSelector() {
+                var season = document.getElementById('season-select').value;
+                var courts = Courts.getAvailable(season);
+                var select = document.getElementById('mobile-court-select');
 
-                var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-                var headerTimes = (courts[0] && dayTemplate[courts[0].id]) ? dayTemplate[courts[0].id] : defaultTimes;
+                if (!select || !courts || courts.length === 0) return;
 
-                var tableHtml = '<table class="public-horizontal-table"><tbody>';
+                var currentValue = select.value;
+                select.innerHTML = '';
 
-                for (var c = 0; c < courts.length; c++) {
-                    var court = courts[c];
+                courts.forEach(function (court, index) {
+                    var option = document.createElement('option');
+                    option.value = court.id;
+                    option.textContent = court.name;
+                    if (court.id === currentValue || (!currentValue && index === 0)) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            }
+
+            // Render mobile vertical table for selected court
+            function renderMobilePlanning() {
+                try {
+                    var season = document.getElementById('season-select').value;
+                    var dateStr = formatDateISO(currentDate);
+                    var dayName = Matching.getDayNameFromDate(dateStr);
+
+                    var courts = Courts.getAvailable(season);
+                    var mobileTable = document.getElementById('mobile-planning-table');
+                    var select = document.getElementById('mobile-court-select');
+
+                    if (!mobileTable || !courts || courts.length === 0) return;
+
+                    var selectedCourtId = select.value;
+                    var court = courts.find(function (c) { return c.id === selectedCourtId; });
+
+                    if (!court) {
+                        court = courts[0];
+                    }
+
+                    var planningTemplates = Storage.load('planning_templates', {}) || {};
+                    var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
+                    var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
                     var times = dayTemplate[court.id] || defaultTimes;
 
-                    // Riga orari per questo campo
-                    tableHtml += '<tr class="court-time-row">';
-                    tableHtml += '<td class="court-name-cell" style="font-size:0.6rem; background:#d0d0d0; color:#000;">⏰ Orari</td>';
-                    for (var ti = 0; ti < times.length; ti++) {
-                        tableHtml += '<td style="background:#e8e8e8; font-size:0.65rem; color:#000; text-align:center; border:1px solid #999;">' + times[ti] + '</td>';
-                    }
-                    tableHtml += '</tr>';
+                    var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
 
-                    // Riga attività
-                    tableHtml += '<tr><td class="court-name-cell">' + court.name + '</td>';
+                    var tableHtml = '<colgroup><col style="width:75px"><col style="width:auto"></colgroup>';
+                    tableHtml += '<tbody>';
+                    tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
 
                     for (var t = 0; t < times.length; t++) {
                         var time = times[t];
@@ -1400,30 +1599,9 @@
                         }
 
                         var cellClass = 'activity-free';
-                        var cellContent = '';
+                        var cellContent = '-';
 
                         if (res) {
-                            var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
-
-                            // Check payment status
-                            var isPaid = false;
-                            var isPartial = false;
-                            if (res.paid && Array.isArray(res.paid)) {
-                                var totalPaid = res.paid.reduce(function (a, b) { return a + b; }, 0);
-                                var totalDue = 0;
-                                if (res.payments && Array.isArray(res.payments)) {
-                                    totalDue = res.payments.reduce(function (a, b) { return a + b; }, 0);
-                                }
-
-                                if (totalDue > 0) {
-                                    if (totalPaid >= totalDue - 0.5) isPaid = true; // Tolerance
-                                    else if (totalPaid > 0) isPartial = true;
-                                } else if (totalPaid > 0) {
-                                    // If no quota set but something paid
-                                    isPartial = true;
-                                }
-                            }
-
                             if (res.players && res.players.some(function (p) { return p; })) {
                                 var filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
                                 var hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
@@ -1435,275 +1613,174 @@
                                     return res.paid && res.paid[idx] && res.paid[idx] > 0;
                                 };
 
-                                // Helper to get player name with green if paid
-                                var getPlayerNameStyled = function (name, idx) {
+                                // Helper to get full player name with green if paid
+                                var getPlayerNameStyledMobile = function (name, idx) {
                                     if (!name || !name.trim()) return '';
-                                    var surname = name.split(' ')[0];
                                     if (playerHasPaid(idx)) {
-                                        return '<span style="color:#22c55e;font-weight:600;">' + surname + '</span>';
+                                        return '<span style="color:#22c55e;font-weight:600;">' + name + '</span>';
                                     }
-                                    return '<span>' + surname + '</span>';
+                                    return '<span>' + name + '</span>';
                                 };
 
                                 if (hasOnlyFirst && isActivity) {
                                     cellClass = 'activity-' + firstPlayerLower;
-                                    cellContent = '<span class="cell-label">' + res.players[0] + '</span>';
+                                    cellContent = res.players[0];
                                 } else if (hasOnlyFirst) {
                                     cellClass = 'activity-single-player';
-                                    var playerStyle = playerHasPaid(0) ? 'color:#22c55e;font-weight:600;' : '';
-                                    cellContent = '<span class="cell-label" style="' + playerStyle + '">' + res.players[0] + '</span>';
-                                } else if (filledPlayers.length === 2) {
-                                    cellClass = 'activity-players';
-                                    // Find original indices
-                                    var idx1 = res.players.indexOf(filledPlayers[0]);
-                                    var idx2 = res.players.indexOf(filledPlayers[1]);
-                                    cellContent = '<div style="display:flex;flex-direction:column;font-size:0.7rem;">' +
-                                        getPlayerNameStyled(filledPlayers[0], idx1) +
-                                        getPlayerNameStyled(filledPlayers[1], idx2) + '</div>';
+                                    cellContent = playerHasPaid(0) ?
+                                        '<span style="color:#22c55e;font-weight:600;">' + res.players[0] + '</span>' :
+                                        res.players[0];
                                 } else {
                                     cellClass = 'activity-players';
-                                    cellContent = '<div style="display:grid;grid-template-columns:1fr 1fr;font-size:0.55rem;gap:1px;">';
-                                    for (var p = 0; p < 4; p++) {
-                                        cellContent += getPlayerNameStyled(res.players[p] || '', p);
+                                    // Show each player with their original index for payment check
+                                    var playerHtmls = [];
+                                    for (var i = 0; i < res.players.length; i++) {
+                                        if (res.players[i] && res.players[i].trim()) {
+                                            playerHtmls.push(getPlayerNameStyledMobile(res.players[i], i));
+                                        }
                                     }
-                                    cellContent += '</div>';
+                                    cellContent = playerHtmls.join('<br>');
                                 }
                             } else {
                                 cellClass = 'activity-' + (res.type || 'reserved');
-                                var label = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
-                                cellContent = '<span class="cell-label">' + label + '</span>';
+                                cellContent = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
                             }
                         }
 
-                        tableHtml += '<td class="planning-cell ' + cellClass + '">' + cellContent + '</td>';
+                        // Store reservation data for click handlers
+                        var clickHandler = '';
+                        if (res && res.players && res.players.some(function (p) { return p && p.trim(); })) {
+                            // Store reservation in global object for later retrieval
+                            if (!window.reservationsCache) window.reservationsCache = {};
+                            var cacheKey = court.id + '_' + time;
+                            window.reservationsCache[cacheKey] = res;
+                            clickHandler = ' onclick="showPaymentModal(\'' + court.id + '\', \'' + time + '\', window.reservationsCache[\'' + cacheKey + '\'])" style="cursor:pointer;"';
+                        }
+
+                        tableHtml += '<tr>';
+                        tableHtml += '<td class="time-column">' + time + '</td>';
+                        tableHtml += '<td class="activity-cell clickable-cell ' + cellClass + '"' + clickHandler + '>' + cellContent + '</td>';
+                        tableHtml += '</tr>';
                     }
 
-                    tableHtml += '</tr>';
-                }
+                    tableHtml += '</tbody>';
+                    mobileTable.innerHTML = tableHtml;
 
-                tableHtml += '</tbody></table>';
-                if (container) {
-                    container.innerHTML = tableHtml;
-                }
 
-                document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-                // Generate QR code
-                generateQRCode();
-
-                // Also render mobile version
-                populateMobileCourtSelector();
-                renderMobilePlanning();
-            } catch (e) {
-                console.error('Error rendering planning:', e);
-                var errorContainer = document.getElementById('planning-grid');
-                if (errorContainer) {
-                    errorContainer.innerHTML = '<p style="color:red;padding:20px;">Errore: ' + e.message + '</p>';
+                } catch (e) {
+                    console.error('Error rendering mobile planning:', e);
                 }
             }
-        }
 
-        // Populate mobile court selector dropdown
-        function populateMobileCourtSelector() {
-            var season = document.getElementById('season-select').value;
-            var courts = Courts.getAvailable(season);
-            var select = document.getElementById('mobile-court-select');
 
-            if (!select || !courts || courts.length === 0) return;
+            // Initialize with Firebase support
+            async function init() {
+                // If Firebase is connected, load data first and subscribe to changes
+                if (Storage.isFirebaseConnected()) {
+                    console.log('🔄 Public view: caricamento dati da Firebase...');
+                    await Storage.loadFromFirebase(Storage.KEYS.COURTS);
+                    await Storage.loadFromFirebase(Storage.KEYS.PLANNING_TEMPLATES);
+                    await Storage.loadFromFirebase(Storage.KEYS.QR_CONFIG);
 
-            var currentValue = select.value;
-            select.innerHTML = '';
+                    // Subscribe to real-time updates
+                    Storage.subscribe(Storage.KEYS.COURTS, () => {
+                        console.log('📡 Aggiornamento campi ricevuto');
+                        renderPlanning();
+                    });
+                    Storage.subscribe(Storage.KEYS.PLANNING_TEMPLATES, () => {
+                        console.log('📡 Aggiornamento templates ricevuto');
+                        renderPlanning();
+                    });
+                    Storage.subscribe(Storage.KEYS.QR_CONFIG, () => {
+                        console.log('📡 Aggiornamento configurazione QR ricevuto');
+                    });
 
-            courts.forEach(function (court, index) {
-                var option = document.createElement('option');
-                option.value = court.id;
-                option.textContent = court.name;
-                if (court.id === currentValue || (!currentValue && index === 0)) {
-                    option.selected = true;
+                    console.log('✅ Public view: sottoscritto a aggiornamenti real-time');
                 }
-                select.appendChild(option);
+
+                // Initial render
+                renderPlanning();
+            }
+
+            // Start initialization
+            init();
+
+            // Auto-refresh every 30 seconds (as backup for non-Firebase mode)
+            setInterval(function () {
+                if (!Storage.isFirebaseConnected()) {
+                    renderPlanning();
+                }
+            }, 30000);
+
+            // Real-time update when admin makes changes (localStorage events for non-Firebase mode)
+            window.addEventListener('storage', function (event) {
+                if (event.key === 'tennis_courts' || event.key === 'planning_templates') {
+                    console.log('Detected change from admin, updating...');
+                    renderPlanning();
+                }
             });
-        }
+        </script>
+    </div> <!-- Close public-content -->
 
-        // Render mobile vertical table for selected court
-        function renderMobilePlanning() {
+    <!-- Public View Authentication Script -->
+    <script>
+        // Check if public password is required
+        function checkPublicAuth() {
             try {
-                var season = document.getElementById('season-select').value;
-                var dateStr = formatDateISO(currentDate);
-                var dayName = Matching.getDayNameFromDate(dateStr);
-
-                var courts = Courts.getAvailable(season);
-                var mobileTable = document.getElementById('mobile-planning-table');
-                var select = document.getElementById('mobile-court-select');
-
-                if (!mobileTable || !courts || courts.length === 0) return;
-
-                var selectedCourtId = select.value;
-                var court = courts.find(function (c) { return c.id === selectedCourtId; });
-
-                if (!court) {
-                    court = courts[0];
-                }
-
-                var planningTemplates = Storage.load('planning_templates', {}) || {};
-                var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
-                var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-                var times = dayTemplate[court.id] || defaultTimes;
-
-                var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
-
-                var tableHtml = '<colgroup><col style="width:75px"><col style="width:auto"></colgroup>';
-                tableHtml += '<tbody>';
-                tableHtml += '<tr><th colspan="2" style="background:#2d8a4e;color:#fff;font-size:1.1rem;padding:12px;">' + court.name + '</th></tr>';
-
-                for (var t = 0; t < times.length; t++) {
-                    var time = times[t];
-                    var standardizedTime = time.replace('.', ':');
-                    var nextTime = times[t + 1] || Matching.addTime(standardizedTime, 60);
-                    var standardizedNextTime = nextTime.replace('.', ':');
-
-                    var res = null;
-                    if (court.reservations) {
-                        for (var r = 0; r < court.reservations.length; r++) {
-                            var reservation = court.reservations[r];
-                            if (reservation.date === dateStr && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
-                                res = reservation;
-                                break;
-                            }
-                        }
-                        if (!res) {
-                            for (var r = 0; r < court.reservations.length; r++) {
-                                var reservation = court.reservations[r];
-                                if (!reservation.date && reservation.day === dayName && standardizedTime < reservation.to && standardizedNextTime > reservation.from) {
-                                    res = reservation;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    var cellClass = 'activity-free';
-                    var cellContent = '-';
-
-                    if (res) {
-                        if (res.players && res.players.some(function (p) { return p; })) {
-                            var filledPlayers = res.players.filter(function (p) { return p && p.trim(); });
-                            var hasOnlyFirst = res.players[0] && !res.players[1] && !res.players[2] && !res.players[3];
-                            var firstPlayerLower = (res.players[0] || '').toLowerCase();
-                            var isActivity = activityLabels.indexOf(firstPlayerLower) !== -1;
-
-                            // Helper to check if player at index has paid
-                            var playerHasPaid = function (idx) {
-                                return res.paid && res.paid[idx] && res.paid[idx] > 0;
-                            };
-
-                            // Helper to get full player name with green if paid
-                            var getPlayerNameStyledMobile = function (name, idx) {
-                                if (!name || !name.trim()) return '';
-                                if (playerHasPaid(idx)) {
-                                    return '<span style="color:#22c55e;font-weight:600;">' + name + '</span>';
-                                }
-                                return '<span>' + name + '</span>';
-                            };
-
-                            if (hasOnlyFirst && isActivity) {
-                                cellClass = 'activity-' + firstPlayerLower;
-                                cellContent = res.players[0];
-                            } else if (hasOnlyFirst) {
-                                cellClass = 'activity-single-player';
-                                cellContent = playerHasPaid(0) ?
-                                    '<span style="color:#22c55e;font-weight:600;">' + res.players[0] + '</span>' :
-                                    res.players[0];
-                            } else {
-                                cellClass = 'activity-players';
-                                // Show each player with their original index for payment check
-                                var playerHtmls = [];
-                                for (var i = 0; i < res.players.length; i++) {
-                                    if (res.players[i] && res.players[i].trim()) {
-                                        playerHtmls.push(getPlayerNameStyledMobile(res.players[i], i));
-                                    }
-                                }
-                                cellContent = playerHtmls.join('<br>');
-                            }
+                const storedPasswords = localStorage.getItem('app_passwords');
+                if (storedPasswords) {
+                    const passwords = JSON.parse(storedPasswords);
+                    // If public password is set, require login
+                    if (passwords.public && passwords.public.trim() !== '') {
+                        // Check if already logged in
+                        if (sessionStorage.getItem('public_logged_in') === 'true') {
+                            showPublicContent();
                         } else {
-                            cellClass = 'activity-' + (res.type || 'reserved');
-                            cellContent = res.label || (res.type ? res.type.toUpperCase() : 'Prenotato');
+                            // Show login overlay
+                            document.getElementById('public-login-overlay').style.display = 'flex';
+                            document.getElementById('public-content').style.display = 'none';
                         }
+                        return;
                     }
-
-                    // Store reservation data for click handlers
-                    var clickHandler = '';
-                    if (res && res.players && res.players.some(function (p) { return p && p.trim(); })) {
-                        // Store reservation in global object for later retrieval
-                        if (!window.reservationsCache) window.reservationsCache = {};
-                        var cacheKey = court.id + '_' + time;
-                        window.reservationsCache[cacheKey] = res;
-                        clickHandler = ' onclick="showPaymentModal(\'' + court.id + '\', \'' + time + '\', window.reservationsCache[\'' + cacheKey + '\'])" style="cursor:pointer;"';
-                    }
-
-                    tableHtml += '<tr>';
-                    tableHtml += '<td class="time-column">' + time + '</td>';
-                    tableHtml += '<td class="activity-cell clickable-cell ' + cellClass + '"' + clickHandler + '>' + cellContent + '</td>';
-                    tableHtml += '</tr>';
                 }
-
-                tableHtml += '</tbody>';
-                mobileTable.innerHTML = tableHtml;
-
-
-
             } catch (e) {
-                console.error('Error rendering mobile planning:', e);
+                console.warn('Could not check public password:', e);
             }
+            // No password required, show content directly
+            showPublicContent();
         }
 
+        function checkPublicPassword() {
+            const input = document.getElementById('public-password');
+            const error = document.getElementById('public-login-error');
 
-        // Initialize with Firebase support
-        async function init() {
-            // If Firebase is connected, load data first and subscribe to changes
-            if (Storage.isFirebaseConnected()) {
-                console.log('🔄 Public view: caricamento dati da Firebase...');
-                await Storage.loadFromFirebase(Storage.KEYS.COURTS);
-                await Storage.loadFromFirebase(Storage.KEYS.PLANNING_TEMPLATES);
-                await Storage.loadFromFirebase(Storage.KEYS.QR_CONFIG);
-
-                // Subscribe to real-time updates
-                Storage.subscribe(Storage.KEYS.COURTS, () => {
-                    console.log('📡 Aggiornamento campi ricevuto');
-                    renderPlanning();
-                });
-                Storage.subscribe(Storage.KEYS.PLANNING_TEMPLATES, () => {
-                    console.log('📡 Aggiornamento templates ricevuto');
-                    renderPlanning();
-                });
-                Storage.subscribe(Storage.KEYS.QR_CONFIG, () => {
-                    console.log('📡 Aggiornamento configurazione QR ricevuto');
-                });
-
-                console.log('✅ Public view: sottoscritto a aggiornamenti real-time');
+            try {
+                const storedPasswords = localStorage.getItem('app_passwords');
+                if (storedPasswords) {
+                    const passwords = JSON.parse(storedPasswords);
+                    if (input.value === passwords.public) {
+                        sessionStorage.setItem('public_logged_in', 'true');
+                        showPublicContent();
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error checking password:', e);
             }
 
-            // Initial render
-            renderPlanning();
+            error.style.display = 'block';
+            input.value = '';
+            input.focus();
         }
 
-        // Start initialization
-        init();
+        function showPublicContent() {
+            document.getElementById('public-login-overlay').style.display = 'none';
+            document.getElementById('public-content').style.display = 'block';
+        }
 
-        // Auto-refresh every 30 seconds (as backup for non-Firebase mode)
-        setInterval(function () {
-            if (!Storage.isFirebaseConnected()) {
-                renderPlanning();
-            }
-        }, 30000);
-
-        // Real-time update when admin makes changes (localStorage events for non-Firebase mode)
-        window.addEventListener('storage', function (event) {
-            if (event.key === 'tennis_courts' || event.key === 'planning_templates') {
-                console.log('Detected change from admin, updating...');
-                renderPlanning();
-            }
-        });
+        // Check auth on page load
+        window.addEventListener('DOMContentLoaded', checkPublicAuth);
     </script>
 </body>
 

@@ -92,6 +92,9 @@ const App = {
 
         // Initialize weekly default times UI
         this.initWeeklyTimesUI();
+
+        // Load passwords into form
+        this.loadPasswords();
     },
 
     loadSettings() {
@@ -286,6 +289,54 @@ const App = {
         }
     },
 
+    // ============ PASSWORD MANAGEMENT ============
+
+    // Toggle password visibility
+    togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+    },
+
+    // Save all passwords
+    savePasswords() {
+        const adminPwd = document.getElementById('password-admin')?.value.trim();
+        const bookingPwd = document.getElementById('password-booking')?.value.trim();
+        const publicPwd = document.getElementById('password-public')?.value.trim();
+
+        const passwords = {
+            admin: adminPwd || 'tennis', // Default to 'tennis' if empty
+            booking: bookingPwd || null,
+            public: publicPwd || null
+        };
+
+        Storage.save(Storage.KEYS.PASSWORDS, passwords);
+        alert('✅ Password salvate con successo!');
+        console.log('🔐 Password salvate');
+    },
+
+    // Load passwords into form
+    loadPasswords() {
+        const defaultPasswords = { admin: 'tennis', booking: null, public: null };
+        const passwords = Storage.load(Storage.KEYS.PASSWORDS, defaultPasswords);
+
+        const adminInput = document.getElementById('password-admin');
+        const bookingInput = document.getElementById('password-booking');
+        const publicInput = document.getElementById('password-public');
+
+        if (adminInput) adminInput.value = passwords.admin || '';
+        if (bookingInput) bookingInput.value = passwords.booking || '';
+        if (publicInput) publicInput.value = passwords.public || '';
+    },
+
+    // Get password for a specific section
+    getPassword(section) {
+        const defaultPasswords = { admin: 'tennis', booking: null, public: null };
+        const passwords = Storage.load(Storage.KEYS.PASSWORDS, defaultPasswords);
+        return passwords[section] || defaultPasswords[section];
+    },
+
     // ============ WEEKLY DEFAULT TIMES ============
     selectedWeeklyDay: 'lunedi',
     weeklyDefaultTimes: {},
@@ -300,7 +351,7 @@ const App = {
         select.innerHTML = courts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
         // Load saved weekly times
-        this.weeklyDefaultTimes = Storage.load('weekly_default_times', {}) || {};
+        this.weeklyDefaultTimes = Storage.load(Storage.KEYS.WEEKLY_TIMES, {}) || {};
 
         // Render initial UI
         this.renderWeeklyTimesUI();
@@ -411,7 +462,7 @@ const App = {
         this.weeklyDefaultTimes[courtId][day] = times;
 
         // Save to storage
-        Storage.save('weekly_default_times', this.weeklyDefaultTimes);
+        Storage.save(Storage.KEYS.WEEKLY_TIMES, this.weeklyDefaultTimes);
 
         alert(`✅ Orari di ${day} salvati per il campo selezionato!`);
     },
@@ -451,7 +502,7 @@ const App = {
         });
 
         // Save to storage
-        Storage.save('weekly_default_times', this.weeklyDefaultTimes);
+        Storage.save(Storage.KEYS.WEEKLY_TIMES, this.weeklyDefaultTimes);
 
         alert('✅ Orari copiati a tutti i giorni della settimana!');
     },
@@ -471,7 +522,7 @@ const App = {
         const dayNames = ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
         const dayName = dayNames[date.getDay()];
 
-        const weeklyTimes = Storage.load('weekly_default_times', {}) || {};
+        const weeklyTimes = Storage.load(Storage.KEYS.WEEKLY_TIMES, {}) || {};
         if (weeklyTimes[courtId] && weeklyTimes[courtId][dayName]) {
             return weeklyTimes[courtId][dayName];
         }
