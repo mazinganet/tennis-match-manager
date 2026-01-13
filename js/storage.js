@@ -168,7 +168,9 @@ const Storage = {
                 this.loadFromFirebase(this.KEYS.SCHEDULED, []),
                 this.loadFromFirebase(this.KEYS.SETTINGS, {}),
                 this.loadFromFirebase(this.KEYS.PLANNING_TEMPLATES, {}),
-                this.loadFromFirebase(this.KEYS.COURT_RATES, {})
+                this.loadFromFirebase(this.KEYS.COURT_RATES, {}),
+                this.loadFromFirebase(this.KEYS.WEEKLY_TIMES, {}),
+                this.loadFromFirebase(this.KEYS.PASSWORDS, {})
             ]);
             console.log('✅ [INIT] Data loaded from Firebase');
             console.log('📊 [INIT] Players in cache:', this.cache[this.KEYS.PLAYERS]?.length || 0);
