@@ -7,6 +7,187 @@ const App = {
     currentProposals: [],
     currentPlanningDate: new Date(), // Start of the week displayed in planning
     activePlayerSlot: 1, // Slot attivo per inserimento giocatore (1-4)
+    dragData: null, // Data for drag and drop operations
+
+    // ============ DRAG AND DROP FUNCTIONS ============
+
+    // Handle drag start - store the reservation data being dragged
+    handleDragStart(e) {
+        const cell = e.target.closest('.planning-activity-cell, .vertical-activity-cell');
+        if (!cell) return;
+
+        const courtId = cell.dataset.court;
+        const time = cell.dataset.time;
+        const dateStr = this.formatDateISO(this.currentPlanningDate);
+
+        // Find the reservation for this cell
+        const court = Courts.getById(courtId);
+        if (!court?.reservations) return;
+
+        const dayName = Matching.getDayNameFromDate(dateStr);
+        const reservation = court.reservations.find(r => {
+            if (r.date === dateStr) {
+                return time >= r.from && time < r.to;
+            }
+            return !r.date && r.day === dayName && time >= r.from && time < r.to;
+        });
+
+        if (!reservation) {
+            e.preventDefault();
+            return;
+        }
+
+        // Store drag data
+        this.dragData = {
+            sourceCourtId: courtId,
+            sourceTime: time,
+            sourceDateStr: dateStr,
+            reservation: { ...reservation }
+        };
+
+        // Add dragging class
+        cell.classList.add('dragging');
+
+        // Set drag effect
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', JSON.stringify({
+            courtId, time, dateStr
+        }));
+    },
+
+    // Handle drag over - allow dropping
+    handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    },
+
+    // Handle drag enter - add visual feedback
+    handleDragEnter(e) {
+        e.preventDefault();
+        const cell = e.target.closest('.planning-activity-cell, .vertical-activity-cell');
+        if (cell && this.dragData) {
+            cell.classList.add('drag-over');
+        }
+    },
+
+    // Handle drag leave - remove visual feedback
+    handleDragLeave(e) {
+        const cell = e.target.closest('.planning-activity-cell, .vertical-activity-cell');
+        if (cell) {
+            cell.classList.remove('drag-over');
+        }
+    },
+
+    // Handle drop - move the reservation to the new cell
+    handleDrop(e) {
+        e.preventDefault();
+
+        const targetCell = e.target.closest('.planning-activity-cell, .vertical-activity-cell');
+        if (!targetCell || !this.dragData) return;
+
+        const targetCourtId = targetCell.dataset.court;
+        const targetTime = targetCell.dataset.time;
+        const targetIndex = parseInt(targetCell.dataset.index);
+
+        // Same cell - no action needed
+        if (targetCourtId === this.dragData.sourceCourtId &&
+            targetTime === this.dragData.sourceTime) {
+            this.handleDragEnd(e);
+            return;
+        }
+
+        // Get the planning templates to calculate the new time range
+        const dateStr = this.dragData.sourceDateStr;
+        const targetCourt = Courts.getById(targetCourtId);
+        const sourceCourt = Courts.getById(this.dragData.sourceCourtId);
+
+        if (!targetCourt) {
+            this.handleDragEnd(e);
+            return;
+        }
+
+        // Get times for the target court
+        const times = this.getDefaultTimesForDate(dateStr, targetCourtId);
+        const nextTime = times[targetIndex + 1] || Matching.addTime(targetTime, 60);
+
+        // Calculate duration of original reservation (preserve it)
+        const origRes = this.dragData.reservation;
+        const origDurationMs = this.timeToMinutes(origRes.to) - this.timeToMinutes(origRes.from);
+        const newEndTime = this.minutesToTime(this.timeToMinutes(targetTime) + origDurationMs);
+
+        // 1. Remove the old reservation from the source court
+        if (sourceCourt?.reservations) {
+            const dayName = Matching.getDayNameFromDate(dateStr);
+            sourceCourt.reservations = sourceCourt.reservations.filter(r => {
+                if (r.date === dateStr) {
+                    return !(this.dragData.sourceTime >= r.from && this.dragData.sourceTime < r.to);
+                }
+                if (!r.date && r.day === dayName) {
+                    return !(this.dragData.sourceTime >= r.from && this.dragData.sourceTime < r.to);
+                }
+                return true;
+            });
+        }
+
+        // 2. Remove any existing reservation at the target location (overwrite)
+        const dayName = Matching.getDayNameFromDate(dateStr);
+        if (!targetCourt.reservations) targetCourt.reservations = [];
+        targetCourt.reservations = targetCourt.reservations.filter(r => {
+            if (r.date === dateStr) {
+                // Check for any overlap with target slot
+                return !(targetTime < r.to && newEndTime > r.from);
+            }
+            if (!r.date && r.day === dayName) {
+                return !(targetTime < r.to && newEndTime > r.from);
+            }
+            return true;
+        });
+
+        // 3. Create the new reservation at target location
+        const newReservation = {
+            ...origRes,
+            day: dayName,
+            date: dateStr,
+            from: targetTime,
+            to: newEndTime
+        };
+
+        targetCourt.reservations.push(newReservation);
+
+        // 4. Save all courts
+        Courts.save();
+
+        // 5. Cleanup and re-render
+        this.handleDragEnd(e);
+        this.renderPlanning();
+
+        console.log(`[DRAG] Prenotazione spostata da ${this.dragData.sourceCourtId}@${this.dragData.sourceTime} a ${targetCourtId}@${targetTime}`);
+    },
+
+    // Handle drag end - cleanup
+    handleDragEnd(e) {
+        // Remove all drag classes
+        document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+        // Clear drag data
+        this.dragData = null;
+    },
+
+    // Helper: Convert time string "HH:MM" to minutes
+    timeToMinutes(time) {
+        if (!time) return 0;
+        const [h, m] = time.replace('.', ':').split(':').map(Number);
+        return h * 60 + (m || 0);
+    },
+
+    // Helper: Convert minutes back to time string "HH:MM"
+    minutesToTime(mins) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    },
+
 
     // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion issues)
     formatDateISO(date) {
@@ -1073,10 +1254,15 @@ const App = {
                     dataPlayersAttr = `data-players="${names.replace(/"/g, '&quot;')}"`;
                 }
 
+                // Determine if cell is draggable (has a reservation)
+                const isDraggable = isReserved && res;
+                const draggableAttr = isDraggable ? 'draggable="true"' : '';
+
                 tableHtml += `
                     <td class="planning-cell">
                         <div class="planning-activity-cell ${statusClass}" 
                              data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
+                             ${draggableAttr}
                              ${dataPlayersAttr}>
                             ${playersHtml}
                         </div>
@@ -1093,6 +1279,14 @@ const App = {
         // Bind events
         container.querySelectorAll('.planning-activity-cell').forEach(cell => {
             cell.addEventListener('click', (e) => this.handlePlanningAction(e));
+
+            // Drag and drop events
+            cell.addEventListener('dragstart', (e) => this.handleDragStart(e));
+            cell.addEventListener('dragover', (e) => this.handleDragOver(e));
+            cell.addEventListener('dragenter', (e) => this.handleDragEnter(e));
+            cell.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            cell.addEventListener('drop', (e) => this.handleDrop(e));
+            cell.addEventListener('dragend', (e) => this.handleDragEnd(e));
 
             // Magnifying glass popup on hover
             cell.addEventListener('mouseenter', (e) => {
@@ -1333,11 +1527,16 @@ const App = {
                     cellContent = res.label || res.type?.toUpperCase() || 'Prenotato';
                 }
 
+                // Determine if cell is draggable (has a reservation)
+                const isDraggable = !!res;
+                const draggableAttr = isDraggable ? 'draggable="true"' : '';
+
                 rowsHtml += `
                     <tr style="height: 32px; font-family: 'Roboto Condensed', Arial Narrow, sans-serif;">
                         <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: middle; background: #374151; color: #fff; width: 45px;">${time}</td>
                         <td class="vertical-activity-cell" style="border: 1px solid #000; padding: 2px 6px; ${cellStyle} text-align: left; vertical-align: middle; cursor: pointer;"
                             data-court="${court.id}" data-time="${standardizedTime}" data-index="${index}"
+                            ${draggableAttr}
                             onclick="App.handlePlanningAction(event)">${cellContent}</td>
                         <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff; width: 40px;">${quotaCol}</td>
                         <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; vertical-align: middle; background: #374151; color: #fff; width: 40px;">${paidCol}</td>
@@ -1366,6 +1565,16 @@ const App = {
 
         html += '</div>';
         container.innerHTML = html;
+
+        // Bind drag and drop events for vertical planning cells
+        container.querySelectorAll('.vertical-activity-cell').forEach(cell => {
+            cell.addEventListener('dragstart', (e) => this.handleDragStart(e));
+            cell.addEventListener('dragover', (e) => this.handleDragOver(e));
+            cell.addEventListener('dragenter', (e) => this.handleDragEnter(e));
+            cell.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            cell.addEventListener('drop', (e) => this.handleDrop(e));
+            cell.addEventListener('dragend', (e) => this.handleDragEnd(e));
+        });
     },
 
     // Populate the mobile court selector dropdown

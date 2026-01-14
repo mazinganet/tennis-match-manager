@@ -3132,3 +3132,30 @@ body {
 .non-admin-mode .non-admin-only {
     display: flex !important;
 }
+
+/* ===== Drag and Drop Styles ===== */
+/* Cells with reservations that can be dragged */
+.planning-activity-cell[draggable="true"],
+.vertical-activity-cell[draggable="true"] {
+    cursor: grab;
+}
+
+.planning-activity-cell[draggable="true"]:active,
+.vertical-activity-cell[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* Visual feedback when dragging */
+.planning-activity-cell.dragging,
+.vertical-activity-cell.dragging {
+    opacity: 0.5;
+    box-shadow: 0 0 10px rgba(45, 138, 78, 0.5);
+}
+
+/* Visual feedback for drop target */
+.planning-activity-cell.drag-over,
+.vertical-activity-cell.drag-over {
+    outline: 3px dashed var(--primary);
+    outline-offset: -3px;
+    background-color: rgba(45, 138, 78, 0.2) !important;
+}
