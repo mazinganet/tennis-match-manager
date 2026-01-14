@@ -89,67 +89,23 @@ const App = {
         const targetTime = targetCell.dataset.time;
         const targetIndex = parseInt(targetCell.dataset.index);
 
-        // Same cell - no action needed
-        if (targetCourtId === this.dragData.sourceCourtId &&
-            targetTime === this.dragData.sourceTime) {
-            this.handleDragEnd(e);
-            return;
-        }
-
-        // Get the planning templates to calculate the new time range
         const dateStr = this.dragData.sourceDateStr;
         const sourceCourtId = this.dragData.sourceCourtId;
         const sourceTime = this.dragData.sourceTime;
         const origRes = this.dragData.reservation;
+        const dayName = Matching.getDayNameFromDate(dateStr);
 
-        // Get fresh court data
-        const targetCourt = Courts.getById(targetCourtId);
-        const sourceCourt = Courts.getById(sourceCourtId);
-
-        if (!targetCourt) {
+        // Same cell - no action needed
+        if (targetCourtId === sourceCourtId && targetTime === sourceTime) {
             this.handleDragEnd(e);
             return;
         }
 
-        // Get times for the target court
-        const times = this.getDefaultTimesForDate(dateStr, targetCourtId);
-        const nextTime = times[targetIndex + 1] || Matching.addTime(targetTime, 60);
+        // Calculate new end time preserving original duration
+        const origDuration = this.timeToMinutes(origRes.to) - this.timeToMinutes(origRes.from);
+        const newEndTime = this.minutesToTime(this.timeToMinutes(targetTime) + origDuration);
 
-        // Calculate duration of original reservation (preserve it)
-        const origDurationMs = this.timeToMinutes(origRes.to) - this.timeToMinutes(origRes.from);
-        const newEndTime = this.minutesToTime(this.timeToMinutes(targetTime) + origDurationMs);
-
-        const dayName = Matching.getDayNameFromDate(dateStr);
-
-        // 1. Remove the old reservation from the source court
-        if (sourceCourt) {
-            let sourceReservations = sourceCourt.reservations || [];
-            sourceReservations = sourceReservations.filter(r => {
-                if (r.date === dateStr) {
-                    return !(sourceTime >= r.from && sourceTime < r.to);
-                }
-                if (!r.date && r.day === dayName) {
-                    return !(sourceTime >= r.from && sourceTime < r.to);
-                }
-                return true;
-            });
-            Courts.update(sourceCourtId, { reservations: sourceReservations });
-        }
-
-        // 2. Remove any existing reservation at the target location (overwrite) and add new one
-        let targetReservations = targetCourt.reservations || [];
-        targetReservations = targetReservations.filter(r => {
-            if (r.date === dateStr) {
-                // Check for any overlap with target slot
-                return !(targetTime < r.to && newEndTime > r.from);
-            }
-            if (!r.date && r.day === dayName) {
-                return !(targetTime < r.to && newEndTime > r.from);
-            }
-            return true;
-        });
-
-        // 3. Create the new reservation at target location
+        // Create the new reservation object
         const newReservation = {
             ...origRes,
             day: dayName,
@@ -158,12 +114,65 @@ const App = {
             to: newEndTime
         };
 
-        targetReservations.push(newReservation);
-        Courts.update(targetCourtId, { reservations: targetReservations });
+        // Use exact from/to matching to identify the original reservation
+        const matchesOriginal = (r) => {
+            return r.from === origRes.from && r.to === origRes.to &&
+                ((r.date === dateStr) || (!r.date && r.day === dayName));
+        };
 
-        console.log(`[DRAG] Prenotazione spostata da ${sourceCourtId}@${sourceTime} a ${targetCourtId}@${targetTime}`);
+        // Check if overlap with target slot (for overwrite)
+        const overlapsTarget = (r) => {
+            const matchDate = (r.date === dateStr) || (!r.date && r.day === dayName);
+            if (!matchDate) return false;
+            return targetTime < r.to && newEndTime > r.from;
+        };
 
-        // 4. Cleanup and re-render
+        if (sourceCourtId === targetCourtId) {
+            // Same court - work on a single array to avoid stale data issues
+            const court = Courts.getById(sourceCourtId);
+            if (!court) {
+                this.handleDragEnd(e);
+                return;
+            }
+
+            let reservations = court.reservations || [];
+
+            // Remove the original reservation
+            reservations = reservations.filter(r => !matchesOriginal(r));
+
+            // Remove any reservation that overlaps with target (for overwrite)
+            reservations = reservations.filter(r => !overlapsTarget(r));
+
+            // Add the new reservation
+            reservations.push(newReservation);
+
+            Courts.update(sourceCourtId, { reservations });
+        } else {
+            // Different courts - update source first, then target
+            const sourceCourt = Courts.getById(sourceCourtId);
+            if (sourceCourt) {
+                let sourceReservations = sourceCourt.reservations || [];
+                sourceReservations = sourceReservations.filter(r => !matchesOriginal(r));
+                Courts.update(sourceCourtId, { reservations: sourceReservations });
+            }
+
+            // Get fresh target court data AFTER source update
+            const targetCourt = Courts.getById(targetCourtId);
+            if (!targetCourt) {
+                this.handleDragEnd(e);
+                return;
+            }
+
+            let targetReservations = targetCourt.reservations || [];
+            // Remove any overlapping reservation at target (overwrite)
+            targetReservations = targetReservations.filter(r => !overlapsTarget(r));
+            targetReservations.push(newReservation);
+            Courts.update(targetCourtId, { reservations: targetReservations });
+        }
+
+        console.log(`[DRAG] Prenotazione spostata da ${sourceCourtId}@${origRes.from}-${origRes.to} a ${targetCourtId}@${targetTime}-${newEndTime}`);
+
+        // Cleanup and re-render
         this.handleDragEnd(e);
         this.renderPlanning();
     },
