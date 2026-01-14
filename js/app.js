@@ -86,23 +86,37 @@ const App = {
         if (!targetCell || !this.dragData) return;
 
         const targetCourtId = targetCell.dataset.court;
-        const targetTime = targetCell.dataset.time;
+        const targetTime = this.normalizeTime(targetCell.dataset.time);
         const targetIndex = parseInt(targetCell.dataset.index);
 
         const dateStr = this.dragData.sourceDateStr;
         const sourceCourtId = this.dragData.sourceCourtId;
-        const sourceTime = this.dragData.sourceTime;
         const origRes = this.dragData.reservation;
         const dayName = Matching.getDayNameFromDate(dateStr);
 
+        // Normalize the original reservation times for comparison
+        const origFrom = this.normalizeTime(origRes.from);
+        const origTo = this.normalizeTime(origRes.to);
+
+        console.log('[DRAG DEBUG] Starting drop:', {
+            sourceCourtId,
+            targetCourtId,
+            origFrom,
+            origTo,
+            targetTime,
+            dateStr,
+            dayName
+        });
+
         // Same cell - no action needed
-        if (targetCourtId === sourceCourtId && targetTime === sourceTime) {
+        if (targetCourtId === sourceCourtId && targetTime === origFrom) {
+            console.log('[DRAG DEBUG] Same cell, aborting');
             this.handleDragEnd(e);
             return;
         }
 
         // Calculate new end time preserving original duration
-        const origDuration = this.timeToMinutes(origRes.to) - this.timeToMinutes(origRes.from);
+        const origDuration = this.timeToMinutes(origTo) - this.timeToMinutes(origFrom);
         const newEndTime = this.minutesToTime(this.timeToMinutes(targetTime) + origDuration);
 
         // Create the new reservation object
@@ -114,17 +128,22 @@ const App = {
             to: newEndTime
         };
 
-        // Use exact from/to matching to identify the original reservation
+        // Use normalized time matching to identify the original reservation
         const matchesOriginal = (r) => {
-            return r.from === origRes.from && r.to === origRes.to &&
-                ((r.date === dateStr) || (!r.date && r.day === dayName));
+            const rFrom = this.normalizeTime(r.from);
+            const rTo = this.normalizeTime(r.to);
+            const timesMatch = rFrom === origFrom && rTo === origTo;
+            const dateMatch = (r.date === dateStr) || (!r.date && r.day === dayName);
+            return timesMatch && dateMatch;
         };
 
         // Check if overlap with target slot (for overwrite)
         const overlapsTarget = (r) => {
             const matchDate = (r.date === dateStr) || (!r.date && r.day === dayName);
             if (!matchDate) return false;
-            return targetTime < r.to && newEndTime > r.from;
+            const rFrom = this.normalizeTime(r.from);
+            const rTo = this.normalizeTime(r.to);
+            return targetTime < rTo && newEndTime > rFrom;
         };
 
         if (sourceCourtId === targetCourtId) {
@@ -136,15 +155,21 @@ const App = {
             }
 
             let reservations = court.reservations || [];
+            console.log('[DRAG DEBUG] Same court, reservations before:', reservations.length);
 
             // Remove the original reservation
+            const beforeRemove = reservations.length;
             reservations = reservations.filter(r => !matchesOriginal(r));
+            console.log('[DRAG DEBUG] After removing original:', beforeRemove, '->', reservations.length);
 
             // Remove any reservation that overlaps with target (for overwrite)
+            const beforeOverwrite = reservations.length;
             reservations = reservations.filter(r => !overlapsTarget(r));
+            console.log('[DRAG DEBUG] After removing overlaps:', beforeOverwrite, '->', reservations.length);
 
             // Add the new reservation
             reservations.push(newReservation);
+            console.log('[DRAG DEBUG] After adding new:', reservations.length);
 
             Courts.update(sourceCourtId, { reservations });
         } else {
@@ -152,7 +177,10 @@ const App = {
             const sourceCourt = Courts.getById(sourceCourtId);
             if (sourceCourt) {
                 let sourceReservations = sourceCourt.reservations || [];
+                console.log('[DRAG DEBUG] Source court reservations before:', sourceReservations.length);
+                const beforeRemove = sourceReservations.length;
                 sourceReservations = sourceReservations.filter(r => !matchesOriginal(r));
+                console.log('[DRAG DEBUG] Source after removing:', beforeRemove, '->', sourceReservations.length);
                 Courts.update(sourceCourtId, { reservations: sourceReservations });
             }
 
@@ -164,13 +192,15 @@ const App = {
             }
 
             let targetReservations = targetCourt.reservations || [];
+            console.log('[DRAG DEBUG] Target court reservations before:', targetReservations.length);
             // Remove any overlapping reservation at target (overwrite)
             targetReservations = targetReservations.filter(r => !overlapsTarget(r));
             targetReservations.push(newReservation);
+            console.log('[DRAG DEBUG] Target after adding:', targetReservations.length);
             Courts.update(targetCourtId, { reservations: targetReservations });
         }
 
-        console.log(`[DRAG] Prenotazione spostata da ${sourceCourtId}@${origRes.from}-${origRes.to} a ${targetCourtId}@${targetTime}-${newEndTime}`);
+        console.log(`[DRAG] Prenotazione spostata da ${sourceCourtId}@${origFrom}-${origTo} a ${targetCourtId}@${targetTime}-${newEndTime}`);
 
         // Cleanup and re-render
         this.handleDragEnd(e);
@@ -199,6 +229,14 @@ const App = {
         const h = Math.floor(mins / 60);
         const m = mins % 60;
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    },
+
+    // Helper: Normalize time format to "HH:MM" (handles "10.30" -> "10:30", "9:00" -> "09:00")
+    normalizeTime(time) {
+        if (!time) return '00:00';
+        const normalized = time.replace('.', ':');
+        const [h, m] = normalized.split(':').map(Number);
+        return `${String(h || 0).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
     },
 
 
