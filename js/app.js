@@ -98,8 +98,13 @@ const App = {
 
         // Get the planning templates to calculate the new time range
         const dateStr = this.dragData.sourceDateStr;
+        const sourceCourtId = this.dragData.sourceCourtId;
+        const sourceTime = this.dragData.sourceTime;
+        const origRes = this.dragData.reservation;
+
+        // Get fresh court data
         const targetCourt = Courts.getById(targetCourtId);
-        const sourceCourt = Courts.getById(this.dragData.sourceCourtId);
+        const sourceCourt = Courts.getById(sourceCourtId);
 
         if (!targetCourt) {
             this.handleDragEnd(e);
@@ -111,28 +116,29 @@ const App = {
         const nextTime = times[targetIndex + 1] || Matching.addTime(targetTime, 60);
 
         // Calculate duration of original reservation (preserve it)
-        const origRes = this.dragData.reservation;
         const origDurationMs = this.timeToMinutes(origRes.to) - this.timeToMinutes(origRes.from);
         const newEndTime = this.minutesToTime(this.timeToMinutes(targetTime) + origDurationMs);
 
+        const dayName = Matching.getDayNameFromDate(dateStr);
+
         // 1. Remove the old reservation from the source court
-        if (sourceCourt?.reservations) {
-            const dayName = Matching.getDayNameFromDate(dateStr);
-            sourceCourt.reservations = sourceCourt.reservations.filter(r => {
+        if (sourceCourt) {
+            let sourceReservations = sourceCourt.reservations || [];
+            sourceReservations = sourceReservations.filter(r => {
                 if (r.date === dateStr) {
-                    return !(this.dragData.sourceTime >= r.from && this.dragData.sourceTime < r.to);
+                    return !(sourceTime >= r.from && sourceTime < r.to);
                 }
                 if (!r.date && r.day === dayName) {
-                    return !(this.dragData.sourceTime >= r.from && this.dragData.sourceTime < r.to);
+                    return !(sourceTime >= r.from && sourceTime < r.to);
                 }
                 return true;
             });
+            Courts.update(sourceCourtId, { reservations: sourceReservations });
         }
 
-        // 2. Remove any existing reservation at the target location (overwrite)
-        const dayName = Matching.getDayNameFromDate(dateStr);
-        if (!targetCourt.reservations) targetCourt.reservations = [];
-        targetCourt.reservations = targetCourt.reservations.filter(r => {
+        // 2. Remove any existing reservation at the target location (overwrite) and add new one
+        let targetReservations = targetCourt.reservations || [];
+        targetReservations = targetReservations.filter(r => {
             if (r.date === dateStr) {
                 // Check for any overlap with target slot
                 return !(targetTime < r.to && newEndTime > r.from);
@@ -152,16 +158,14 @@ const App = {
             to: newEndTime
         };
 
-        targetCourt.reservations.push(newReservation);
+        targetReservations.push(newReservation);
+        Courts.update(targetCourtId, { reservations: targetReservations });
 
-        // 4. Save all courts
-        Courts.save();
+        console.log(`[DRAG] Prenotazione spostata da ${sourceCourtId}@${sourceTime} a ${targetCourtId}@${targetTime}`);
 
-        // 5. Cleanup and re-render
+        // 4. Cleanup and re-render
         this.handleDragEnd(e);
         this.renderPlanning();
-
-        console.log(`[DRAG] Prenotazione spostata da ${this.dragData.sourceCourtId}@${this.dragData.sourceTime} a ${targetCourtId}@${targetTime}`);
     },
 
     // Handle drag end - cleanup
