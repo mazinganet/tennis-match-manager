@@ -25,24 +25,30 @@ const App = {
         if (!court?.reservations) return;
 
         const dayName = Matching.getDayNameFromDate(dateStr);
-        const reservation = court.reservations.find(r => {
-            if (r.date === dateStr) {
-                return time >= r.from && time < r.to;
+        // Find the reservation for this cell AND its index
+        let reservationIndex = -1;
+        const reservation = court.reservations.find((r, idx) => {
+            const matches = (r.date === dateStr)
+                ? (time >= r.from && time < r.to)
+                : (!r.date && r.day === dayName && time >= r.from && time < r.to);
+            if (matches) {
+                reservationIndex = idx;
             }
-            return !r.date && r.day === dayName && time >= r.from && time < r.to;
+            return matches;
         });
 
-        if (!reservation) {
+        if (!reservation || reservationIndex === -1) {
             e.preventDefault();
             return;
         }
 
-        // Store drag data
+        // Store drag data including the reservation index for unique identification
         this.dragData = {
             sourceCourtId: courtId,
             sourceTime: time,
             sourceDateStr: dateStr,
-            reservation: { ...reservation }
+            reservation: { ...reservation },
+            reservationIndex: reservationIndex
         };
 
         // Add dragging class
@@ -92,6 +98,7 @@ const App = {
         const dateStr = this.dragData.sourceDateStr;
         const sourceCourtId = this.dragData.sourceCourtId;
         const origRes = this.dragData.reservation;
+        const originalReservationIndex = this.dragData.reservationIndex;
         const dayName = Matching.getDayNameFromDate(dateStr);
 
         // Normalize the original reservation times for comparison
@@ -105,7 +112,8 @@ const App = {
             origTo,
             targetTime,
             dateStr,
-            dayName
+            dayName,
+            originalReservationIndex
         });
 
         // Same cell - no action needed
@@ -128,15 +136,6 @@ const App = {
             to: newEndTime
         };
 
-        // Use normalized time matching to identify the original reservation
-        const matchesOriginal = (r) => {
-            const rFrom = this.normalizeTime(r.from);
-            const rTo = this.normalizeTime(r.to);
-            const timesMatch = rFrom === origFrom && rTo === origTo;
-            const dateMatch = (r.date === dateStr) || (!r.date && r.day === dayName);
-            return timesMatch && dateMatch;
-        };
-
         // Check if overlap with target slot (for overwrite)
         const overlapsTarget = (r) => {
             const matchDate = (r.date === dateStr) || (!r.date && r.day === dayName);
@@ -157,10 +156,12 @@ const App = {
             let reservations = court.reservations || [];
             console.log('[DRAG DEBUG] Same court, reservations before:', reservations.length);
 
-            // Remove the original reservation
+            // Remove the original reservation by index (more reliable than matching)
             const beforeRemove = reservations.length;
-            reservations = reservations.filter(r => !matchesOriginal(r));
-            console.log('[DRAG DEBUG] After removing original:', beforeRemove, '->', reservations.length);
+            if (originalReservationIndex >= 0 && originalReservationIndex < reservations.length) {
+                reservations = reservations.filter((r, idx) => idx !== originalReservationIndex);
+            }
+            console.log('[DRAG DEBUG] After removing original by index:', beforeRemove, '->', reservations.length);
 
             // Remove any reservation that overlaps with target (for overwrite)
             const beforeOverwrite = reservations.length;
@@ -179,8 +180,11 @@ const App = {
                 let sourceReservations = sourceCourt.reservations || [];
                 console.log('[DRAG DEBUG] Source court reservations before:', sourceReservations.length);
                 const beforeRemove = sourceReservations.length;
-                sourceReservations = sourceReservations.filter(r => !matchesOriginal(r));
-                console.log('[DRAG DEBUG] Source after removing:', beforeRemove, '->', sourceReservations.length);
+                // Remove by index for reliable identification
+                if (originalReservationIndex >= 0 && originalReservationIndex < sourceReservations.length) {
+                    sourceReservations = sourceReservations.filter((r, idx) => idx !== originalReservationIndex);
+                }
+                console.log('[DRAG DEBUG] Source after removing by index:', beforeRemove, '->', sourceReservations.length);
                 Courts.update(sourceCourtId, { reservations: sourceReservations });
             }
 
