@@ -777,6 +777,31 @@
                 return days[date.getDay()];
             }
 
+            // Helper function to get default times for a specific date and court
+            // Uses weekly defaults as fallback, same logic as app.js
+            function getDefaultTimesForDate(dateStr, courtId) {
+                var hardcodedDefaults = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
+
+                // 1. First check if there are custom times for this specific date
+                var planningTemplates = Storage.load('planning_templates', {}) || {};
+                if (planningTemplates[dateStr] && planningTemplates[dateStr][courtId]) {
+                    return planningTemplates[dateStr][courtId];
+                }
+
+                // 2. Check weekly defaults for this day of week
+                var date = new Date(dateStr);
+                var dayNames = ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
+                var dayName = dayNames[date.getDay()];
+
+                var weeklyTimes = Storage.load(Storage.KEYS.WEEKLY_TIMES, {}) || {};
+                if (weeklyTimes[courtId] && weeklyTimes[courtId][dayName]) {
+                    return weeklyTimes[courtId][dayName];
+                }
+
+                // 3. Return hardcoded defaults
+                return hardcodedDefaults.slice();
+            }
+
             // Generate QR Code for current date
             function generateQRCode() {
                 const qrContainer = document.getElementById('qr-code');
@@ -1366,17 +1391,12 @@
                         return;
                     }
 
-                    var planningTemplates = Storage.load('planning_templates', {}) || {};
-                    var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
-
-                    var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-                    var headerTimes = (courts[0] && dayTemplate[courts[0].id]) ? dayTemplate[courts[0].id] : defaultTimes;
-
                     var tableHtml = '<table class="public-horizontal-table"><tbody>';
 
                     for (var c = 0; c < courts.length; c++) {
                         var court = courts[c];
-                        var times = dayTemplate[court.id] || defaultTimes;
+                        // Use getDefaultTimesForDate for weekly defaults fallback
+                        var times = getDefaultTimesForDate(dateStr, court.id);
 
                         // Riga orari per questo campo
                         tableHtml += '<tr class="court-time-row">';
@@ -1561,10 +1581,8 @@
                         court = courts[0];
                     }
 
-                    var planningTemplates = Storage.load('planning_templates', {}) || {};
-                    var dayTemplate = (planningTemplates && planningTemplates[dateStr]) ? planningTemplates[dateStr] : {};
-                    var defaultTimes = ['08.30', '09.30', '10.30', '11.30', '12.30', '13.30', '14.30', '15.30', '16.30', '17.30', '18.30', '19.30', '20.30', '21.30', '22.30'];
-                    var times = dayTemplate[court.id] || defaultTimes;
+                    // Use getDefaultTimesForDate for weekly defaults fallback
+                    var times = getDefaultTimesForDate(dateStr, court.id);
 
                     var activityLabels = ['match', 'scuola', 'ago', 'promo', 'torneo', 'manutenzione'];
 
@@ -1681,6 +1699,7 @@
                     console.log('🔄 Public view: caricamento dati da Firebase...');
                     await Storage.loadFromFirebase(Storage.KEYS.COURTS);
                     await Storage.loadFromFirebase(Storage.KEYS.PLANNING_TEMPLATES);
+                    await Storage.loadFromFirebase(Storage.KEYS.WEEKLY_TIMES);
                     await Storage.loadFromFirebase(Storage.KEYS.QR_CONFIG);
 
                     // Subscribe to real-time updates
@@ -1715,7 +1734,7 @@
 
             // Real-time update when admin makes changes (localStorage events for non-Firebase mode)
             window.addEventListener('storage', function (event) {
-                if (event.key === 'tennis_courts' || event.key === 'planning_templates') {
+                if (event.key === 'tennis_courts' || event.key === 'planning_templates' || event.key === 'weekly_times') {
                     console.log('Detected change from admin, updating...');
                     renderPlanning();
                 }
